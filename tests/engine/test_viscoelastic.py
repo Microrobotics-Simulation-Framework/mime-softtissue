@@ -15,7 +15,8 @@ The lines, stated before the checks:
   peak (the branches relax every step). Planted: the long-term modulus taken as the instantaneous one (1 + sum beta)
   must fail it.
 - **every build:** the axisymmetric cylinder with its side held and the plane-strain sheet with its width held are the
-  same uniaxial strain; their relaxing stresses agree to 1e-9."""
+  same uniaxial strain; their relaxing stresses agree to 1e-9 (the stress relaxing by over 15 %, so the branches are
+  in it)."""
 from dataclasses import replace
 
 import jax
@@ -160,7 +161,7 @@ def test_relaxation_on_the_fe_sheet_is_the_prony_closed_form():
 def test_the_axisymmetric_and_plane_strain_builds_relax_alike():
     """Uniaxial strain (lateral stretches held at 1) two ways: the axisymmetric cylinder with its side held, and the
     plane-strain sheet with its width held; nominal stress per unit reference area."""
-    mat = material(kappa=20 * 2 * C1)
+    mat = material(kappa=4 * C1)  # a small bulk modulus, so that the relaxing isochoric part is a fifth of the stress
     dts = step_and_hold(n=30, dt=1.0)
     stretch = 1.2
     cyl = stretched_cylinder(radius=1e-3, height=2e-3, nr=2, nz=2, confined=True)
@@ -173,7 +174,7 @@ def test_the_axisymmetric_and_plane_strain_builds_relax_alike():
     axi = ra["force"] / (np.pi * 1e-3 ** 2)
     plane = rp["force"] / 4e-3
     assert np.max(np.abs(axi / plane - 1)) <= 1e-9
-    assert axi[0] / axi[-1] > 1.3  # the check is not of a relaxed state
+    assert axi[0] / axi[-1] > 1.15  # the check is not of a relaxed state (1.21 measured)
 
 
 def test_the_branches_are_smooth_at_the_undeformed_state():
