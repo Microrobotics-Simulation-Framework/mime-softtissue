@@ -32,10 +32,11 @@ def main() -> None:
     ap.add_argument("--depth", type=float, default=1.0, help="mm")
     ap.add_argument("--speed", type=float, default=0.1, help="mm/s")
     ap.add_argument("--every", type=int, default=1, help="a stage frame every this many steps")
+    ap.add_argument("--solver", default="tip3d", help="3-D: tip3d or all2")
     a = ap.parse_args()
     p = puncture_experiment(material=a.material, tip=tips()[a.tip], speed=mm_per_s(a.speed), depth=mm(a.depth),
                             dimension=a.dimension, resolution=mm(a.h), step=mm(a.step), block_radius=mm(a.radius),
-                            block_height=mm(a.height), fine=mm(a.fine), frames_every=a.every)
+                            block_height=mm(a.height), fine=mm(a.fine), frames_every=a.every, solver=a.solver)
     t0 = time.perf_counter()
     written = p.experiment.build().run_to(a.out, p.duration, record=[f"{FORCE}.force", f"{FORCE}.depth",
                                                                      f"{CRACK}.area"], stage_every=p.stage_every)
@@ -45,7 +46,8 @@ def main() -> None:
     depth = [float(v) * 1e3 for v in run[FORCE].depth.values.to(m)]
     area = [float(v) * 1e6 for v in run[CRACK].area.values.to(m2)]
     peak = max(range(len(force)), key=lambda k: force[k])
-    summary = dict(tip=a.tip, material=a.material, dimension=a.dimension, h_mm=a.h, fine_mm=a.fine, step_mm=a.step,
+    summary = dict(tip=a.tip, material=a.material, dimension=a.dimension, solver=a.solver, h_mm=a.h, fine_mm=a.fine,
+                   step_mm=a.step,
                    speed_mm_s=a.speed, steps=p.steps, wall_s=wall, depth_mm=depth, force_N=force,
                    crack_area_mm2=area, peak_N=force[peak], peak_depth_mm=depth[peak])
     Path(a.out).joinpath("puncture.json").write_text(json.dumps(summary, indent=1))

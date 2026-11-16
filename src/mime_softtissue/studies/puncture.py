@@ -48,7 +48,8 @@ def tips() -> dict[str, Any]:
 def puncture_experiment(*, material: str, tip: Any, speed: Quantity = mm_per_s(0.1), depth: Quantity = mm(3.0),
                         dimension: str = "axisymmetric", resolution: Quantity = mm(0.125),
                         step: Quantity = mm(0.02), block_radius: Quantity = mm(5.0), block_height: Quantity = mm(5.0),
-                        fine: Quantity = mm(1.0), frames_every: int = 1, name: str = "puncture") -> Puncture:
+                        fine: Quantity = mm(1.0), frames_every: int = 1, solver: str = "tip3d",
+                        name: str = "puncture") -> Puncture:
     """A rigid ``tip`` pushed at ``speed`` into a block of the record ``material`` to ``depth``.
 
     - ``material``: a record's name (``"softtissue.whole_blood_clot"``, or your own fitted record);
@@ -68,7 +69,7 @@ def puncture_experiment(*, material: str, tip: Any, speed: Quantity = mm_per_s(0
     exp = Experiment(name, scene=Scene.new(up=Z, units="m"), gravity=m_per_s2(0.0), dt=s(dt))
     exp.add_body(Body("clot", dynamics=st.GelBlock(radius=block_radius, height=block_height, material=material,
                                                    h=resolution, fine=fine, dimension=dimension,
-                                                   tip_shape=SHAPES[type(tip)]),
+                                                   tip_shape=SHAPES[type(tip)], solver=solver),
                       initial=State(position=mm((0.0, 0.0, 0.0)))))
     exp.add_body(Body("tip", dynamics=RigidInertial(), parts={"tip": Part(tip)},
                       initial=State(position=mm((0.0, 0.0, float(block_height.to(mm)))),

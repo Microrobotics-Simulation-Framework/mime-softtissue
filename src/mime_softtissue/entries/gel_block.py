@@ -291,6 +291,11 @@ class _LawTip(p3.Puncture3D):
         return 0.5 * jnp.asarray(self.given["stiffness"], jnp.float32) * jnp.sum(self.w32 * gap * gap)
 
 
+#: The 3-D solver's settings by name: TIP3D's (spike 3D-COST's all2 levers, Anderson acceleration at depth 3, a step
+#: limit, the mean dilatation), or all2's arithmetic alone (the 3-D spikes' Gauss-point volumetric term, no Anderson, no
+#: limit), which reproduces spike 3D-COST's rows.
+SOLVERS = {"tip3d": p3.Settings(),
+           "all2": p3.Settings(anderson=0, stagger_cap=0, newton_cap=0, volumetric="gauss")}
 #: A base step whose solve does not converge is redone from its start in 2, then 4, then 8 sub-steps (TIP3D's rejection
 #: at half the increment, inside one MIME step); past 8 the last try is kept and flagged in ``capped``.
 MAX_SUBSTEPS = 8
@@ -303,12 +308,13 @@ class Block3DNode(MimeNode):
 
     def __init__(self, name: str, timestep: float, *, radius: float, height: float, h: float, fine: float,
                  young: float, poisson: float, toughness: float, length_scale: float, stretch_limit: float,
-                 residual: float, origin: Sequence[float], shape: str, yeoh_c2: float = 0.0) -> None:
+                 residual: float, origin: Sequence[float], shape: str, yeoh_c2: float = 0.0,
+                 solver: str = "tip3d") -> None:
         super().__init__(name, timestep, radius=float(radius), height=float(height), h=float(h), fine=float(fine),
                          young=float(young), poisson=float(poisson), toughness=float(toughness),
                          length_scale=float(length_scale), stretch_limit=float(stretch_limit),
                          residual=float(residual), origin=tuple(float(c) for c in origin), shape=str(shape),
-                         yeoh_c2=float(yeoh_c2))
+                         yeoh_c2=float(yeoh_c2), solver=str(solver))
         self._engine: _LawTip | None = None
 
     def engine(self) -> _LawTip:
@@ -319,7 +325,7 @@ class Block3DNode(MimeNode):
                            stretch_limit=own["stretch_limit"], c2=own["yeoh_c2"])
             block = p3.Block(half_width=own["radius"], height=own["height"], h=own["h"], symmetry="quarter",
                              fine_xy=FINE_XY * own["fine"], fine_z=own["fine"])
-            self._engine = _LawTip(block, mat, p3.Settings(), own["shape"], own["origin"])
+            self._engine = _LawTip(block, mat, SOLVERS[own["solver"]], own["shape"], own["origin"])
         return self._engine
 
     def surface(self, u: Array, d: Array) -> tuple[Array, Array]:
@@ -436,7 +442,9 @@ class GelBlock(Dynamics):
                      "lag_relaxation": convention(NUMERICAL, "friction's lagged pressure under-relaxed (round 4: a "
                                                               "two-cycle at 1.0 on withdrawal)"),
                      "tip_shape": convention(DESIGN, "the registered shape of the tip's kind"),
-                     "dimension": convention(NUMERICAL, "axisymmetric, or 3d (a quarter, TIP3D's engine)")}
+                     "dimension": convention(NUMERICAL, "axisymmetric, or 3d (a quarter, TIP3D's engine)"),
+                     "solver": convention(NUMERICAL, "3-D only: tip3d (TIP3D's settings) or all2 (spike 3D-COST's "
+                                                     "arithmetic, its rows reproduced)")}
     radius: Annotated[Quantity, Length]
     height: Annotated[Quantity, Length]
     material: str
@@ -447,6 +455,7 @@ class GelBlock(Dynamics):
     tip_shape: str = "softtissue.headed_tip"
     lag_relaxation: float = 0.5
     dimension: str = "axisymmetric"
+    solver: str = "tip3d"
 
     @override
     def assets_read(self) -> tuple[str, ...]:
@@ -459,6 +468,8 @@ class GelBlock(Dynamics):
             found.append(f"dimension is {self.dimension!r}, not one of {DIMENSIONS}")
         elif self.dimension == "3d" and self.mode != "phase_field":
             found.append(f"mode {self.mode!r} has no 3-D build (the 3-D block is the phase field's)")
+        if self.solver not in SOLVERS:
+            found.append(f"solver is {self.solver!r}, not one of {tuple(SOLVERS)}")
         return found
 
     @override
@@ -488,7 +499,7 @@ class GelBlock(Dynamics):
                 h=ctx.scalar("h"), fine=ctx.scalar("fine"), young=values["young_modulus"],
                 poisson=values["poisson_ratio"], toughness=values["toughness"], length_scale=values["length_scale"],
                 stretch_limit=values["stretch_limit"], residual=values.get("residual_stiffness", 1e-6), origin=origin,
-                shape=self.tip_shape, yeoh_c2=values.get("yeoh_c2", 0.0)))
+                shape=self.tip_shape, yeoh_c2=values.get("yeoh_c2", 0.0), solver=self.solver))
             return
         b.add_node(BlockNode(
             ctx.node_name(), ctx.timestep, radius=ctx.scalar("radius"), height=ctx.scalar("height"),
