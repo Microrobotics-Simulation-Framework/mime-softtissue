@@ -35,6 +35,7 @@ def solve_damage(history: jax.Array, gc, l, dx: jax.Array, dy: jax.Array, grid: 
         stiff = gc * l * jnp.einsum("eg,egai,egbi->eab", wq, G, G)
         src = wq * 2.0 * history
         if viscosity:
+            assert d_prev is not None, "a viscous damage solve needs the previous damage"
             src = src + wq * viscosity * damage_at_gauss(d_prev, I, J)
         ke = mass + stiff
         fe = jnp.einsum("eg,ga->ea", src, N)

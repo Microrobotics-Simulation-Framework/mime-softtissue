@@ -15,7 +15,7 @@ NEEDS = {"mu": "G' at small strain (any sweep), or the initial slope of compress
          "k2": "the curvature of the stiffening: data well into it (G' over at least a decade of its rise)"}
 
 
-def summary(prob: core.Problem, f: core.Fit, flags: list[dict[str, Any]], boot: dict[str, Any] | None) -> dict:
+def summary(prob: core.Problem, f: core.Fit, flags: list[dict[str, Any]], boot: dict[str, Any] | None) -> dict[str, Any]:
     v = f.values
     nu = (3 * v["kappa"] - 2 * v["mu"]) / (2 * (3 * v["kappa"] + v["mu"]))
     rec: dict[str, Any] = {

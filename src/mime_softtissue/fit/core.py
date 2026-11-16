@@ -141,6 +141,8 @@ def _lm(problem: Problem, y: np.ndarray, theta: np.ndarray, w: np.ndarray, max_i
         A, g = Jm.T @ Jm, Jm.T @ r
         D = np.diag(np.maximum(np.diag(A), 1e-12 * max(np.max(np.diag(A)), 1e-300)))
         improved = False
+        step = trial = theta  # the 30 trials below always assign these; the checker cannot see it
+        rt, ct = r, np.inf
         for _ in range(30):
             step = -np.linalg.solve(A + lam * D, g)
             step = step * min(1.0, 2.0 / (np.max(np.abs(step)) + 1e-300))  # at most a factor e^2 a step
