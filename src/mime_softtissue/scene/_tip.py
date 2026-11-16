@@ -79,8 +79,11 @@ def value(settings: Mapping[str, Magnitude], name: str) -> float:
 
 def above_zero_problems(settings: Mapping[str, Magnitude], names: tuple[str, ...]) -> list[str]:
     """The settings among ``names`` that are not a finite number above zero."""
-    return [f"{n} is {settings[n]!r}, not a value above zero" for n in names
-            if not (isinstance(settings[n], (int, float)) and math.isfinite(settings[n]) and settings[n] > 0)]
+    return [f"{n} is {settings[n]!r}, not a value above zero" for n in names if not _above_zero(settings[n])]
+
+
+def _above_zero(held: Magnitude) -> bool:
+    return isinstance(held, (int, float)) and math.isfinite(held) and held > 0
 
 
 def revolved_drawing(profile: list[tuple[float, float]], segments: int, what: str) -> Drawing:

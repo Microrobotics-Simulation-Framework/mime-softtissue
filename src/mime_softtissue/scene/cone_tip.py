@@ -18,7 +18,7 @@ from ._tip import AXIS, EDGES, CylinderTip, ProfileShape, above_zero_problems, r
 
 
 class ConeShape(ProfileShape):
-    parameter_names = ("radius", "tip_radius", "half_angle")
+    parameter_names: tuple[str, ...] = ("radius", "tip_radius", "half_angle")
 
     def indenter(self, parameters: Mapping[str, Any]) -> ct.Indenter:
         return ct.Indenter("cone", radius=parameters["radius"], fillet=parameters["tip_radius"], top=0.0,

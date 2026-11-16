@@ -21,6 +21,7 @@ from mime.things import Body, Part, State
 from mime.units import Quantity, deg, kg, kg_m2, m, m_per_s, m_per_s2, mm, mm_per_s, rad_per_s, s
 
 from .._material_record import read_material
+from .._quantities import scalar
 from ..dynamics import GelBlock
 from ..interactions import Servo, TipContact
 from ..observations import CrackSize, TipForce
@@ -71,9 +72,9 @@ def puncture_experiment(*, material: str, tip: Any, speed: Quantity = mm_per_s(0
     its bottom held; the tip starts with its lowest point on the top face."""
     if type(tip) not in SHAPES:
         raise TypeError(f"the tip is one of {[k.__name__ for k in SHAPES]}, not {type(tip).__name__}")
-    step_m, speed_m_s = float(step.to(m)), float(speed.to(m_per_s))
+    step_m, speed_m_s = scalar(step, m), scalar(speed, m_per_s)
     dt = step_m / speed_m_s
-    h_m = float(resolution.to(m))
+    h_m = scalar(resolution, m)
     exp = Experiment(name, scene=Scene.new(up=Z, units="m"), gravity=m_per_s2(0.0), dt=s(dt))
     exp.add_body(Body("clot", dynamics=GelBlock(radius=block_radius, height=block_height, material=material,
                                                    h=resolution, fine=fine, dimension=dimension,
@@ -81,13 +82,13 @@ def puncture_experiment(*, material: str, tip: Any, speed: Quantity = mm_per_s(0
                                                    fine_across=fine_across),
                       initial=State(position=mm((0.0, 0.0, 0.0)))))
     exp.add_body(Body("tip", dynamics=RigidInertial(), parts={"tip": Part(tip)},
-                      initial=State(position=mm((float(offset.to(mm)), 0.0, float(block_height.to(mm)))),
+                      initial=State(position=mm((scalar(offset, mm), 0.0, scalar(block_height, mm))),
                                     orientation=(1.0, 0.0, 0.0, 0.0), velocity=m_per_s((0.0, 0.0, -speed_m_s)),
                                     angular_velocity=rad_per_s((0.0, 0.0, 0.0)))))
     exp.declare("tip.mass", kg(1.2e-5), reason="a steel tip of a few millimetres (quasi-static: its mass does not matter)")
     exp.declare("tip.inertia", kg_m2((1e-11, 1e-11, 1e-12)), reason="the same tip's order")
     # one step more than the depth needs (the block solves at the tip's pose of the step before), in whole frames
-    steps = frames_every * math.ceil((round(float(depth.to(mm)) / float(step.to(mm))) + 1) / frames_every)
+    steps = frames_every * math.ceil((round(scalar(depth, mm) / scalar(step, mm)) + 1) / frames_every)
     exp.attach(Servo(speed=m_per_s(speed_m_s), insert_steps=steps), body="tip")
     young = read_material(material)["young_modulus"]
     exp.attach(TipContact(friction=0.0, adhesion=0.0, stiffness=100.0 * young / h_m), tip="tip", solid="clot")

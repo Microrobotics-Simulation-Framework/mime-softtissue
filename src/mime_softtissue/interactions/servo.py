@@ -13,9 +13,11 @@ from jax import Array
 from jaxtyping import Float
 from typing_extensions import ReadOnly, TypedDict
 
+from mime.build import InteractionBuilder
 from mime.core import MimeNode, NodeFields, Units, node_fields, typed_view
 from mime.gradients import GradientStatus
-from mime.registry import DESIGN, NUMERICAL, Delivery, Interaction, RoleKind, convention, register_interaction
+from mime.registry import (DESIGN, NUMERICAL, BuildContext, Delivery, Interaction, RoleKind, convention,
+                           register_interaction)
 from mime.units import Force, N, Quantity, Velocity, m_per_s
 from mime.vocabulary import BACKGROUND_LOAD, RESISTANCE
 

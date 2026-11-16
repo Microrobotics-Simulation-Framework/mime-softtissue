@@ -23,6 +23,7 @@ from mime.registry import (DESIGN, NUMERICAL, BuildContext, Dynamics, GradientRe
 from mime.things import ThingKind
 from mime.units import LENGTH, Length, Quantity, mm
 
+from .._quantities import scalar
 from ..studies import results
 
 #: The sheet's thickness (mm) and the test's grip rate (mm/s): the thinning drawn on the front face, and the clock one
@@ -144,7 +145,7 @@ class ReplayedTear(Dynamics):
         return (self.frames,)
 
     def _replayed(self) -> tuple[Any, ...]:
-        return replay(self.every_column, self.every_frame, float(self.to_mm.to(mm)), self.frames)
+        return replay(self.every_column, self.every_frame, scalar(self.to_mm, mm), self.frames)
 
     @property
     def step_seconds(self) -> float:

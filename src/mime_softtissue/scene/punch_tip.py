@@ -17,7 +17,7 @@ from ._tip import AXIS, EDGES, CylinderTip, ProfileShape, above_zero_problems, r
 
 
 class PunchShape(ProfileShape):
-    parameter_names = ("radius", "fillet")
+    parameter_names: tuple[str, ...] = ("radius", "fillet")
 
     def indenter(self, parameters: Mapping[str, Any]) -> ct.Indenter:
         return ct.Indenter("punch", radius=parameters["radius"], fillet=parameters["fillet"], top=0.0)

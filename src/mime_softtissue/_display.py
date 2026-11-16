@@ -47,12 +47,14 @@ def revolved(nx: int, ny: int, segments: int = SEGMENTS, sweep: float = SWEEP) -
                 theta.append(float(angle))
         a_, b_, c_, d_ = grid[:-1, :-1], grid[1:, :-1], grid[1:, 1:], grid[:-1, 1:]
         tri = np.concatenate([np.stack([a_, b_, c_], -1).reshape(-1, 3), np.stack([a_, c_, d_], -1).reshape(-1, 3)])
-        faces += [tuple(int(v) for v in (row[::-1] if flip else row)) for row in tri]
+        for row in tri:
+            p, q, r = (row[::-1] if flip else row).tolist()
+            faces.append((int(p), int(q), int(r)))
     return (np.asarray(nodes_i, dtype=np.int64), np.asarray(nodes_j, dtype=np.int64), np.asarray(theta),
             np.asarray(faces, dtype=np.int64))
 
 
-def placed(x: np.ndarray, y: np.ndarray, u: object, i: np.ndarray, j: np.ndarray, theta: np.ndarray, xp: object = np) -> object:
+def placed(x: np.ndarray, y: np.ndarray, u: object, i: np.ndarray, j: np.ndarray, theta: object, xp: object = np) -> object:
     """The vertices' points: node ``(i, j)``'s radius and height, displaced by ``u`` (``None``: at rest), turned to its
     angle; ``xp`` the array module (NumPy at build, JAX in the step)."""
     m: object = xp
@@ -109,8 +111,8 @@ def mirrored_boundary(nx: int, ny: int, nz: int, symmetry: str) -> tuple[np.ndar
     the planes of symmetry (a quarter's) or the plane x = 0 and the half's plane of symmetry. ``full`` is
     ``box_boundary``, unreflected."""
     if symmetry == "full":
-        ijk, faces = box_boundary(nx, ny, nz)
-        return ijk, np.ones((len(ijk), 3)), faces
+        whole, triangles = box_boundary(nx, ny, nz)
+        return whole, np.ones((len(whole), 3)), triangles
     sizes = (nx, ny, nz)
     nodes: list[np.ndarray] = []
     signs: list[np.ndarray] = []
