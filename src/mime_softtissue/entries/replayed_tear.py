@@ -24,11 +24,8 @@ from mime.things import ThingKind
 from mime.units import LENGTH, Length, Quantity, mm
 
 from ..studies import results
+from ..studies.lohr2025 import GRIP_RATE_MM_S, THICKNESS_MM
 from ._vocabulary import VERSION
-
-#: The sheet's thickness (mm) and the test's grip rate (mm/s): the thinning drawn on the front face, and the clock one
-#: frame spacing takes at the rate the specimens were pulled.
-THICKNESS_MM, GRIP_RATE_MM_S = 3.0, 0.1
 
 
 class ReplayState(TypedDict, closed=True):
@@ -105,7 +102,7 @@ class ReplayedTear(Dynamics):
     """The pure-shear study's group-4 sheet tearing, replayed from its saved frames (both halves, the crack plane
     opened), its surface coloured by the phase field's damage (0 to 1). Every ``every_column``-th grid column and
     every ``every_frame``-th frame up to the grip displacement ``to_mm`` are kept, which sets the size of the page. One
-    step is one kept frame: set the experiment's base step to ``step_seconds`` (the test's clock at 0.1 mm/s) for the
+    step is one kept frame: set the experiment's base step to ``step_seconds`` (the test's clock at the grip rate the data files show, 0.2 mm/s) for the
     page's time to be the test's."""
 
     name = "softtissue.replayed_tear"
