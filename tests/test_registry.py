@@ -16,7 +16,8 @@ from mime.testing import installed_entries, round_trip_failures
 RECORDS = Path(__file__).resolve().parent.parent / "src" / "mime_softtissue" / "records"
 ENTRIES = {("dynamics", "softtissue.notched_strip"), ("observation", "softtissue.grip_force"),
            ("dynamics", "softtissue.gel_block"), ("interaction", "softtissue.tip_contact"),
-           ("interaction", "softtissue.servo"), ("observation", "softtissue.tip_force"), ("geometry", "softtissue.headed_tip")}
+           ("interaction", "softtissue.servo"), ("observation", "softtissue.tip_force"), ("geometry", "softtissue.headed_tip"),
+           ("dynamics", "softtissue.replayed_tear")}
 
 
 def test_the_registry_lists_the_entries():
