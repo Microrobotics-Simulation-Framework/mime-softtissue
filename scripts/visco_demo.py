@@ -14,7 +14,7 @@ Materials: ``elastic`` is the replication's (Yeoh C1 363, C2 434 Pa, Gc 0.83 J/m
 as the response at 0.2 mm/s: long-term s (C1, C2) with the Prony terms (``--beta``, ``--tau``) and s from
 ``studies.visco_clot.rate_consistent_scale``; ``slow`` is the slow-rate control's (long-term = the elastic constants,
 the rate 1e-6 times the relaxation's). The axisymmetric block is compressible (nu 0.45, the tutorial record's
-placeholder): kappa = 2 mu (1 + nu) / (3 (1 - 2 nu)) with the long-term mu.
+placeholder): kappa = 2 mu (1 + nu) / (3 (1 - 2 nu)) with the elastic record's mu (2 C1), unscaled.
 """
 import argparse
 import json
@@ -69,8 +69,10 @@ t0 = time.time()
 
 
 def material(h: float, kappa_ratio: float = 0.0) -> Material:
+    """The bulk modulus is the elastic record's (kappa_ratio times its mu = 2 C1), whatever the long-term scale: the
+    viscous material differs from the elastic one only in its isochoric response."""
     mu = 2 * C1 * scale
-    return Material(mu=jnp.asarray(mu), kappa=jnp.asarray(kappa_ratio * mu),
+    return Material(mu=jnp.asarray(mu), kappa=jnp.asarray(kappa_ratio * 2 * C1),
                     gc=jnp.asarray(discretisation_toughness(GC, h, L)), l=jnp.asarray(L), k_res=jnp.asarray(1e-6),
                     stretch_limit=jnp.asarray(10.0), c2=jnp.asarray(C2 * scale), prony=prony)
 
@@ -101,7 +103,7 @@ else:
     RB = HB = 5e-3
     kappa_ratio = 2 * (1 + NU) / (3 * (1 - 2 * NU))  # K / mu
     mat = material(h, kappa_ratio)
-    young = 2 * float(mat.mu) * (1 + NU)
+    young = 2 * (2 * C1) * (1 + NU)  # the penalty's scale: the elastic record's Young's modulus
     cone = ct.Indenter("cone", radius=0.5e-3, fillet=0.02e-3, top=HB, half_angle=float(np.deg2rad(15.0)))
     block = axisymmetric_block(radius=RB, height=HB, h=h, fine_r=1e-3, fine_z=1e-3, predictor="proportional")
     sp = with_indenter(block, cone, stiffness=100.0 * young / h)

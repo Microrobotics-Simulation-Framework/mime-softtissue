@@ -97,20 +97,23 @@ def test_a_wrong_relaxation_time_fails_the_relaxation_check(factor):
 
 def creep(mat, target, dts, update=law.updated_strains):
     """The material point (pure shear) under a constant nominal stress ``target``: each step's stretch solves
-    d W_step / d lam = target by Newton; the internal strains then update by ``update``."""
+    d W_step / d lam = target by 20 Newton iterations; the internal strains then update by ``update``."""
     from mime_softtissue.fit import viscous as fv
 
-    gamma = law.initial_strains((), mat)
-    lam = jnp.asarray(1.0)
-    out = []
-    for h in dts:
-        def potential(q, gamma=gamma, h=h):
+    def step(carry, h):
+        lam, gamma = carry
+
+        def potential(q):
             return fv._long_term(q, mat) + law.viscous_energies(fv._cauchy_green(q), gamma, mat, h)[0]
-        for _ in range(30):
-            lam = lam - (jax.grad(potential)(lam) - target) / jax.hessian(potential)(lam)
-        gamma = update(fv._cauchy_green(lam), gamma, mat, h)
-        out.append(float(lam) - 1.0)
-    return np.asarray(out)
+
+        def newton(_, q):
+            return q - (jax.grad(potential)(q) - target) / jax.hessian(potential)(q)
+
+        lam = jax.lax.fori_loop(0, 20, newton, lam)
+        return (lam, update(fv._cauchy_green(lam), gamma, mat, h)), lam - 1.0
+
+    run_all = jax.jit(lambda d: jax.lax.scan(step, (jnp.asarray(1.0), law.initial_strains((), mat)), d)[1])
+    return np.asarray(run_all(jnp.asarray(dts)))
 
 
 def creep_case():
