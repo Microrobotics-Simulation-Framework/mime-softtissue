@@ -62,3 +62,16 @@ mean 9.01 / 10.01 / 11.27 / 11.75 / 11.29).
   gauss 12-18 / 8-14 / 4-10 / 0-4 / 0-4 %. At h 0.0177 both within 11.0-11.9 mN and within 3 % of each other.
 - **Judgement it would support:** the converged peak about 11.2-11.7 mN; full integration's limit inflated by locking by at
   most about 4 % at h/l <= 0.35. If mean at h 0.025 and 0.0177 reads below 10.9 mN, I am wrong and the limit is inflated.
+
+## Round 4 (runners): the needle points at the finer grids, written after round 1's first three needle arms
+
+(Round 3's header said "21:3x"; its commit is 21:24:50.) Seen before writing: mean against gauss, Fc / (mu R^2): neo-Hookean
+R 0.5 h 0.1 8.79 against 8.79 (+0.0 %); Gent R 2 h 0.2 10.69 against 16.61 (-36 %); Gent R 4 h 0.2 11.50 against 10.88
+(+6 %). GENT's engine-direct full-integration twins at h 0.05 (its run, downloaded, not yet in its report): y 89.9 / 29.5 /
+12.25 at R 0.5 / 1 / 2 (R 4 running).
+
+- **MIME's Study, mean, h 0.1:** neo-Hookean R 2 and R 4 within 5 % of gauss (6.27, 5.72); Gent R 2 within 0.75-1.25 x
+  of gauss's 14.61 (direction not predicted: at h 0.2 the pair is grid-dominated); Gent R 4 within 12 % of gauss's twin
+  (pending on GENT's run; if it never lands, no comparison is claimed).
+- **Engine-direct, mean, h 0.05** (GENT's pf-line arguments plus `--volumetric mean`): each within 15 % of its
+  full-integration twin; with mean, 1 or 2 of R 0.5 / 1 / 2 inside Exp. 1's bars (gauss: 1 of 3).
