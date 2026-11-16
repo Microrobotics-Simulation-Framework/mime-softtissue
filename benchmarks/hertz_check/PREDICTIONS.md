@@ -43,3 +43,10 @@ small-strain theory against a neo-Hookean solid at delta/R <= 0.05 [estimate].
 - P8 verdict lean: tip3d's pre-peak forces are the nearer to the truth at nu 0.4 (all2's are high by a few %); neither
   peak is shown right by Hertz (a fracture quantity), and all2's agreement with 3D-COST is agreement of the same arithmetic.
 Mon 16 Nov 18:37:11 CET 2026
+
+## Addendum, round 2 (written before round 2's arms; round 1's first nine arms had been read)
+Read so far [measured, h 0.2, raw F/F_H, L 20 block not yet corrected]: tip3d nu 0.45 0.99-1.04, all2 nu 0.45 1.04-1.07, all2
+nu 0.4 1.02-1.07; the plants read x 2.87-2.98 (E for mu) and / 4.0 (symmetry). Round 2 adds the third grid (h 0.1) at
+kappa 50 mu for both presets (the locking case) and the punch's one-at-a-time arms at the plotted grid h 0.1. Leans unchanged
+(P2: all2 at kappa 50 mu high and converging from above; P7: the damage bound carries most of the peak gap).
+Mon 16 Nov 18:49:36 CET 2026
