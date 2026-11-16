@@ -67,31 +67,59 @@ def energy_parts(F2: jax.Array, Ftt: jax.Array, mat: Material) -> tuple[jax.Arra
     return law.energy_parts(*invariants(F2, Ftt, mat), mat)
 
 
+def cauchy_green(F2: jax.Array, Ftt: jax.Array) -> jax.Array:
+    """The right Cauchy-Green tensor in Voigt order (6,): the in-plane block's and the hoop's C_tt = F_tt^2."""
+    C = F2.T @ F2
+    zero = jnp.zeros_like(Ftt)
+    return jnp.stack([C[0, 0], C[1, 1], Ftt * Ftt, C[0, 1], zero, zero])
+
+
+def viscous_parts(F2: jax.Array, Ftt: jax.Array, mat: Material,
+                  visco: law.ViscousStep) -> tuple[jax.Array, jax.Array]:
+    """The branches' (incremental potential, stored energy) at the four Gauss points."""
+    return law.viscous_energies(jax.vmap(cauchy_green)(F2, Ftt), visco.gamma, mat, visco.dt)
+
+
 def element_strain_energy(ue: jax.Array, dq: jax.Array, x0: jax.Array, dx: jax.Array, dy: jax.Array,
-                          mat: Material) -> jax.Array:
-    """Degraded strain energy of one ring element (the whole ring, 2 pi included): ``ue`` (4, 2), ``dq`` (4,)."""
+                          mat: Material, visco: law.ViscousStep | None = None) -> jax.Array:
+    """Degraded strain energy of one ring element (the whole ring, 2 pi included): ``ue`` (4, 2), ``dq`` (4,).
+    ``visco``: the viscous branches' step, added to psi_plus as in ``plane_strain``."""
     F2, Ftt = deformation(ue, x0, dx, dy)
     plus, minus = jax.vmap(lambda f, t: energy_parts(f, t, mat))(F2, Ftt)
+    if visco is not None:
+        plus = plus + viscous_parts(F2, Ftt, mat, visco)[0]
     g = law.degradation(dq, mat.k_res)
     return jnp.sum(gauss_weights(x0, dx, dy) * (g * plus + minus))
 
 
 def element_hessian(ue: jax.Array, dq: jax.Array, x0: jax.Array, dx: jax.Array, dy: jax.Array,
-                    mat: Material) -> jax.Array:
-    return jax.hessian(lambda v: element_strain_energy(v.reshape(4, 2), dq, x0, dx, dy, mat))(ue.reshape(8))
+                    mat: Material, visco: law.ViscousStep | None = None) -> jax.Array:
+    return jax.hessian(lambda v: element_strain_energy(v.reshape(4, 2), dq, x0, dx, dy, mat, visco))(ue.reshape(8))
 
 
-def element_plus(ue: jax.Array, x0: jax.Array, dx: jax.Array, dy: jax.Array, mat: Material) -> jax.Array:
-    """psi_plus at the four Gauss points (the history field's source)."""
+def element_plus(ue: jax.Array, x0: jax.Array, dx: jax.Array, dy: jax.Array, mat: Material,
+                 visco: law.ViscousStep | None = None) -> jax.Array:
+    """psi_plus at the four Gauss points (the history field's source); with ``visco`` the branches' stored energy."""
     F2, Ftt = deformation(ue, x0, dx, dy)
-    return jax.vmap(lambda f, t: energy_parts(f, t, mat)[0])(F2, Ftt)
+    plus = jax.vmap(lambda f, t: energy_parts(f, t, mat)[0])(F2, Ftt)
+    if visco is not None:
+        plus = plus + viscous_parts(F2, Ftt, mat, visco)[1]
+    return plus
+
+
+def element_cauchy_green(ue: jax.Array, x0: jax.Array, dx: jax.Array, dy: jax.Array) -> jax.Array:
+    """C in Voigt order at the four Gauss points: (4, 6)."""
+    return jax.vmap(cauchy_green)(*deformation(ue, x0, dx, dy))
 
 
 def element_stored(ue: jax.Array, dq: jax.Array, x0: jax.Array, dx: jax.Array, dy: jax.Array,
-                   mat: Material) -> jax.Array:
-    """The stored energy at each Gauss point times its weight: (4,) (a readout)."""
+                   mat: Material, visco: law.ViscousStep | None = None) -> jax.Array:
+    """The stored energy at each Gauss point times its weight: (4,) (a readout; with ``visco`` at ``dt`` = 0 the
+    branches' stored energy at its strains)."""
     F2, Ftt = deformation(ue, x0, dx, dy)
     plus, minus = jax.vmap(lambda f, t: energy_parts(f, t, mat))(F2, Ftt)
+    if visco is not None:
+        plus = plus + viscous_parts(F2, Ftt, mat, visco)[1]
     return gauss_weights(x0, dx, dy) * (law.degradation(dq, mat.k_res) * plus + minus)
 
 

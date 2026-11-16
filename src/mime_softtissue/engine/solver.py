@@ -10,6 +10,12 @@ The kinematics is the specimen's (``kinematics.plane_strain``, in plane strain o
 ``contact`` is pressed by a rigid indenter (``engine.contact``) whose depth is the load's ``delta``. ``viscosity``
 adds eta/2 (d - d_n)^2 to the damage functional (a viscous regularisation, off by default).
 
+A material with Prony terms (``Material.prony``) is viscoelastic: the state carries the branches' internal strains
+(``State.gamma``, per Gauss point as the history), each step minimises the energy plus the branches' dissipation
+potential over the step's time and then updates the internal strains in closed form (``material``). The step's time is
+``dt`` when given (a hold), otherwise the load's increment over ``Solver.rate`` (the grip's speed in tension, the
+insertion speed in puncture).
+
 Every function is differentiable in forward mode (``jax.jvp`` through the loops); the reaction is the internal force
 summed over the specimen's reaction nodes, or the indenter's. ``Solver.advance`` is the traceable step (a MIME node
 calls it inside its own jit); ``Solver.step`` is its jitted form."""
@@ -25,11 +31,12 @@ import numpy as np
 
 from . import contact as ct
 from .assembly import Assembly, constrain
+from . import material as law
 from .fracture import deletion, phase_field
 from .kinematics import axisymmetric as axi
-from .kinematics.plane_strain import (centre_stretch, element_hessian, element_plus,
-                                                              element_strain_energy)
-from .material import Material
+from .kinematics.plane_strain import (centre_stretch, element_cauchy_green, element_hessian, element_plus,
+                                      element_strain_energy)
+from .material import Material, ViscousStep
 from .solvers import bfgs, newton
 from .specimen import Specimen, apply_load, morph_columns, reaction_force
 
@@ -41,6 +48,7 @@ class State(NamedTuple):
     d: jax.Array  # (nx+1, ny+1) nodal (phase field) or (n_el,) element (local)
     history: jax.Array  # (n_el, 4) psi_plus's maximum so far (phase field)
     delta: jax.Array  # the load's displacement (total)
+    gamma: Any = None  # (n_el, 4, n_branches, 6) the viscous branches' internal strains (None: elastic)
 
 
 class StepOut(NamedTuple):
@@ -55,6 +63,8 @@ class StepOut(NamedTuple):
     friction_work: jax.Array  # J, the friction dissipated over the step
     viscous_work: jax.Array  # J, the viscous damage term's dissipation over the step
     force_normal: jax.Array  # N, the indenter's force from the penalty alone (the rest is the shear: friction, adhesion)
+    branch_dissipation: jax.Array  # J, the viscous branches' dissipation over the step (0 when elastic)
+    dt: jax.Array  # s, the step's time (0 when elastic)
 
 
 @dataclass
@@ -76,6 +86,8 @@ class Solver:
     lag_relaxation: float = 1.0
     #: Newton's stagnation stop (m; 0 off): ``solvers.newton.minimise``'s ``stall_step``.
     newton_stall: float = 0.0
+    #: The load's speed (m/s of ``delta``): a viscoelastic material's step takes the time |d delta| / rate.
+    rate: float | None = None
     grid: Any = field(init=False)
 
     def __post_init__(self) -> None:
@@ -114,15 +126,52 @@ class Solver:
             return None
         return jax.vmap(axi.gauss_weights)(self.x0, self.dx, self.dy)
 
-    def energy(self, u: jax.Array, dq: jax.Array, mat: Material, notch: Any = None) -> jax.Array:
+    def energy(self, u: jax.Array, dq: jax.Array, mat: Material, notch: Any = None,
+               vis: ViscousStep | None = None) -> jax.Array:
+        dx, dy = self.sizes(notch)
+        if vis is None:
+            if self.axi:
+                e = jax.vmap(lambda ue, d, x0, dx, dy: axi.element_strain_energy(ue, d, x0, dx, dy, mat))(
+                    u[self.I, self.J], dq, self.x0, dx, dy)
+            else:
+                e = jax.vmap(lambda ue, d, dx, dy: element_strain_energy(ue, d, dx, dy, mat, self.stress))(
+                    u[self.I, self.J], dq, dx, dy)
+            return jnp.sum(e)
+        if self.axi:
+            e = jax.vmap(lambda ue, d, x0, dx, dy, gm: axi.element_strain_energy(
+                ue, d, x0, dx, dy, mat, ViscousStep(gm, vis.dt)))(u[self.I, self.J], dq, self.x0, dx, dy, vis.gamma)
+        else:
+            e = jax.vmap(lambda ue, d, dx, dy, gm: element_strain_energy(
+                ue, d, dx, dy, mat, self.stress, ViscousStep(gm, vis.dt)))(u[self.I, self.J], dq, dx, dy, vis.gamma)
+        return jnp.sum(e)
+
+    def element_hessians(self, u: jax.Array, dq: jax.Array, mat: Material, notch: Any = None,
+                         vis: ViscousStep | None = None) -> jax.Array:
+        dx, dy = self.sizes(notch)
+        if vis is None:
+            if self.axi:
+                return jax.vmap(lambda ue, d, x0, dx, dy: axi.element_hessian(ue, d, x0, dx, dy, mat))(
+                    u[self.I, self.J], dq, self.x0, dx, dy)
+            return jax.vmap(lambda ue, d, dx, dy: element_hessian(ue, d, dx, dy, mat, self.stress))(
+                u[self.I, self.J], dq, dx, dy)
+        if self.axi:
+            return jax.vmap(lambda ue, d, x0, dx, dy, gm: axi.element_hessian(
+                ue, d, x0, dx, dy, mat, ViscousStep(gm, vis.dt)))(u[self.I, self.J], dq, self.x0, dx, dy, vis.gamma)
+        return jax.vmap(lambda ue, d, dx, dy, gm: element_hessian(
+            ue, d, dx, dy, mat, self.stress, ViscousStep(gm, vis.dt)))(u[self.I, self.J], dq, dx, dy, vis.gamma)
+
+    def cauchy_green(self, u: jax.Array, notch: Any = None) -> jax.Array:
+        """C in Voigt order at every Gauss point: (n_el, 4, 6)."""
         dx, dy = self.sizes(notch)
         if self.axi:
-            e = jax.vmap(lambda ue, d, x0, dx, dy: axi.element_strain_energy(ue, d, x0, dx, dy, mat))(
-                u[self.I, self.J], dq, self.x0, dx, dy)
-        else:
-            e = jax.vmap(lambda ue, d, dx, dy: element_strain_energy(ue, d, dx, dy, mat, self.stress))(
-                u[self.I, self.J], dq, dx, dy)
-        return jnp.sum(e)
+            return jax.vmap(axi.element_cauchy_green)(u[self.I, self.J], self.x0, dx, dy)
+        return jax.vmap(lambda ue, dx, dy: element_cauchy_green(ue, dx, dy, self.stress))(u[self.I, self.J], dx, dy)
+
+    def weights(self, notch: Any = None) -> jax.Array:
+        """The Gauss weights (n_el, 4): the element's dx dy / 4, or the ring's."""
+        dx, dy = self.sizes(notch)
+        wq = self.gauss_weights()
+        return jnp.broadcast_to((dx * dy / 4.0)[:, None], (self.grid.n_elements, 4)) if wq is None else wq
 
     def contact_energy(self, u: jax.Array, depth: jax.Array, lag: ct.Lag | None, c: Any = None) -> jax.Array:
         c = self.contact if c is None else c
@@ -132,16 +181,12 @@ class Solver:
         return e
 
     def newton(self, u: jax.Array, dq: jax.Array, mat: Material, notch: Any = None, depth: Any = None,
-               lag: ct.Lag | None = None, c: Any = None) -> tuple[jax.Array, jax.Array, jax.Array]:
+               lag: ct.Lag | None = None, c: Any = None,
+               vis: ViscousStep | None = None) -> tuple[jax.Array, jax.Array, jax.Array]:
         c = self.contact if c is None else c
 
         def hessian_blocks(u):
-            if self.axi:
-                ke = jax.vmap(lambda ue, d, x0, dx, dy: axi.element_hessian(ue, d, x0, dx, dy, mat))(
-                    u[self.I, self.J], dq, self.x0, *self.sizes(notch))
-            else:
-                ke = jax.vmap(lambda ue, d, dx, dy: element_hessian(ue, d, dx, dy, mat, self.stress))(
-                    u[self.I, self.J], dq, *self.sizes(notch))
+            ke = self.element_hessians(u, dq, mat, notch, vis)
             diag, upper = self.vec.blocks(ke)
             if c is not None:
                 diag = ct.add_nodal_to_blocks(diag, ct.nodal_hessian(c, self.X, u, depth, lag))
@@ -149,10 +194,10 @@ class Solver:
 
         if c is None:
             def total(v):
-                return self.energy(v, dq, mat, notch)
+                return self.energy(v, dq, mat, notch, vis)
         else:
             def total(v):
-                return self.energy(v, dq, mat, notch) + self.contact_energy(v, depth, lag, c)
+                return self.energy(v, dq, mat, notch, vis) + self.contact_energy(v, depth, lag, c)
 
         if not self.newton_regularise:
             return newton.minimise(total, hessian_blocks, u, self.free, self.free_blocks, max_iter=self.max_newton,
@@ -164,7 +209,13 @@ class Solver:
         return newton.minimise(total, hessian_blocks, u, self.free, self.free_blocks, max_iter=self.max_newton,
                                step_tol=1e-11 * float(self.grid.y[-1]), regularise=True)
 
-    def plus(self, u: jax.Array, mat: Material, notch: Any = None) -> jax.Array:
+    def plus(self, u: jax.Array, mat: Material, notch: Any = None, vis: ViscousStep | None = None) -> jax.Array:
+        if vis is not None:
+            if self.axi:
+                return jax.vmap(lambda ue, x0, dx, dy, gm: axi.element_plus(ue, x0, dx, dy, mat, ViscousStep(
+                    gm, vis.dt)))(u[self.I, self.J], self.x0, *self.sizes(notch), vis.gamma)
+            return jax.vmap(lambda ue, dx, dy, gm: element_plus(ue, dx, dy, mat, self.stress, ViscousStep(
+                gm, vis.dt)))(u[self.I, self.J], *self.sizes(notch), vis.gamma)
         if self.axi:
             return jax.vmap(lambda ue, x0, dx, dy: axi.element_plus(ue, x0, dx, dy, mat))(u[self.I, self.J], self.x0,
                                                                                           *self.sizes(notch))
@@ -194,9 +245,11 @@ class Solver:
             return jax.vmap(axi.centre_stretch)(u[self.I, self.J], self.x0, *self.sizes(notch))
         return jax.vmap(centre_stretch)(u[self.I, self.J], *self.sizes(notch))
 
-    def reaction(self, u: jax.Array, dq: jax.Array, mat: Material, notch: Any = None) -> jax.Array:
-        """The force the load carries, per unit thickness of the model's half."""
-        r = jax.grad(self.energy)(u, dq, mat, notch)
+    def reaction(self, u: jax.Array, dq: jax.Array, mat: Material, notch: Any = None,
+                 vis: ViscousStep | None = None) -> jax.Array:
+        """The force the load carries, per unit thickness of the model's half (with ``vis``, the step's incremental
+        potential's derivative: the stress with the branches' updated strains)."""
+        r = jax.grad(self.energy)(u, dq, mat, notch, vis)
         return reaction_force(self.specimen.reaction, r)
 
     def indenter_force(self, u: jax.Array, depth: jax.Array, lag: ct.Lag | None, c: Any = None) -> jax.Array:
@@ -235,7 +288,8 @@ class Solver:
             e = e + 0.5 * self.viscosity * (dq - phase_field.damage_at_gauss(d_prev, self.I, self.J)) ** 2
         return jnp.sum(wq * e)
 
-    def _monolithic(self, state: State, u: jax.Array, mat: Material, notch: Any, depth: Any, lag: Any, c: Any = None):
+    def _monolithic(self, state: State, u: jax.Array, mat: Material, notch: Any, depth: Any, lag: Any, c: Any = None,
+                    vis: ViscousStep | None = None):
         c = self.contact if c is None else c
         n_u = u.size
         shape_u, shape_d = u.shape, state.d.shape
@@ -245,28 +299,25 @@ class Solver:
             return z[:n_u].reshape(shape_u), z[n_u:].reshape(shape_d)
 
         def total(v, dq):
-            e = self.energy(v, dq, mat, notch)
+            e = self.energy(v, dq, mat, notch, vis)
             return e + self.contact_energy(v, depth, lag, c) if c is not None else e
 
         def residual(z):
             v, d = split(z)
             ru = jax.grad(total)(v, self.damage_at_gauss(d)) * self.free
-            hist = phase_field.updated_history(state.history, self.plus(v, mat, notch))
+            hist = phase_field.updated_history(state.history, self.plus(v, mat, notch, vis))
             rd = jax.grad(self.damage_functional)(d, hist, mat, state.d, notch)
             return jnp.concatenate([ru.ravel(), rd.ravel()])
 
         def blocks(z):
             v, d = split(z)
             dq = self.damage_at_gauss(d)
-            ke = (jax.vmap(lambda ue, dd, x0, dx, dy: axi.element_hessian(ue, dd, x0, dx, dy, mat))(
-                v[self.I, self.J], dq, self.x0, *self.sizes(notch)) if self.axi else
-                jax.vmap(lambda ue, dd, dx, dy: element_hessian(ue, dd, dx, dy, mat, self.stress))(
-                    v[self.I, self.J], dq, *self.sizes(notch)))
+            ke = self.element_hessians(v, dq, mat, notch, vis)
             du, uu = self.vec.blocks(ke)
             if c is not None:
                 du = ct.add_nodal_to_blocks(du, ct.nodal_hessian(c, self.X, v, depth, lag))
             du, uu = constrain(du, uu, self.free_blocks)
-            hist = phase_field.updated_history(state.history, self.plus(v, mat, notch))
+            hist = phase_field.updated_history(state.history, self.plus(v, mat, notch, vis))
             # the damage functional is quadratic in d: its element matrices are assembled as the damage solve's
             dx, dy = self.sizes(notch)
             wq = self.gauss_weights()
@@ -282,26 +333,43 @@ class Solver:
         z, k, ok = bfgs.solve(residual, blocks, z0, n_u, (g.nx + 1, 2 * (g.ny + 1)), (g.nx + 1, g.ny + 1),
                               tol_u=1e-10 * float(g.y[-1]), tol_d=self.tol_d)
         v, d = split(z)
-        hist = phase_field.updated_history(state.history, self.plus(v, mat, notch))
+        hist = phase_field.updated_history(state.history, self.plus(v, mat, notch, vis))
         return v, d, hist, k, k, jnp.zeros((), u.dtype), (~ok).astype(jnp.int32)
 
     # --- the step ------------------------------------------------------------------------------------------------
-    def initial(self, dtype: Any = jnp.float64) -> State:
+    def initial(self, dtype: Any = jnp.float64, mat: Material | None = None) -> State:
+        """The undeformed state; with a viscoelastic ``mat``, its branches relaxed (zero internal strains)."""
         g = self.grid
         u = jnp.zeros((g.nx + 1, g.ny + 1, 2), dtype=dtype)
         d = jnp.zeros((g.nx + 1, g.ny + 1) if self.mode != "local" else (g.n_elements,), dtype=dtype)
-        return State(u, d, jnp.zeros((g.n_elements, 4), dtype=dtype), jnp.zeros((), dtype=dtype))
+        gamma = None
+        if mat is not None and mat.prony is not None:
+            gamma = law.initial_strains((g.n_elements, 4), mat, dtype)
+        return State(u, d, jnp.zeros((g.n_elements, 4), dtype=dtype), jnp.zeros((), dtype=dtype), gamma)
+
+    def viscous_step(self, state: State, delta: Any, mat: Material, dt: Any, dtype: Any) -> ViscousStep | None:
+        """The step's branches (None for an elastic material): the state's internal strains and the step's time."""
+        if mat.prony is None:
+            return None
+        gamma = state.gamma if state.gamma is not None else law.initial_strains((self.grid.n_elements, 4), mat, dtype)
+        if dt is None:
+            if self.rate is None:
+                raise ValueError("a viscoelastic material needs the load's rate (Solver.rate) or the step's dt")
+            dt = jnp.abs(jnp.asarray(delta, dtype) - state.delta) / self.rate
+        return ViscousStep(gamma, jnp.asarray(dt, dtype))
 
     def advance(self, state: State, delta: jax.Array, mat: Material, notch: Any = None,
-                tip: Any = None) -> tuple[State, StepOut]:
+                tip: Any = None, dt: Any = None) -> tuple[State, StepOut]:
         """One load step to ``delta``. ``tip``: the indenter's numbers (``contact.GEOMETRY``, possibly traced) in place
-        of the specimen's, so that a derivative reaches its shape."""
+        of the specimen's, so that a derivative reaches its shape. ``dt``: the step's time (s) for a viscoelastic
+        material; by default |delta - state.delta| / ``rate`` (a hold at fixed ``delta`` gives it explicitly)."""
         sp = self.specimen
         con = None if self.contact is None else self.contact.at(tip)
         u = apply_load(sp.load, state.u, delta, state.delta, self.y_frac)
+        vis = self.viscous_step(state, delta, mat, dt, u.dtype)
         depth = jnp.asarray(delta, u.dtype)  # read only where there is a contact
         if con is not None:  # a predictor that inverts an element (infinite energy) falls back to the last state
-            e_pred = self.energy(u, self.damage_at_gauss(state.d), mat, notch)
+            e_pred = self.energy(u, self.damage_at_gauss(state.d), mat, notch, vis)
             u = jnp.where(jnp.isfinite(e_pred), u, state.u)
         lag, p_start = None, None
         if con is not None and con.sliding:
@@ -311,15 +379,15 @@ class Solver:
         friction = lag is not None
 
         if self.mode == "phase_field" and self.scheme == "bfgs":
-            u, d, hist, k, nk, err, capped = self._monolithic(state, u, mat, notch, depth, lag, con)
+            u, d, hist, k, nk, err, capped = self._monolithic(state, u, mat, notch, depth, lag, con, vis)
             d_used = d
             dq = self.damage_at_gauss(d)
         elif self.mode == "phase_field":
             def staggered_body(c):
                 u, d, hist, k, nk, _, _, capped, lag, _ = c
                 dq = self.damage_at_gauss(d)
-                u, n, ok = self.newton(u, dq, mat, notch, depth, lag, con)
-                hist = phase_field.updated_history(state.history, self.plus(u, mat, notch))
+                u, n, ok = self.newton(u, dq, mat, notch, depth, lag, con, vis)
+                hist = phase_field.updated_history(state.history, self.plus(u, mat, notch, vis))
                 d_new = self.solve_damage(hist, mat, notch, state.d)
                 dp = jnp.zeros((), u.dtype)
                 if friction:
@@ -340,7 +408,7 @@ class Solver:
         elif self.mode == "local":
             def local_body(c):
                 u, d, k, nk, _, capped, lag = c
-                u, n, ok = self.newton(u, self.damage_at_gauss(d), mat, notch, depth, lag, con)
+                u, n, ok = self.newton(u, self.damage_at_gauss(d), mat, notch, depth, lag, con, vis)
                 stretch = self.centre_stretch(u, notch)
                 new = deletion.newly_deleted(stretch, d, mat.stretch_limit)
                 if friction:
@@ -359,7 +427,7 @@ class Solver:
             if friction:
                 def friction_body(c):
                     u, k, nk, _, capped, lag = c
-                    u, n, ok = self.newton(u, dq, mat, notch, depth, lag, con)
+                    u, n, ok = self.newton(u, dq, mat, notch, depth, lag, con, vis)
                     new_lag = self._lag(u, depth, lag, con)
                     assert new_lag is not None  # friction: the contact slides
                     dp = (jnp.max(jnp.abs(new_lag.pressure - lag.pressure)) / self.lag_relaxation
@@ -372,13 +440,13 @@ class Solver:
                 u, k, nk, err, capped, lag = jax.lax.while_loop(
                     cond, friction_body, (u, 0, 0, jnp.asarray(jnp.inf, u.dtype), 0, lag))
             else:
-                u, nk, ok = self.newton(u, dq, mat, notch, depth, lag, con)
+                u, nk, ok = self.newton(u, dq, mat, notch, depth, lag, con, vis)
                 k, err, capped = 1, jnp.zeros((), u.dtype), (~ok).astype(jnp.int32)
             d, hist = state.d, state.history
 
         zero = jnp.zeros((), u.dtype)
         if con is None:
-            force = self.reaction(u, dq, mat, notch) * sp.thickness * sp.force_factor
+            force = self.reaction(u, dq, mat, notch, vis) * sp.thickness * sp.force_factor
             e_c, w_f, f_n = zero, zero, zero
         else:
             force = self.indenter_force(u, depth, lag, con) * sp.thickness * sp.force_factor
@@ -392,9 +460,18 @@ class Solver:
             wq = self.gauss_weights()
             wq = jnp.broadcast_to((self.dx * self.dy / 4.0)[:, None], dd.shape) if wq is None else wq
             w_v = self.viscosity * jnp.sum(wq * dd * dd) * sp.thickness * sp.energy_factor
-        out = StepOut(force=force, energy=sp.energy_factor * self.energy(u, dq, mat, notch) * sp.thickness,
+        gamma, w_b, stored, step_dt = None, zero, None, zero
+        if vis is not None:
+            c_end = self.cauchy_green(u, notch)
+            gamma = law.updated_strains(c_end, vis.gamma, mat, vis.dt)
+            per_point = law.branch_dissipation(self.cauchy_green(state.u, notch), c_end, vis.gamma, gamma, mat)
+            g = law.degradation(dq, mat.k_res)
+            w_b = jnp.sum(self.weights(notch) * g * per_point) * sp.thickness * sp.energy_factor
+            stored = ViscousStep(gamma, zero)
+            step_dt = vis.dt
+        out = StepOut(force=force, energy=sp.energy_factor * self.energy(u, dq, mat, notch, stored) * sp.thickness,
                       crack_energy=sp.energy_factor * self.crack_energy(d, mat, notch) * sp.thickness,
                       iterations=jnp.asarray(k), newton=jnp.asarray(nk), residual=err,
                       newton_capped=jnp.asarray(capped), contact_energy=e_c, friction_work=w_f, viscous_work=w_v,
-                      force_normal=f_n)
-        return State(u, d, hist, jnp.asarray(delta, u.dtype)), out
+                      force_normal=f_n, branch_dissipation=w_b, dt=step_dt)
+        return State(u, d, hist, jnp.asarray(delta, u.dtype), gamma), out

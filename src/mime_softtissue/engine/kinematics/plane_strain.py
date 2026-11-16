@@ -61,6 +61,23 @@ def energy_parts(F: jax.Array, mat: Material, stress: bool = False) -> tuple[jax
     return law.energy_parts(*invariants(F, mat, stress), mat)
 
 
+def cauchy_green(F: jax.Array, stress: bool = False) -> jax.Array:
+    """The 3-D right Cauchy-Green tensor in Voigt order (6,) of a 2 x 2 deformation gradient: C33 = 1 in plane strain,
+    det(F)^-2 in incompressible plane stress (1 where the element is inverted; the law's energy is infinite there)."""
+    C = F.T @ F
+    area = F[0, 0] * F[1, 1] - F[0, 1] * F[1, 0]
+    safe = jnp.where(area > 0, area, 1.0)
+    c33 = 1.0 / (safe * safe) if stress else jnp.ones_like(area)
+    zero = jnp.zeros_like(area)
+    return jnp.stack([C[0, 0], C[1, 1], c33, C[0, 1], zero, zero])
+
+
+def viscous_parts(F: jax.Array, mat: Material, stress: bool, visco: law.ViscousStep) -> tuple[jax.Array, jax.Array]:
+    """The branches' (incremental potential, stored energy) at the four Gauss points' ``F`` (4, 2, 2)."""
+    c = jax.vmap(lambda f: cauchy_green(f, stress))(F)
+    return law.viscous_energies(c, visco.gamma, mat, visco.dt)
+
+
 def gauss_gradients(dx: jax.Array, dy: jax.Array) -> jax.Array:
     """dN/dX at each Gauss point of a dx-by-dy element: (4 gauss, 4 nodes, 2)."""
     scale = jnp.stack([2.0 / dx, 2.0 / dy])
@@ -74,25 +91,39 @@ def deformation_gradients(ue: jax.Array, dx: jax.Array, dy: jax.Array) -> jax.Ar
 
 
 def element_strain_energy(ue: jax.Array, dq: jax.Array, dx: jax.Array, dy: jax.Array, mat: Material,
-                          stress: bool = False) -> jax.Array:
+                          stress: bool = False, visco: law.ViscousStep | None = None) -> jax.Array:
     """Degraded strain energy of one element (per unit thickness): ``ue`` (4, 2) nodal displacements, ``dq`` (4,)
-    damage at the Gauss points."""
+    damage at the Gauss points. ``visco``: the viscous branches' step (their incremental potential is added to
+    psi_plus and degraded with it)."""
     F = deformation_gradients(ue, dx, dy)
     plus, minus = jax.vmap(lambda f: energy_parts(f, mat, stress))(F)
+    if visco is not None:
+        plus = plus + viscous_parts(F, mat, stress, visco)[0]
     g = law.degradation(dq, mat.k_res)
     return jnp.sum(g * plus + minus) * dx * dy / 4.0
 
 
 def element_hessian(ue: jax.Array, dq: jax.Array, dx: jax.Array, dy: jax.Array, mat: Material,
-                    stress: bool = False) -> jax.Array:
+                    stress: bool = False, visco: law.ViscousStep | None = None) -> jax.Array:
     """The element energy's Hessian in its eight nodal displacements (the tangent stiffness the Newton solve uses)."""
-    return jax.hessian(lambda v: element_strain_energy(v.reshape(4, 2), dq, dx, dy, mat, stress))(ue.reshape(8))
+    return jax.hessian(lambda v: element_strain_energy(v.reshape(4, 2), dq, dx, dy, mat, stress, visco))(
+        ue.reshape(8))
 
 
-def element_plus(ue: jax.Array, dx: jax.Array, dy: jax.Array, mat: Material, stress: bool = False) -> jax.Array:
-    """psi_plus at the four Gauss points (the history field's source)."""
+def element_plus(ue: jax.Array, dx: jax.Array, dy: jax.Array, mat: Material, stress: bool = False,
+                 visco: law.ViscousStep | None = None) -> jax.Array:
+    """psi_plus at the four Gauss points (the history field's source); with ``visco`` the branches' stored energy
+    after the step's update is added (the elastic energy drives the fracture, the dissipation does not)."""
     F = deformation_gradients(ue, dx, dy)
-    return jax.vmap(lambda f: energy_parts(f, mat, stress)[0])(F)
+    plus = jax.vmap(lambda f: energy_parts(f, mat, stress)[0])(F)
+    if visco is not None:
+        plus = plus + viscous_parts(F, mat, stress, visco)[1]
+    return plus
+
+
+def element_cauchy_green(ue: jax.Array, dx: jax.Array, dy: jax.Array, stress: bool = False) -> jax.Array:
+    """C in Voigt order at the four Gauss points: (4, 6) (the viscous branches' update reads it)."""
+    return jax.vmap(lambda f: cauchy_green(f, stress))(deformation_gradients(ue, dx, dy))
 
 
 def centre_stretch(ue: jax.Array, dx: jax.Array, dy: jax.Array) -> jax.Array:
