@@ -95,6 +95,18 @@
    "credit": "computed by the plugin's authors with MIME (the puncture tutorial's run, for display)",
    "role": "results",
    "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture_gel_gent",
+   "sha256": "acbf729f46372ee4dbd0094fe6fb40ef6638f1ef626dff61b8ffbf80d5676c68",
+   "size": 2281,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture_gel_gent.json"
+   ],
+   "credit": "values from Fakhouri, Hutchens and Crosby 2015 (Soft Matter 11, 4723) as stated by Fregonese and Bacca 2021 (J. Mech. Phys. Solids, doi:10.1016/j.jmps.2021.104497); Gent's Jm refitted to their Ogden alpha = 9 by the plugin's authors; record by the plugin's authors",
+   "role": "results",
+   "kind": "authored"
   }
  ]
 }
