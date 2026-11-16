@@ -112,6 +112,13 @@ class Settings:
     #: "phase_field" (AT2) or "deletion": the plugin's control without a length scale, an element deleted for good once
     #: the largest principal stretch at its centre passes ``Material.stretch_limit`` (mesh-dependent by construction).
     fracture: str = "phase_field"
+    #: The damage's bounds 0 <= d <= 1: "clip" (the spikes' arithmetic: the unconstrained solve clipped; it overshoots
+    #: 1 where one node is driven hard, e.g. under a sharp tip, and the clipped field is not a minimiser) or
+    #: "active_set" (both bounds held exactly, ``_damage_bounded``; identical where nothing leaves [0, 1]).
+    damage_bound: str = "active_set"
+    #: Where the tip's penalty acts: "nodes" (the contact law's nodal penalty, weighted by plan area) or "gauss" (a
+    #: volume penalty at the Gauss points, 100 E0 / h^2: catches a sharp tip between nodes).
+    contact_at: str = "nodes"
 
 
 class State(NamedTuple):
@@ -256,6 +263,10 @@ class Puncture3D:
         self.gc_physical = floats["gc"]
         self.mat = Material(**{**floats, "gc": discretisation_toughness(floats["gc"], b.h, floats["l"])})
         self.kpen = s.penalty_factor * initial_modulus(self.mat) / b.h
+        if s.contact_at == "gauss":  # a volume penalty: the material inside the tip, at the Gauss points
+            self.kpen = s.penalty_factor * initial_modulus(self.mat) / b.h ** 2
+            self.w = S.gauss_weight(self.grid)[None, None, None] * jnp.ones((2, 2, 2, 1, 1, 1))
+            self.w32 = self.w.astype(F32)
         self.tol = s.newton_tol * b.height
         self.opts = MG.GMGOptions(galerkin=s.galerkin, degree=s.chebyshev_degree)
         self.dopts = MG.GMGOptions(galerkin=False)
@@ -279,12 +290,21 @@ class Puncture3D:
         R = ct._norm(p[..., 0] - self.axis[0], p[..., 1] - self.axis[1])
         return ct.signed_distance(self.tip, R, p[..., 2], depth)
 
+    def _gauss_points(self, X, u):
+        """Positions at the Gauss points (2, 2, 2, nx, ny, nz, 3) from nodal reference positions and displacements."""
+        return jnp.stack([S.gauss_values(X[..., c] + u[..., c]) for c in range(3)], axis=-1)
+
+    def _gap(self, X, u, depth):
+        if self.settings.contact_at == "gauss":
+            return jnp.minimum(self.phi(self._gauss_points(X, u), 0.0, depth), 0.0)
+        return jnp.minimum(self.phi(X, u, depth), 0.0)
+
     def contact(self, u, depth):
-        gap = jnp.minimum(self.phi(self.X, u, depth), 0.0)
+        gap = self._gap(self.X, u, depth)
         return 0.5 * self.kpen * jnp.sum(self.w * gap * gap)
 
     def contact32(self, u, depth):
-        gap = jnp.minimum(self.phi(self.X32, u, depth), 0.0)
+        gap = self._gap(self.X32, u, depth)
         return 0.5 * self.kpen * jnp.sum(self.w32 * gap * gap)
 
     def total(self, u, g, depth):
@@ -398,6 +418,50 @@ class Puncture3D:
             Pc = MG.gmg_solver(levels, transfers, self.dopts)
         b = -gradE(d0)
         x, k, _, _ = MG.pcg(K, Pc, b, jnp.zeros_like(b), self.settings.rtol_damage, self.settings.maxit)
+        if self.settings.damage_bound == "clip":
+            return jnp.clip(x[..., 0], 0.0, 1.0), k
+        return self._damage_bounded(K, b, H, x, k)
+
+    def _damage_bounded(self, K, b, H, x, k):
+        """The damage minimiser under 0 <= d <= 1 by a primal-dual active set: nodes outside are held at their bound and
+        the rest re-solved; a node held at 1 is released when its multiplier b - K d turns negative, one held at 0 when it
+        turns positive; until the sets stop changing (at most 8 rounds). Where nothing leaves [0, 1] this returns the
+        unconstrained solve unchanged."""
+        gr, m, s = self.grid, self.mat, self.settings
+        dt = H.dtype
+        mk = lambda g2, c: (lambda d: S.damage_energy(d[..., 0], c["H"], g2, m.gc, m.l))
+
+        def solve(hi, lo):
+            fr = (~(hi | lo))[..., None].astype(dt)
+            fixed = hi[..., None].astype(dt)
+            A = lambda v: fr * K(fr * v) + (1.0 - fr) * v
+            rhs = fr * (b - K(fixed)) + fixed
+            if s.mixed:
+                lv, tr = MG.build_hierarchy(mk, {"H": H.astype(F32)}, jnp.zeros(gr.nodes + (1,), F32), gr,
+                                            fr.astype(F32), self.dopts, ("H",))
+                P32 = MG.gmg_solver(lv, tr, self.dopts)
+                Pc = lambda v: P32(v.astype(F32)).astype(v.dtype)
+            else:
+                lv, tr = MG.build_hierarchy(mk, {"H": H}, jnp.zeros(gr.nodes + (1,), dt), gr, fr, self.dopts, ("H",))
+                Pc = MG.gmg_solver(lv, tr, self.dopts)
+            y, kk, _, _ = MG.pcg(A, Pc, rhs, fixed, s.rtol_damage, s.maxit)
+            return y, kk
+
+        def body(c):
+            x, hi, lo, k, it, _ = c
+            lam = (b - K(x))[..., 0]
+            held = hi | lo
+            hi_new = (hi & (lam >= 0.0)) | (~held & (x[..., 0] > 1.0))
+            lo_new = (lo & (lam <= 0.0)) | (~held & (x[..., 0] < 0.0))
+            y, kk = solve(hi_new, lo_new)
+            return y, hi_new, lo_new, k + kk.astype(k.dtype), it + 1, jnp.any(hi_new != hi) | jnp.any(lo_new != lo)
+
+        def cond(c):
+            return c[5] & (c[4] < 8)
+
+        none = jnp.zeros(gr.nodes, bool)
+        go = jnp.any(x[..., 0] > 1.0) | jnp.any(x[..., 0] < 0.0)
+        x, _, _, k, _, _ = jax.lax.while_loop(cond, body, (x, none, none, k, jnp.zeros((), jnp.int32), go))
         return jnp.clip(x[..., 0], 0.0, 1.0), k
 
     # ---- the step --------------------------------------------------------------------------------------------
@@ -478,7 +542,7 @@ class Puncture3D:
                       contact_energy=mult * self.contact(u, depth), staggered=c["k"], newton=nk, newton_capped=capped,
                       krylov=kry, shifts=shifts, damage_krylov=c["dk"], residual=c["err"], converged=converged,
                       aa_restarts=c["rs"], d_max=jnp.max(d),
-                      penetration=jnp.min(self.phi(self.X, u, depth)) / self.block.h)
+                      penetration=jnp.min(self._gap(self.X, u, depth)) / self.block.h)
         return State(u, d, c["hist"], depth, state.deleted), out
 
     # ---- the deletion control --------------------------------------------------------------------------------
@@ -525,7 +589,7 @@ class Puncture3D:
                       contact_energy=mult * self.contact(u, depth), staggered=c["k"], newton=c["nk"],
                       newton_capped=c["capped"], krylov=c["kry"], shifts=c["shifts"], damage_krylov=zi,
                       residual=jnp.zeros((), u.dtype), converged=converged, aa_restarts=zi, d_max=jnp.max(de),
-                      penetration=jnp.min(self.phi(self.X, u, depth)) / self.block.h)
+                      penetration=jnp.min(self._gap(self.X, u, depth)) / self.block.h)
         return State(u, d, state.history, depth, de), out
 
     # ---- readouts --------------------------------------------------------------------------------------------
@@ -649,8 +713,10 @@ class PunctureRun:
     counts: dict[str, Any]
     meta: dict[str, Any]
 
-    def energy_balance(self) -> float:
-        """max over steps of |W - (stored + crack + contact)| / W, W the work of the tip force (trapezoid from 0)."""
+    def energy_balance(self, floor: float = 0.05) -> float:
+        """max over steps of |W - (stored + crack + contact)| / W, W the work of the tip force (trapezoid from 0), over the
+        steps where W is at least ``floor`` of the run's largest W (the first contacts' tiny W would make any rounding a
+        large ratio)."""
         z, f = self.rows["depth_m"], self.rows["force_N"]
         if len(z) == 0:
             return float("nan")
@@ -658,8 +724,8 @@ class PunctureRun:
         ff = np.concatenate([[0.0], f])
         W = np.cumsum(0.5 * (ff[1:] + ff[:-1]) * np.diff(zz))
         E = self.rows["energy_J"] + self.rows["crack_energy_J"] + self.rows["contact_energy_J"]
-        ok = W > 0
-        return float(np.max(np.abs(W[ok] - E[ok]) / W[ok])) if ok.any() else float("nan")
+        ok = W >= floor * np.max(W)
+        return float(np.max(np.abs(W[ok] - E[ok]) / W[ok])) if ok.any() and np.max(W) > 0 else float("nan")
 
     def peak(self) -> tuple[float, float]:
         """(the largest force N, its depth m)."""
