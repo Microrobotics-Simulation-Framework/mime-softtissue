@@ -87,3 +87,12 @@ the question is whether these are locking or the puncture's own sensitivity.
   is not attributed to locking. The same perturbation on mean at R 2 (h 0.2) moves it by 0-30 %.
 - **nu at h 0.2:** mean, Gent nu 0.49, R 0.5 and 1: within 0.6-1.4 x of gauss's 24.3 / 24.7. GENT's nu 0.45 (15.8 / 12.5)
   is not reproduced by removing the locking: mean at 0.49 lands nearer gauss at 0.49 than gauss at 0.45 at R 1.
+
+## Round 6 (runners): engine-direct twins at h 0.1 for Gent R 2 and 4, written 22:4x (the commit time rules)
+
+Why: GENT's MIME full-integration R 4 at h 0.1 hit its 335-minute wall with nothing written, so the MIME pair at R 4 may
+never exist. Engine-direct (`axi_run.py`, stopping 5 % after the drop) matched MIME at h 0.2 to 0 % (R 0.5, 1) and 2.5-3.7 %
+(R 2, 4). Seen: block-24 noise floor at R 2, h 0.2: gauss +1.6 %, mean +6.4 %.
+
+- engine-direct gauss at h 0.1, R 2: within 5 % of MIME's 14.61.
+- mean against gauss, engine-direct, h 0.1: R 2 within 0.75-1.25 x; R 4 within 12 %.
