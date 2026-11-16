@@ -50,13 +50,13 @@
   },
   {
    "name": "softtissue.whole_blood_clot",
-   "sha256": "63d4ddbc3b50638c6b63cc4090e8c6687bd32ff7a068a39e0a4a74375d108a39",
-   "size": 1828,
+   "sha256": "522eebfec0a891139420c2b0ae9955b7891a8abf47a804ae462ce50faf3317a1",
+   "size": 2714,
    "licence": "CC-BY-4.0",
    "locations": [
     "package:softtissue/data/whole_blood_clot_lohr2025.json"
    ],
-   "credit": "calibrated by the plugin's pure-shear study from data digitised from Lohr et al. 2025 (Int. J. Fract., doi:10.1007/s10704-024-00820-4); record by the plugin's authors",
+   "credit": "calibrated by the plugin's pure-shear study from the raw data of Lohr et al. 2025 (Int. J. Fract., doi:10.1007/s10704-024-00820-4; data doi:10.18738/T8/97ZAZN, doi:10.18738/T8/DUJWSR, CC0 1.0); record by the plugin's authors",
    "role": "results",
    "kind": "authored"
   },

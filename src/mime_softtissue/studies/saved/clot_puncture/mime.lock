@@ -1,0 +1,798 @@
+{
+ "assets": [
+  {
+   "credit": "calibrated by the plugin's pure-shear study from the raw data of Lohr et al. 2025 (Int. J. Fract., doi:10.1007/s10704-024-00820-4; data doi:10.18738/T8/97ZAZN, doi:10.18738/T8/DUJWSR, CC0 1.0); record by the plugin's authors",
+   "kind": "authored",
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/whole_blood_clot_lohr2025.json"
+   ],
+   "name": "softtissue.whole_blood_clot",
+   "role": "results",
+   "sha256": "522eebfec0a891139420c2b0ae9955b7891a8abf47a804ae462ce50faf3317a1",
+   "size": 2714
+  }
+ ],
+ "derived": {
+  "observations": {
+   "edges": [
+    {
+     "source_field": "crack_area",
+     "source_node": "clot",
+     "source_units": "m^2",
+     "target_field": "area",
+     "target_node": "softtissue.crack_size:clot",
+     "target_units": "m^2"
+    },
+    {
+     "source_field": "depth",
+     "source_node": "clot",
+     "source_units": "m",
+     "target_field": "depth",
+     "target_node": "softtissue.tip_force:clot",
+     "target_units": "m"
+    },
+    {
+     "source_field": "force",
+     "source_node": "clot",
+     "source_units": "N",
+     "target_field": "force",
+     "target_node": "softtissue.tip_force:clot",
+     "target_units": "N"
+    }
+   ],
+   "external_inputs": [],
+   "nodes": [
+    {
+     "name": "softtissue.crack_size:clot",
+     "params": {},
+     "timestep": 0.2,
+     "type": "CrackNode"
+    },
+    {
+     "name": "softtissue.tip_force:clot",
+     "params": {},
+     "timestep": 0.2,
+     "type": "TipForceNode"
+    }
+   ],
+   "param_specs": {},
+   "recipe": "mime.hash/1",
+   "static": {
+    "softtissue.crack_size:clot": {},
+    "softtissue.tip_force:clot": {}
+   }
+  },
+  "physics": {
+   "coupling_groups": [],
+   "edges": [
+    {
+     "source_field": "force",
+     "source_node": "clot",
+     "source_units": "N",
+     "target_field": "force",
+     "target_node": "softtissue.tip_contact:tip-clot",
+     "target_units": "N"
+    },
+    {
+     "source_field": "pose",
+     "source_node": "tip",
+     "source_units": "m; 1",
+     "target_field": "pose",
+     "target_node": "softtissue.tip_contact:tip-clot",
+     "target_units": "m; 1"
+    },
+    {
+     "source_field": "indenter",
+     "source_node": "softtissue.tip_contact:tip-clot",
+     "source_units": "1",
+     "target_field": "indenter",
+     "target_node": "clot",
+     "target_units": "1"
+    },
+    {
+     "additive": true,
+     "source_field": "wrench",
+     "source_node": "softtissue.tip_contact:tip-clot",
+     "source_units": "N; N m",
+     "target_field": "applied_wrench",
+     "target_node": "tip",
+     "target_units": "N; N m"
+    },
+    {
+     "additive": true,
+     "source_field": "background",
+     "source_node": "softtissue.servo:tip",
+     "source_units": "N; N m",
+     "target_field": "background_load",
+     "target_node": "tip",
+     "target_units": "N; N m"
+    },
+    {
+     "additive": true,
+     "source_field": "resistance",
+     "source_node": "softtissue.servo:tip",
+     "source_units": "N s/m; N s; N m s",
+     "target_field": "resistance",
+     "target_node": "tip",
+     "target_units": "N s/m; N s; N m s"
+    }
+   ],
+   "external_inputs": [],
+   "nodes": [
+    {
+     "name": "softtissue.servo:tip",
+     "params": {
+      "gain": 1000000.0,
+      "insert_steps": 156,
+      "speed": 0.0001,
+      "turn_gain": 1.0
+     },
+     "timestep": 0.2,
+     "type": "ServoNode"
+    },
+    {
+     "name": "softtissue.tip_contact:tip-clot",
+     "params": {
+      "adhesion": 0.0,
+      "friction": 0.0,
+      "hull_centre": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "hull_rotation": [
+       1.0,
+       0.0,
+       0.0,
+       0.0,
+       1.0,
+       0.0,
+       0.0,
+       0.0,
+       1.0
+      ],
+      "region_half_angle": 0.2617993877991494,
+      "region_radius": 0.0005,
+      "region_tip_radius": 2e-05,
+      "shape": "softtissue.cone_tip",
+      "stiffness": 1684320000.0
+     },
+     "timestep": 0.2,
+     "type": "TipContactNode"
+    },
+    {
+     "name": "clot",
+     "params": {
+      "fine": 0.001,
+      "h": 0.000125,
+      "height": 0.005,
+      "lag_relaxation": 0.5,
+      "length_scale": 0.00025,
+      "mode": "phase_field",
+      "origin": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "poisson": 0.45,
+      "radius": 0.005,
+      "residual": 1e-06,
+      "shape": "softtissue.cone_tip",
+      "stretch_limit": 2.0,
+      "toughness": 0.83,
+      "viscosity": 0.1,
+      "yeoh_c2": 434.0,
+      "young": 2105.4
+     },
+     "timestep": 0.2,
+     "type": "BlockNode"
+    },
+    {
+     "name": "tip",
+     "params": {
+      "extent": 0.0,
+      "inertia": [
+       1e-11,
+       0.0,
+       0.0,
+       0.0,
+       1e-11,
+       0.0,
+       0.0,
+       0.0,
+       1e-12
+      ],
+      "initial_pose": [
+       0.0,
+       0.0,
+       0.005,
+       1.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "initial_twist": [
+       0.0,
+       0.0,
+       -0.0001,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "margin": 0.0,
+      "mass": 1.2e-05,
+      "surface_shape": "",
+      "velocity_rule": ""
+     },
+     "timestep": 0.2,
+     "type": "RigidInertialTensorNode"
+    }
+   ],
+   "param_specs": {},
+   "recipe": "mime.hash/1",
+   "static": {
+    "clot": {},
+    "softtissue.servo:tip": {},
+    "softtissue.tip_contact:tip-clot": {},
+    "tip": {}
+   }
+  }
+ },
+ "entries": [
+  {
+   "distribution": "mime-engine",
+   "distribution_version": "0.3.0.dev1",
+   "kind": "dynamics",
+   "name": "rigid_inertial",
+   "version": "0.4.0"
+  },
+  {
+   "distribution": "mime-softtissue",
+   "distribution_version": "0.1.0",
+   "kind": "dynamics",
+   "name": "softtissue.gel_block",
+   "version": "0.1.0"
+  },
+  {
+   "distribution": "mime-softtissue",
+   "distribution_version": "0.1.0",
+   "kind": "interaction",
+   "name": "softtissue.servo",
+   "version": "0.1.0"
+  },
+  {
+   "distribution": "mime-softtissue",
+   "distribution_version": "0.1.0",
+   "kind": "interaction",
+   "name": "softtissue.tip_contact",
+   "version": "0.1.0"
+  },
+  {
+   "distribution": "mime-softtissue",
+   "distribution_version": "0.1.0",
+   "kind": "observation",
+   "name": "softtissue.crack_size",
+   "version": "0.1.0"
+  },
+  {
+   "distribution": "mime-softtissue",
+   "distribution_version": "0.1.0",
+   "kind": "observation",
+   "name": "softtissue.tip_force",
+   "version": "0.1.0"
+  }
+ ],
+ "environment": {
+  "blas_threads": 1,
+  "cpu": {
+   "flags_sha256": "5124b048901de4914eb2d5d6d584fa4cc9f80ed3bef810d7beea092108841d56",
+   "model": "12th Gen Intel(R) Core(TM) i7-12850HX"
+  },
+  "deterministic": false,
+  "device": "cpu",
+  "gpu": null,
+  "jax": "0.12.0.1",
+  "jaxlib": "0.12.0.1",
+  "maddening": "0.4.2",
+  "matmul_precision": null,
+  "mime": "0.3.0.dev1",
+  "openmaterica": "0.1.0.dev4",
+  "platform": "linux-x86_64",
+  "prng": "threefry2x32 (jax_threefry_partitionable=True)",
+  "python": "3.12.15",
+  "runner": {},
+  "runner_info": {},
+  "usable_cpus": 1,
+  "usd_core": "26.11",
+  "x64": true,
+  "xla_flags": ""
+ },
+ "hashes": {
+  "derived": "sha256:f841c4f22345259509314fff485a32165cf799ad142727cc6e1db1fa5acb667f",
+  "document": "sha256:f614a954995927f83e9f680142add10397cb117140d677f68f401779777b411e",
+  "input": "sha256:21758216845b1c7474a4031d4e6bae219e81a50c68c9d0a89f05953a6993c0b3",
+  "observations": "sha256:becc5b23bd40633d6f28aa98dfde3d89da54473f807763aae4092e4d7b5518cc",
+  "recipe": "mime.hash/1"
+ },
+ "records": {},
+ "reference": {
+  "atol": 0.0,
+  "file": "reference.npz",
+  "resolution": {
+   "clot.capped": {
+    "1": 0.0
+   },
+   "clot.contact_energy": {
+    "J": 4.4292936862800404e-23
+   },
+   "clot.crack_area": {
+    "m^2": 4.879073144355749e-25
+   },
+   "clot.crack_energy": {
+    "J": 4.006656092053728e-25
+   },
+   "clot.d": {
+    "1": 2.5673907444456745e-16
+   },
+   "clot.depth": {
+    "m": 8.673617379884035e-19
+   },
+   "clot.energy": {
+    "J": 3.2899040912765293e-21
+   },
+   "clot.force": {
+    "N": 1.7923217163900995e-17
+   },
+   "clot.force_normal": {
+    "N": 1.7923217163900995e-17
+   },
+   "clot.friction_work": {
+    "J": 0.0
+   },
+   "clot.history": {
+    "J/m^3": 5.4001247917767614e-12
+   },
+   "clot.surface_damage": {
+    "1": 2.5673907444456745e-16
+   },
+   "clot.surface_points": {
+    "m": 8.673617379884035e-19
+   },
+   "clot.tip_pose": {
+    "1": 2.220446049250313e-16,
+    "m": 8.673617379884035e-19
+   },
+   "clot.u": {
+    "m": 9.215718466126788e-19
+   },
+   "clot.viscous_work": {
+    "J": 2.675816190509672e-27
+   },
+   "softtissue.crack_size:clot.area": {
+    "m^2": 4.879073144355749e-25
+   },
+   "softtissue.crack_size:clot.largest_area": {
+    "m^2": 4.879073144355749e-25
+   },
+   "softtissue.servo:tip.background": {
+    "N": 2.842170943040401e-14,
+    "N m": 0.0
+   },
+   "softtissue.servo:tip.resistance": {
+    "N m s": 2.220446049250313e-16,
+    "N s": 0.0,
+    "N s/m": 1.1641532182693481e-10
+   },
+   "softtissue.servo:tip.steps": {
+    "1": 0.0
+   },
+   "softtissue.tip_contact:tip-clot.indenter": {
+    "1": 2.384185791015625e-07
+   },
+   "softtissue.tip_contact:tip-clot.wrench": {
+    "N": 1.7923217163900995e-17,
+    "N m": 0.0
+   },
+   "softtissue.tip_force:clot.depth": {
+    "m": 8.673617379884035e-19
+   },
+   "softtissue.tip_force:clot.force": {
+    "N": 1.7923217163900995e-17
+   },
+   "softtissue.tip_force:clot.puncture_force": {
+    "N": 1.7923217163900995e-17
+   },
+   "softtissue.tip_force:clot.retrieval_force": {
+    "N": 0.0
+   },
+   "softtissue.tip_force:clot.withdrawal_work": {
+    "J": 0.0
+   },
+   "tip.pose": {
+    "1": 0.0,
+    "m": 8.673617379884035e-19
+   },
+   "tip.twist": {
+    "m/s": 2.710505431213761e-20,
+    "rad/s": 0.0
+   }
+  },
+  "resolution_factor": 30.0,
+  "rtol": 2e-14,
+  "sha256": "sha256:ea3919fa4a078c81986e1efa297dd6219fb8478760e5e8bd99f1373c621e4b11",
+  "steps": 8
+ },
+ "resolved": {
+  "assets": {},
+  "controller": null,
+  "descriptions": {},
+  "entries": {
+   "clot": {
+    "binds": {},
+    "differentiability": "piecewise_kink",
+    "every": 1,
+    "initial": {
+     "position": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "kind": "dynamics",
+    "name": "softtissue.gel_block",
+    "nodes": [
+     "clot"
+    ],
+    "settings": {
+     "dimension": "axisymmetric",
+     "fine": {
+      "unit": "m",
+      "value": 0.001
+     },
+     "h": {
+      "unit": "m",
+      "value": 0.000125
+     },
+     "height": {
+      "unit": "m",
+      "value": 0.005
+     },
+     "lag_relaxation": 0.5,
+     "material": "softtissue.whole_blood_clot",
+     "mode": "phase_field",
+     "radius": {
+      "unit": "m",
+      "value": 0.005
+     },
+     "rate": null,
+     "tip_shape": "softtissue.cone_tip",
+     "viscosity": 0.1
+    },
+    "version": "0.1.0"
+   },
+   "softtissue.crack_size:clot": {
+    "binds": {
+     "solid": "clot"
+    },
+    "differentiability": "exact",
+    "every": 1,
+    "initial": {},
+    "kind": "observation",
+    "name": "softtissue.crack_size",
+    "nodes": [
+     "softtissue.crack_size:clot"
+    ],
+    "settings": {
+     "rate": null
+    },
+    "version": "0.1.0"
+   },
+   "softtissue.servo:tip": {
+    "binds": {
+     "body": "tip"
+    },
+    "differentiability": "exact",
+    "every": 1,
+    "initial": {},
+    "kind": "interaction",
+    "name": "softtissue.servo",
+    "nodes": [
+     "softtissue.servo:tip"
+    ],
+    "settings": {
+     "gain": {
+      "unit": "kg s^-1",
+      "value": 1000000.0
+     },
+     "insert_steps": 156,
+     "speed": {
+      "unit": "m/s",
+      "value": 0.0001
+     },
+     "turn_gain": 1.0
+    },
+    "version": "0.1.0"
+   },
+   "softtissue.tip_contact:tip-clot": {
+    "binds": {
+     "solid": "clot",
+     "tip": "tip"
+    },
+    "differentiability": "piecewise_kink",
+    "every": 1,
+    "initial": {},
+    "kind": "interaction",
+    "name": "softtissue.tip_contact",
+    "nodes": [
+     "softtissue.tip_contact:tip-clot"
+    ],
+    "settings": {
+     "adhesion": 0.0,
+     "friction": 0.0,
+     "stiffness": 1684320000.0
+    },
+    "version": "0.1.0"
+   },
+   "softtissue.tip_force:clot": {
+    "binds": {
+     "solid": "clot"
+    },
+    "differentiability": "piecewise_kink",
+    "every": 1,
+    "initial": {},
+    "kind": "observation",
+    "name": "softtissue.tip_force",
+    "nodes": [
+     "softtissue.tip_force:clot"
+    ],
+    "settings": {
+     "rate": null
+    },
+    "version": "0.1.0"
+   },
+   "tip": {
+    "binds": {},
+    "differentiability": "exact",
+    "every": 1,
+    "initial": {
+     "angular_velocity": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "orientation": [
+      1.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "position": [
+      0.0,
+      0.0,
+      0.005
+     ],
+     "velocity": [
+      0.0,
+      0.0,
+      -0.0001
+     ]
+    },
+    "kind": "dynamics",
+    "name": "rigid_inertial",
+    "nodes": [
+     "tip"
+    ],
+    "settings": {
+     "rate": null
+    },
+    "version": "0.4.0"
+   }
+  },
+  "fills": {},
+  "geometry": {},
+  "groups": [],
+  "materials": {
+   "conditions": {},
+   "parts": {
+    "tip": {
+     "tip": {
+      "centre": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "inertia_per_mass": [
+       [
+        1.20625e-05,
+        0.0,
+        0.0
+       ],
+       [
+        0.0,
+        1.20625e-05,
+        0.0
+       ],
+       [
+        0.0,
+        0.0,
+        1.25e-07
+       ]
+      ],
+      "inside": null,
+      "magnet": false,
+      "material": null,
+      "rotation": [
+       [
+        1.0,
+        0.0,
+        0.0
+       ],
+       [
+        0.0,
+        1.0,
+        0.0
+       ],
+       [
+        0.0,
+        0.0,
+        1.0
+       ]
+      ],
+      "solid": {
+       "name": "softtissue.cone_tip",
+       "settings": {
+        "half_angle": {
+         "unit": "1",
+         "value": 0.2617993877991494
+        },
+        "length": {
+         "unit": "m",
+         "value": 0.006
+        },
+        "radius": {
+         "unit": "m",
+         "value": 0.0005
+        },
+        "tip_radius": {
+         "unit": "m",
+         "value": 2e-05
+        }
+       },
+       "version": "0.1.0"
+      },
+      "volume": 4.71238898038469e-09
+     }
+    }
+   },
+   "reads": [],
+   "records": {}
+  },
+  "order": [
+   "softtissue.servo:tip",
+   "softtissue.tip_contact:tip-clot",
+   "clot",
+   "tip",
+   "softtissue.crack_size:clot",
+   "softtissue.tip_force:clot"
+  ],
+  "profile": {
+   "changes": {},
+   "defaults": {
+    "clot.motion.dimension": {
+     "entry": "softtissue.gel_block 0.1.0",
+     "kind": "convention",
+     "value": "axisymmetric"
+    },
+    "clot.motion.lag_relaxation": {
+     "entry": "softtissue.gel_block 0.1.0",
+     "kind": "convention",
+     "value": 0.5
+    },
+    "clot.motion.mode": {
+     "entry": "softtissue.gel_block 0.1.0",
+     "kind": "convention",
+     "value": "phase_field"
+    },
+    "clot.motion.viscosity": {
+     "entry": "softtissue.gel_block 0.1.0",
+     "kind": "convention",
+     "value": 0.1
+    },
+    "softtissue.servo:tip.gain": {
+     "entry": "softtissue.servo 0.1.0",
+     "kind": "convention",
+     "value": {
+      "unit": "kg s^-1",
+      "value": 1000000.0
+     }
+    },
+    "softtissue.servo:tip.turn_gain": {
+     "entry": "softtissue.servo 0.1.0",
+     "kind": "convention",
+     "value": 1.0
+    }
+   },
+   "listed": [],
+   "pending": [],
+   "profile": "exploratory",
+   "sources": {},
+   "waivers": []
+  },
+  "registrations": {},
+  "run": {
+   "dt": 0.2,
+   "experiment": "clot_puncture",
+   "gravity": [
+    -0.0,
+    -0.0,
+    -0.0
+   ],
+   "seed": 0,
+   "structure": "one compiled scan",
+   "up": [
+    0.0,
+    0.0,
+    1.0
+   ]
+  },
+  "scene": {
+   "bound": [],
+   "magnets": {},
+   "meters_per_unit": 1.0,
+   "prims": {
+    "clot": "/World/clot",
+    "tip": "/World/tip"
+   },
+   "units": "m",
+   "up": [
+    0.0,
+    0.0,
+    1.0
+   ]
+  },
+  "slots": {},
+  "things": {
+   "clot": "body",
+   "tip": "body"
+  },
+  "values": {
+   "tip.inertia": {
+    "details": [],
+    "read_by": [
+     "tip"
+    ],
+    "reason": "the same needle's order",
+    "source": "declared in the experiment, in place of the value its parts would give (none: body tip's mass and inertia are derived from its parts, and 'tip' has no density)",
+    "unit": "kg m^2",
+    "value": [
+     1e-11,
+     1e-11,
+     1e-12
+    ]
+   },
+   "tip.mass": {
+    "details": [],
+    "read_by": [
+     "tip"
+    ],
+    "reason": "a steel needle of a few millimetres (its mass does not matter here)",
+    "source": "declared in the experiment, in place of the value its parts would give (none: body tip's mass and inertia are derived from its parts, and 'tip' has no density)",
+    "unit": "kg",
+    "value": 1.2e-05
+   }
+  },
+  "vocabulary": {
+   "mime": "0.3.0.dev1",
+   "softtissue": "0.1.0"
+  }
+ },
+ "schema": "mime.lock/15",
+ "seeds": {},
+ "stage": {
+  "file": "scene/scene.usda",
+  "layers": {},
+  "sha256": "0caf0cb522d56d6b4cb24749226e9bafe3675ce92cc842a18d40187ebcef9667",
+  "writer": 2
+ }
+}

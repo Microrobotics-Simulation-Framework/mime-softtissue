@@ -44,3 +44,9 @@ def fregonese_fig5() -> dict[str, Any]:
     """Fregonese and Bacca's Fig. 5 (Fakhouri et al.'s gel, "Exp. 1", and their theory for Ogden alpha = 2 to 9),
     digitised: ``exp1`` points with their error bars, ``theory`` curves, and how they were read."""
     return json.loads(resources.files(__package__).joinpath("data/fregonese2021_fig5.json").read_text())
+
+
+def saved(name: str) -> Path:
+    """A saved experiment shipped with the plugin (``studies/saved/<name>``), to base one's own on:
+    ``Experiment.based_on(saved("clot_puncture"), name="my_clot")``."""
+    return Path(str(resources.files(__package__).joinpath("saved", name)))

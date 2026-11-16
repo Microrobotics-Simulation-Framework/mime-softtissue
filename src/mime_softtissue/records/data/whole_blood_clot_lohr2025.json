@@ -1,12 +1,26 @@
-{"about": "Human whole-blood clot, calibrated by the plugin's pure-shear replication against the digitised tests of Lohr, Bechtel, Dortdivanlioglu and Rausch (2025, Int. J. Fract., doi:10.1007/s10704-024-00820-4): a Yeoh law fitted to the unnotched mean, the AT2 toughness from notch group 4's peak force. Every value is labelled by its source; a value marked placeholder is not a measurement.",
- "values": {"yeoh_c1": 361.4522135135015, "yeoh_c2": 437.70819147454563, "poisson_ratio": 0.45, "young_modulus": 2096.4228383783084, "toughness": 0.819, "length_scale": 0.00025, "stretch_limit": 2.0, "residual_stiffness": 1e-06},
+{
+ "about": "Human whole-blood clot (in vitro), calibrated by the plugin's pure-shear replication on the raw data of Lohr, Bechtel, Dortdivanlioglu and Rausch (2025, Int. J. Fract., doi:10.1007/s10704-024-00820-4; data doi:10.18738/T8/97ZAZN and doi:10.18738/T8/DUJWSR, CC0 1.0): a Yeoh law fitted to the unnotched mean through the phase-field run, the AT2 toughness from notch group 4's peak force. The three constants are a set, to use together with this model at l = 0.25 mm. Every value is labelled by its source; a value marked placeholder is not a measurement.",
+ "values": {
+  "yeoh_c1": 363.0,
+  "yeoh_c2": 434.0,
+  "poisson_ratio": 0.45,
+  "young_modulus": 2105.4,
+  "toughness": 0.83,
+  "length_scale": 0.00025,
+  "stretch_limit": 2.0,
+  "residual_stiffness": 1e-06
+ },
  "labels": {
-  "yeoh_c1": "fitted: the plugin's pure-shear study (incompressible plane stress, l 0.25 mm, h 0.0625 mm) to Lohr et al. 2025 Fig. 1A's unnotched mean (digitised), NRMSE 1.4 % of its maximum; C1 = mu / 2",
-  "yeoh_c2": "fitted: the same fit, Yeoh's second coefficient",
+  "yeoh_c1": "fitted (+-18 Pa, jackknife over samples): Gauss-Newton through the plugin's unnotched phase-field run (incompressible plane stress, l 0.25 mm) to the mean of the three unnotched raw curves at stretch 1.025-1.50; C1 = mu / 2",
+  "yeoh_c2": "fitted (+-95 Pa, jackknife): the same fit; C1 and C2 trade off against each other and against Gc",
   "poisson_ratio": "placeholder: the fit was incompressible; a compressible 3-D or axisymmetric build needs a bulk modulus, and 0.45 (kappa about 9.7 mu) is chosen for the solver's conditioning, not measured",
   "young_modulus": "derived: 2 mu (1 + nu) with mu = 2 C1 and the placeholder nu",
-  "toughness": "calibrated: the AT2 Gc at which the model's group-4 peak force meets the data's (69.56 against 69.30 mN), inside Lohr et al.'s Griffith-A mean of 0.9 +- 0.38 J/m^2; in incompressible plane stress at l 0.25 mm",
-  "length_scale": "chosen: the replication's AT2 length scale (its Gc is tied to it)",
+  "toughness": "calibrated (+-0.17 J/m^2, jackknife): the AT2 Gc at which the model's peak force meets notch group 4's raw mean (69.76 mN); at l 0.25 mm, in incompressible plane stress",
+  "length_scale": "chosen, not fitted: the replication's AT2 length scale (Gc and the Yeoh constants are tied to it)",
   "stretch_limit": "placeholder (read only by the element-deletion control)",
-  "residual_stiffness": "numerical: the fully damaged material's share of stiffness"},
- "model": "Yeoh (C1, C2) with a compressible bulk term and an AT2 phase field; the clot's viscoelasticity, fluid and heterogeneity are not in it"}
+  "residual_stiffness": "numerical: the fully damaged material's share of stiffness"
+ },
+ "validity": "pure shear to stretch about 1.5 (fit) and 1.55 (failure), at a grip rate of 0.2 mm/s; not validated in compression, at other rates or in other clots; puncture with these constants is a prediction (Yeoh beyond stretch 1.5, isotropy, damage driven by the whole energy in compression too). The replication's model had no tension-compression split; the plugin's axisymmetric and 3-D blocks have one.",
+ "claim": "At Gc*, the model gives held-out group 5's peak force within 2 % (inside its band) and groups 1-3's 19 to 24 % low, for in-vitro whole-blood clot in pure shear at 0.2 mm/s. It does not reproduce the notch dependence with one Gc.",
+ "model": "Yeoh (C1, C2) with a compressible bulk term and an AT2 phase field; the clot's viscoelasticity, fluid and heterogeneity are not in it"
+}

@@ -7,8 +7,9 @@ geometry kind names, evaluated through ``mime.core.shape_named`` at each node (n
 
 The block's axis is the world z through its body's initial ``position`` (the centre of its bottom face); the tip must
 be coaxial (the build cannot see it, so it is a validity line). In 3-D the block is square, ``2 radius`` across, and a
-quarter of it is solved (x >= 0, y >= 0 in the block's frame, symmetric about both planes through the axis), with spike
-3D-COST's ``all2`` solver (``engine.solid3d``); its surface shows that quarter."""
+quarter of it is solved (x >= 0, y >= 0 in the block's frame, symmetric about both planes through the axis) by TIP3D's
+engine (``engine.puncture3d``: spike 3D-COST's ``all2`` levers, Anderson acceleration, a step limit, the mean dilatation);
+its surface shows that quarter."""
 
 from __future__ import annotations
 
@@ -35,7 +36,8 @@ from mime.vocabulary import Interface, ReadKind, TargetKind, define
 
 from ..engine import contact as ct
 from ..engine.kinematics.axisymmetric import nodal_ring_area
-from ..engine.solid3d import block as b3
+from ..engine import puncture3d as p3
+from ..engine.material import Material, shear_and_bulk
 from ..engine.solver import Solver, State
 from ..engine.specimen import axisymmetric_block
 from ._display import placed, quarter_boundary, revolved
@@ -126,6 +128,7 @@ class Block3DState(TypedDict, closed=True):
     u: ReadOnly[Annotated[Float[Array, "nx ny nz 3"], Units("m")]]
     d: ReadOnly[Annotated[Float[Array, "nx ny nz"], Units("1")]]
     history: ReadOnly[Annotated[Float[Array, "2 2 2 ex ey ez"], Units("J/m^3")]]
+    deleted: ReadOnly[Annotated[Float[Array, "ex ey ez"], Units("1")]]
     depth: ReadOnly[Annotated[Float[Array, ""], Units("m")]]
     force: ReadOnly[Annotated[Float[Array, ""], Units("N")]]
     energy: ReadOnly[Annotated[Float[Array, ""], Units("J")]]
@@ -135,6 +138,7 @@ class Block3DState(TypedDict, closed=True):
     staggered: ReadOnly[Annotated[Float[Array, ""], Units("1")]]
     newton: ReadOnly[Annotated[Float[Array, ""], Units("1")]]
     krylov: ReadOnly[Annotated[Float[Array, ""], Units("1")]]
+    substeps: ReadOnly[Annotated[Float[Array, ""], Units("1")]]
     tip_pose: ReadOnly[Annotated[Float[Array, "7"], Units("m; 1")]]
     crack_area: ReadOnly[Annotated[Float[Array, ""], Units("m^2")]]
     surface_points: ReadOnly[Annotated[Float[Array, "v 3"], Units("m")]]
@@ -262,9 +266,40 @@ def registered_distance_3d(shape: str, origin: Sequence[float], tip: Mapping[str
     return shape_named(shape).signed_distance(region, local)
 
 
+class _LawTip(p3.Puncture3D):
+    """TIP3D's 3-D engine (``engine.puncture3d``) with the tip the law hands each step, a registered shape evaluated at the
+    block's points (``registered_distance_3d``), and the law's penalty stiffness, in place of its fixed indenter."""
+
+    def __init__(self, block: p3.Block, material: Any, settings: p3.Settings, shape: str,
+                 origin: Sequence[float]) -> None:
+        super().__init__(block, material, ct.Indenter("punch", radius=1.0, fillet=0.1, top=0.0), settings)
+        self.shape, self.origin = shape, tuple(float(c) for c in origin)
+        self.given: Mapping[str, Any] | None = None  # the law's tip, set by the node before each traced step
+
+    def phi(self, X: Array, u: Array, depth: Array) -> Array:
+        assert self.given is not None, "the node hands the tip before the step"
+        return registered_distance_3d(self.shape, self.origin, self.given, X + u, depth)
+
+    def contact(self, u: Array, depth: Array) -> Array:
+        assert self.given is not None
+        gap = jnp.minimum(self.phi(self.X, u, depth), 0.0)
+        return 0.5 * jnp.asarray(self.given["stiffness"], u.dtype) * jnp.sum(self.w * gap * gap)
+
+    def contact32(self, u: Array, depth: Array) -> Array:
+        assert self.given is not None
+        gap = jnp.minimum(self.phi(self.X32, u, depth), 0.0)
+        return 0.5 * jnp.asarray(self.given["stiffness"], jnp.float32) * jnp.sum(self.w32 * gap * gap)
+
+
+#: A base step whose solve does not converge is redone from its start in 2, then 4, then 8 sub-steps (TIP3D's rejection
+#: at half the increment, inside one MIME step); past 8 the last try is kept and flagged in ``capped``.
+MAX_SUBSTEPS = 8
+
+
 class Block3DNode(MimeNode):
-    """The quarter block's displacement, damage and history fields; each step the equilibrium at the tip's pose
-    (``engine.solid3d.block``, frictionless)."""
+    """The quarter block's displacement, damage and history fields; each base step the equilibrium at the tip's depth by
+    TIP3D's engine (``engine.puncture3d``: spike 3D-COST's all2 levers, Anderson acceleration, a step limit, the mean
+    dilatation), frictionless."""
 
     def __init__(self, name: str, timestep: float, *, radius: float, height: float, h: float, fine: float,
                  young: float, poisson: float, toughness: float, length_scale: float, stretch_limit: float,
@@ -274,37 +309,36 @@ class Block3DNode(MimeNode):
                          length_scale=float(length_scale), stretch_limit=float(stretch_limit),
                          residual=float(residual), origin=tuple(float(c) for c in origin), shape=str(shape),
                          yeoh_c2=float(yeoh_c2))
-        self._block: b3.Block3D | None = None
+        self._engine: _LawTip | None = None
 
-    def block(self) -> b3.Block3D:
-        if self._block is None:
+    def engine(self) -> _LawTip:
+        if self._engine is None:
             own = self.constants()
-            shape, origin = own["shape"], own["origin"]
-
-            def distance(tip: Mapping[str, Any], points: Array, depth: Array) -> Array:
-                return registered_distance_3d(shape, origin, tip, points, depth)
-
-            self._block = b3.Block3D(half_width=own["radius"], height=own["height"], h=own["h"], distance=distance,
-                                     fine_xy=FINE_XY * own["fine"], fine_z=own["fine"])
-        return self._block
+            mu, kappa = shear_and_bulk(own["young"], own["poisson"])
+            mat = Material(mu=mu, kappa=kappa, gc=own["toughness"], l=own["length_scale"], k_res=own["residual"],
+                           stretch_limit=own["stretch_limit"], c2=own["yeoh_c2"])
+            block = p3.Block(half_width=own["radius"], height=own["height"], h=own["h"], symmetry="quarter",
+                             fine_xy=FINE_XY * own["fine"], fine_z=own["fine"])
+            self._engine = _LawTip(block, mat, p3.Settings(), own["shape"], own["origin"])
+        return self._engine
 
     def surface(self, u: Array, d: Array) -> tuple[Array, Array]:
         """The quarter's boundary shown as a surface (``_display.quarter_boundary``): each vertex's point and damage."""
-        blk = self.block()
-        ijk, _ = quarter_boundary(*blk.grid.shape)
+        eng = self.engine()
+        ijk, _ = quarter_boundary(*eng.grid.shape)
         i, j, k = ijk[:, 0], ijk[:, 1], ijk[:, 2]
-        points = jnp.asarray(blk.X_np[i, j, k], dtype=u.dtype) + u[i, j, k]
+        points = jnp.asarray(np.asarray(eng.X)[i, j, k], dtype=u.dtype) + u[i, j, k]
         return points, d[i, j, k]
 
     @override
     def initial_state(self) -> NodeFields:
-        s = self.block().initial(jnp.zeros(()).dtype)
+        s = self.engine().initial(jnp.zeros(()).dtype)
         z = jnp.zeros((), dtype=s.u.dtype)
         points, damage = self.surface(s.u, s.d)
-        return node_fields(Block3DState(u=s.u, d=s.d, history=s.history, depth=z, force=z, energy=z, crack_energy=z,
-                                        contact_energy=z, capped=z, staggered=z, newton=z, krylov=z,
-                                        tip_pose=jnp.asarray(AWAY, dtype=s.u.dtype), crack_area=z,
-                                        surface_points=points, surface_damage=damage))
+        return node_fields(Block3DState(u=s.u, d=s.d, history=s.history, deleted=s.deleted, depth=z, force=z,
+                                        energy=z, crack_energy=z, contact_energy=z, capped=z, staggered=z, newton=z,
+                                        krylov=z, substeps=z, tip_pose=jnp.asarray(AWAY, dtype=s.u.dtype),
+                                        crack_area=z, surface_points=points, surface_damage=damage))
 
     @override
     def boundary_input_spec(self) -> dict[str, BoundaryInputSpec]:
@@ -324,19 +358,39 @@ class Block3DNode(MimeNode):
         apex = given["pose"][:3] + quaternion.rotate(given["pose"][3:], given["centre"])
         own = self.constants()
         depth = jnp.asarray(own["origin"][2] + own["height"], dtype=dtype) - apex[2]
-        tip = dict(given, depth_ref=depth)
-        mat = engine_material(p, "phase_field")
-        blk = self.block()
-        start = b3.State(last["u"], last["d"], last["history"], jnp.maximum(last["depth"], 0.0))
-        new, out = blk.advance(start, depth, mat, tip)
+        eng = self.engine()
+        eng.given = dict(given, depth_ref=depth)
+        start = p3.State(last["u"], last["d"], last["history"], jnp.maximum(last["depth"], 0.0), last["deleted"])
+        blank = jax.tree_util.tree_map(lambda a: jnp.zeros(a.shape, a.dtype),
+                                       jax.eval_shape(eng._step, start, depth))  # pyright: ignore[reportPrivateUsage]
+
+        def attempt(n: Array) -> tuple[Any, Array, Any]:
+            def sub(i: Array, c: tuple[Any, Array, Any]) -> tuple[Any, Array, Any]:
+                st, ok, _ = c
+                z = start.depth + (depth - start.depth) * (i + 1).astype(dtype) / n.astype(dtype)
+                st, o = eng._step(st, z)  # pyright: ignore[reportPrivateUsage]
+                return st, ok & o.converged, o
+            return jax.lax.fori_loop(0, n, sub, (start, jnp.ones((), bool), blank[1]))
+
+        def again(c: tuple[Array, Any, Array, Any]) -> Array:
+            return (~c[2]) & (c[0] <= MAX_SUBSTEPS)
+
+        def retry(c: tuple[Array, Any, Array, Any]) -> tuple[Array, Any, Array, Any]:
+            n = c[0]
+            st, ok, o = attempt(n)
+            return 2 * n, st, ok, o
+
+        n2, new, ok, out = jax.lax.while_loop(again, retry, (jnp.ones((), jnp.int32), start, jnp.zeros((), bool),
+                                                            blank[1]))
+        eng.given = None
         points, damage = self.surface(new.u, new.d)
-        return node_fields(Block3DState(u=new.u, d=new.d, history=new.history, depth=depth, force=out.force,
-                                        energy=out.energy, crack_energy=out.crack_energy,
-                                        contact_energy=out.contact_energy, capped=out.newton_capped.astype(dtype),
+        return node_fields(Block3DState(u=new.u, d=new.d, history=new.history, deleted=new.deleted, depth=depth,
+                                        force=out.force, energy=out.energy, crack_energy=out.crack_energy,
+                                        contact_energy=out.contact_energy, capped=(~ok).astype(dtype),
                                         staggered=out.staggered.astype(dtype), newton=out.newton.astype(dtype),
-                                        krylov=out.krylov.astype(dtype), tip_pose=given["pose"],
-                                        crack_area=out.crack_energy / p["toughness"], surface_points=points,
-                                        surface_damage=damage))
+                                        krylov=out.krylov.astype(dtype), substeps=(n2 // 2).astype(dtype),
+                                        tip_pose=given["pose"], crack_area=out.crack_energy / p["toughness"],
+                                        surface_points=points, surface_damage=damage))
 
 
 @register_dynamics
@@ -382,7 +436,7 @@ class GelBlock(Dynamics):
                      "lag_relaxation": convention(NUMERICAL, "friction's lagged pressure under-relaxed (round 4: a "
                                                               "two-cycle at 1.0 on withdrawal)"),
                      "tip_shape": convention(DESIGN, "the registered shape of the tip's kind"),
-                     "dimension": convention(NUMERICAL, "axisymmetric, or 3d (a quarter, spike 3D-COST's all2 solver)")}
+                     "dimension": convention(NUMERICAL, "axisymmetric, or 3d (a quarter, TIP3D's engine)")}
     radius: Annotated[Quantity, Length]
     height: Annotated[Quantity, Length]
     material: str
@@ -414,8 +468,8 @@ class GelBlock(Dynamics):
         radius, height, h, fine = (float(settings[n]) for n in ("radius", "height", "h", "fine"))  # pyright: ignore[reportArgumentType]
         damage = (MeshField("damage", "1", Port("surface_damage"), (0.0, 1.0), reduction="max"),)
         if self.dimension == "3d":
-            x = b3.rows(h, radius, FINE_XY * fine, 1.5, 16.0, False)
-            z = b3.rows(h, height, fine, 1.5, 16.0, True)
+            x = p3.axis_rows(radius, h, FINE_XY * fine, 1.5, 16.0)
+            z = p3.axis_rows(height, h, fine, 1.5, 16.0, from_top=True)
             ijk, faces = quarter_boundary(len(x) - 1, len(x) - 1, len(z) - 1)
             rest = np.stack([x[ijk[:, 0]], x[ijk[:, 1]], z[ijk[:, 2]]], axis=1)
             return (SurfaceMesh("quarter", rest, faces, Port("surface_points"), damage),)

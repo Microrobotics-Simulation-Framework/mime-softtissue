@@ -1,0 +1,125 @@
+schema: mime.document/15
+mime: 0.3.0.dev1
+experiment: clot_puncture
+profile: exploratory
+run:
+  dt:
+    value: 0.2
+    unit: s
+  seed: 0
+scene:
+  up: [0.0, 0.0, 1.0]
+  units: m
+  references: []
+sources: {}
+conditions: {}
+things:
+  clot:
+    kind: body
+    prim: /World/clot
+    dynamics:
+      motion:
+        name: softtissue.gel_block
+        version: 0.1.0
+        settings:
+          radius:
+            value: 0.005
+            unit: m
+          height:
+            value: 0.005
+            unit: m
+          material: softtissue.whole_blood_clot
+          h:
+            value: 0.000125
+            unit: m
+          fine:
+            value: 0.001
+            unit: m
+          tip_shape: softtissue.cone_tip
+    initial:
+      position:
+        value: [0.0, 0.0, 0.0]
+        unit: m
+  tip:
+    kind: body
+    prim: /World/tip
+    dynamics:
+      motion:
+        name: rigid_inertial
+        version: 0.4.0
+    initial:
+      position:
+        value: [0.0, 0.0, 0.005]
+        unit: m
+      orientation: [1.0, 0.0, 0.0, 0.0]
+      velocity:
+        value: [0.0, 0.0, -0.0001]
+        unit: m/s
+      angular_velocity:
+        value: [0.0, 0.0, 0.0]
+        unit: Hz
+    parts:
+      tip:
+        solid:
+          name: softtissue.cone_tip
+          version: 0.1.0
+          settings:
+            radius:
+              value: 0.0005
+              unit: m
+            tip_radius:
+              value: 2.0e-05
+              unit: m
+            half_angle:
+              value: 0.2617993877991494
+              unit: '1'
+            length:
+              value: 0.006
+              unit: m
+interactions:
+- id: softtissue.servo:tip
+  name: softtissue.servo
+  version: 0.1.0
+  binds:
+    body: tip
+  settings:
+    speed:
+      value: 0.0001
+      unit: m/s
+    insert_steps: 156
+- id: softtissue.tip_contact:tip-clot
+  name: softtissue.tip_contact
+  version: 0.1.0
+  binds:
+    solid: clot
+    tip: tip
+  settings:
+    friction: 0.0
+    adhesion: 0.0
+    stiffness: 1684320000.0
+observations:
+- id: softtissue.crack_size:clot
+  name: softtissue.crack_size
+  version: 0.1.0
+  binds:
+    solid: clot
+- id: softtissue.tip_force:clot
+  name: softtissue.tip_force
+  version: 0.1.0
+  binds:
+    solid: clot
+declared:
+  tip.inertia:
+    value: [1.0e-11, 1.0e-11, 1.0e-12]
+    unit: kg m^2
+    reason: the same needle's order
+  tip.mass:
+    value: 1.2e-05
+    unit: kg
+    reason: a steel needle of a few millimetres (its mass does not matter here)
+materials: {}
+controller: null
+gravity:
+  value: 0.0
+  unit: m/s^2
+licence: CC-BY-4.0

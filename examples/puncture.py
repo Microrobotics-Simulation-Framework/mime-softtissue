@@ -1,7 +1,8 @@
 """A rigid tip pushed into a soft block (gel or clot) through MIME, axisymmetric or in 3-D
 (``mime_softtissue.studies.puncture.puncture_experiment``, the experiment the notebook
 ``notebooks/tutorial_puncture_3d.ipynb`` builds cell by cell): the runs behind its converged curves, each written to a
-run folder with ``puncture.json`` (depth, force and crack area at every step).
+run folder with ``puncture.json`` (depth, force and crack area at every step). The run keeps the observations' series
+(``record=``) and the stage's frames, not every node's fields (a 3-D block's history costs minutes to save).
 
     python examples/puncture.py OUT --tip cone --material softtissue.whole_blood_clot --depth 3 --h 0.125
     python examples/puncture.py OUT --tip punch --material softtissue_gel_placeholder --dimension 3d --depth 0.44 --h 0.1"""
@@ -13,7 +14,7 @@ import math
 import time
 from pathlib import Path
 
-from mime.units import s
+from mime.units import N, m, m2, mm, mm_per_s
 from mime_softtissue.studies.puncture import CRACK, FORCE, puncture_experiment, tips
 
 
@@ -29,26 +30,26 @@ def main() -> None:
     ap.add_argument("--height", type=float, default=5.0, help="mm")
     ap.add_argument("--step", type=float, default=0.02, help="mm")
     ap.add_argument("--depth", type=float, default=1.0, help="mm")
+    ap.add_argument("--speed", type=float, default=0.1, help="mm/s")
     ap.add_argument("--every", type=int, default=1, help="a stage frame every this many steps")
     a = ap.parse_args()
-    exp, steps = puncture_experiment(tips()[a.tip], a.material, dimension=a.dimension, radius_mm=a.radius,
-                                     height_mm=a.height, h_mm=a.h, fine_mm=a.fine, step_mm=a.step, depth_mm=a.depth)
+    p = puncture_experiment(material=a.material, tip=tips()[a.tip], speed=mm_per_s(a.speed), depth=mm(a.depth),
+                            dimension=a.dimension, resolution=mm(a.h), step=mm(a.step), block_radius=mm(a.radius),
+                            block_height=mm(a.height), fine=mm(a.fine), frames_every=a.every)
     t0 = time.perf_counter()
-    built = exp.build()
-    dt = a.step / 0.1  # the default speed, 0.1 mm/s
-    steps = a.every * math.ceil(steps / a.every)  # a run is whole chunks of the stage's frames; the servo keeps pushing
-    written = built.run_to(a.out, s(steps * dt), history=True, stage_every=s(a.every * dt))
+    written = p.experiment.build().run_to(a.out, p.duration, record=[f"{FORCE}.force", f"{FORCE}.depth",
+                                                                     f"{CRACK}.area"], stage_every=p.stage_every)
     wall = time.perf_counter() - t0
     run = written.result
-    force = [float(v) for v in run.history[FORCE]["force"]]
-    depth = [float(v) for v in run.history[FORCE]["depth"]]
-    area = [float(v) for v in run.history[CRACK]["area"]]
+    force = [float(v) for v in run[FORCE].force.values.to(N)]
+    depth = [float(v) * 1e3 for v in run[FORCE].depth.values.to(m)]
+    area = [float(v) * 1e6 for v in run[CRACK].area.values.to(m2)]
     peak = max(range(len(force)), key=lambda k: force[k])
     summary = dict(tip=a.tip, material=a.material, dimension=a.dimension, h_mm=a.h, fine_mm=a.fine, step_mm=a.step,
-                   steps=steps, wall_s=wall, depth_mm=[d * 1e3 for d in depth], force_N=force, crack_area_mm2=[
-                       x * 1e6 for x in area], peak_N=force[peak], peak_depth_mm=depth[peak] * 1e3)
+                   speed_mm_s=a.speed, steps=p.steps, wall_s=wall, depth_mm=depth, force_N=force,
+                   crack_area_mm2=area, peak_N=force[peak], peak_depth_mm=depth[peak])
     Path(a.out).joinpath("puncture.json").write_text(json.dumps(summary, indent=1))
-    print(f"peak {force[peak] * 1e3:.3f} mN at {depth[peak] * 1e3:.3f} mm; {steps} steps in {wall:.0f} s "
+    print(f"peak {force[peak] * 1e3:.3f} mN at {depth[peak]:.3f} mm; {p.steps} steps in {wall:.0f} s "
           f"(build and compile included)", flush=True)
     if not all(math.isfinite(f) for f in force):
         raise SystemExit("a force is not finite")

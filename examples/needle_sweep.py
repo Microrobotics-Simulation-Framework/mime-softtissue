@@ -17,7 +17,7 @@ import numpy as np
 
 import mime_softtissue.entries as st
 from mime.study import Study, along
-from mime.units import mm, s
+from mime.units import mm
 from mime_softtissue.studies.puncture import FORCE, puncture_experiment
 
 RADII_MM = (0.5, 1.0, 2.0, 4.0)
@@ -36,13 +36,12 @@ def main() -> None:
     a = ap.parse_args()
     radii = [float(r) for r in a.radii.split(",")]
     needle = st.PunchTip(radius=mm(radii[0]), fillet=mm(radii[0]), length=mm(a.block))
-    exp, steps = puncture_experiment(needle, "softtissue.puncture_gel", dimension=a.dimension, radius_mm=a.block,
-                                     height_mm=a.block, h_mm=a.h, fine_mm=a.fine, step_mm=a.step, depth_mm=a.depth,
-                                     name="needle_sweep")
-    dt = a.step / 0.1
-    study = Study(exp).sweep(along({"tip.parts.tip.radius": [mm(r) for r in radii],
-                                    "tip.parts.tip.fillet": [mm(r) for r in radii]}),
-                             duration=s(steps * dt), record=[f"{FORCE}.force", f"{FORCE}.depth"])
+    p = puncture_experiment(material="softtissue.puncture_gel", tip=needle, dimension=a.dimension, resolution=mm(a.h),
+                            step=mm(a.step), depth=mm(a.depth), block_radius=mm(a.block), block_height=mm(a.block),
+                            fine=mm(a.fine), name="needle_sweep")
+    study = Study(p.experiment).sweep(along({"tip.parts.tip.radius": [mm(r) for r in radii],
+                                             "tip.parts.tip.fillet": [mm(r) for r in radii]}),
+                                      duration=p.duration, record=[f"{FORCE}.force", f"{FORCE}.depth"])
     print(study.plan(), flush=True)
     t0 = time.perf_counter()
     result = study.run()
