@@ -778,10 +778,13 @@ class PunctureRun:
                       indent=1, default=float)
 
 
-def load_run(path: str) -> PunctureRun:
+def load_run(path: str, meta: str | None = None) -> PunctureRun:
+    """A run ``PunctureRun.save`` wrote: ``path``.npz and ``path``.json, or the two files ``path`` and ``meta`` by name
+    (a record's files, which carry no shared stem)."""
     import json
-    z = np.load(path + ".npz")
-    j = json.load(open(path + ".json"))
+    z = np.load(path + ".npz" if meta is None else path)
+    with open(path + ".json" if meta is None else meta) as fh:
+        j = json.load(fh)
     rows = {k[4:]: z[k] for k in z.files if k.startswith("row_")}
     sf = Surface(rest=z["rest"], faces=z["faces"], face_kind=z["face_kind"], node=z["node"],
                  symmetry_planes=tuple(j["symmetry_planes"]), points=list(z["points"]), damage=list(z["damage"]),

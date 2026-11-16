@@ -21,8 +21,8 @@ from typing_extensions import NotRequired, ReadOnly, TypedDict
 from mime.build import InteractionBuilder
 from mime.core import MimeNode, NodeFields, Units, node_fields, shape_named, typed_view
 from mime.gradients import GradientStatus
-from mime.registry import (DESIGN, NUMERICAL, PHYSICAL, BuildContext, Delivery, GradientRecord, Interaction, Read,
-                           RoleKind, convention, register_interaction)
+from mime.registry import (NUMERICAL, PHYSICAL, BuildContext, Delivery, GradientRecord, Interaction, PlanContext,
+                           Problem, Read, RoleKind, convention, register_interaction)
 from mime.units import Magnitude
 from mime.vocabulary import APPLIED_WRENCH, POSE
 
@@ -126,6 +126,28 @@ class TipContact(Interaction):
     stiffness: float = 1e11
 
     @override
+    def value_problems(self, values: Mapping[str, Magnitude], ctx: PlanContext) -> list[Problem]:
+        """The tip's hull must be one region whose registered shape has at most ``N_REGION`` parameters (the block's
+        interface is one vector, its length fixed when it is defined): a tip that does not fit is refused at the plan,
+        with what to use instead, never as a failure of the build."""
+        hull = ctx.hulls.get("tip")
+        if hull is None:
+            return []
+        regions = hull.kind.regions
+        if len(regions) != 1:
+            return [Problem("softtissue.tip-regions", f"the tip's hull ({hull.label()}) has {len(regions)} regions; "
+                            f"the contact presses one", "give the tip one part of one region: a tip kind of "
+                            "mime_softtissue.scene (ConeTip, PunchTip, HeadedTip)")]
+        shape = hull.kind.region_shapes[regions[0]]
+        count = len(shape_named(shape).parameter_names)
+        if count > N_REGION:
+            return [Problem("softtissue.tip-shape", f"the tip's shape {shape!r} has {count} parameters; the block's "
+                            f"interface holds {N_REGION} (an interface's shape is fixed when it is defined)",
+                            "use a tip kind of mime_softtissue.scene (ConeTip, PunchTip, HeadedTip), or a shape of "
+                            f"at most {N_REGION} parameters")]
+        return []
+
+    @override
     def build(self, ctx: BuildContext, b: InteractionBuilder) -> None:
         hull = ctx.geometry(of="tip")
         assert hull is not None, "the tip has a hull"
@@ -133,10 +155,7 @@ class TipContact(Interaction):
         (region_name,) = kind.regions
         shape = kind.region_shapes[region_name]
         region = kind.region_parameters(region_name, hull.settings)
-        names = shape_named(shape).parameter_names
-        if len(names) > N_REGION:
-            raise ValueError(f"the tip's shape {shape!r} has {len(names)} parameters; the block's interface holds "
-                             f"{N_REGION} (an interface's shape is fixed when it is defined)")
+        names = shape_named(shape).parameter_names  # at most N_REGION: ``value_problems`` refused more at the plan
         node = b.add_response_node(TipContactNode(
             ctx.node_name(), ctx.timestep, shape=shape, hull_centre=hull.centre,
             hull_rotation=tuple(c for row in hull.rotation for c in row), friction=self.friction,

@@ -1,5 +1,5 @@
 {
- "about": "The soft-tissue plugin's records: published fibrin values (open, in the package), a placeholder gel, and a placeholder for a lab's private data (its own licence, referenced, never shipped).",
+ "about": "The soft-tissue plugin's records: published material values (open, in the package), a placeholder gel, a placeholder for a lab's private data (its own licence, referenced, never shipped), and every result the notebooks show (the MIME runs' results, the 3-D engine's runs, the pure-shear and viscoelastic studies' results), each pinned by its sha256.",
  "assets": [
   {
    "name": "softtissue_fibrin_plasma",
@@ -93,6 +93,332 @@
     "package:softtissue/data/puncture_runs/c3d-clot-h0.25/recording.usdc"
    ],
    "credit": "computed by the plugin's authors with MIME (the puncture tutorial's run, for display)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture_run.c3d-clot-h0.25.run",
+   "sha256": "fbd5951d865e588fd74fd0b0be74088ee3f8a48170322a1fe6e2f7bf1f7097ee",
+   "size": 1079,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture_runs/c3d-clot-h0.25/run.json"
+   ],
+   "credit": "computed by the plugin's authors with MIME (the puncture tutorial's run, for display: its run record)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.pure_shear_results",
+   "sha256": "9fa8eefd53901ae46037dff0f51f477bd75694ffae128f5473479931690aa8d1",
+   "size": 26747,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/pure_shear/results.json"
+   ],
+   "credit": "computed by the plugin's authors (the pure-shear study's calibrated constants and each notch group's model curve; the engine on GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored",
+   "citation": "Lohr MJ, Bechtel GN, Dortdivanlioglu B, Rausch MK. How to measure fracture toughness of soft materials: a comparison of six different approaches using blood clot as a model material. Int J Fract (2025), doi:10.1007/s10704-024-00820-4"
+  },
+  {
+   "name": "softtissue.pure_shear_tear_g4",
+   "sha256": "574465ba22d275190f15735fb0a507e94d5c3f6ccdf27002dea374e66929eab8",
+   "size": 1857573,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/pure_shear/tear_g4_frames.npz"
+   ],
+   "credit": "computed by the plugin's authors (the pure-shear study's group-4 run at h = 0.0625 mm: its displacement and damage fields at every second step, the damage in float16, for display)",
+   "role": "results",
+   "kind": "authored",
+   "citation": "Lohr MJ, Bechtel GN, Dortdivanlioglu B, Rausch MK. How to measure fracture toughness of soft materials: a comparison of six different approaches using blood clot as a model material. Int J Fract (2025), doi:10.1007/s10704-024-00820-4"
+  },
+  {
+   "name": "softtissue.visco_calibration",
+   "sha256": "3b202e0acdc79100a9683b25f944e715d32fb72d54493370ac5189a5714c9e47",
+   "size": 35792,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/visco/calibration.json"
+   ],
+   "credit": "computed by the plugin's authors (VISCO's calibration of the clot's relaxing branches on public ramp-and-hold data, CC0)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture_run.cone-clot-h0.03125.result",
+   "sha256": "87e68771a9a9876c44b3eda52e8ece7933c3ff5d802cd59dac17a956716b7fae",
+   "size": 507090,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture_runs/cone-clot-h0.03125/result.npz"
+   ],
+   "credit": "computed by the plugin's authors with MIME (examples/puncture.py, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture_run.cone-clot-h0.0625.result",
+   "sha256": "6b596598340aa4878ad84bc7bd1bc3d1b0e9eb19d3cd978c97998a8073799520",
+   "size": 209866,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture_runs/cone-clot-h0.0625/result.npz"
+   ],
+   "credit": "computed by the plugin's authors with MIME (examples/puncture.py, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture_run.cone-clot-h0.125.result",
+   "sha256": "79083c2613312187d89339a3339aad9f9b4f98cc21a247085f1ee9c1a7ebe6f6",
+   "size": 113106,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture_runs/cone-clot-h0.125/result.npz"
+   ],
+   "credit": "computed by the plugin's authors with MIME (examples/puncture.py, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture_run.p3d-gel-h0.1-all2.result",
+   "sha256": "f719d833e766f301b537989529dfd12966a8c98bb06518a0e8760d9725cf2561",
+   "size": 496972,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture_runs/p3d-gel-h0.1-all2/result.npz"
+   ],
+   "credit": "computed by the plugin's authors with MIME (examples/puncture.py, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture_run.p3d-gel-h0.1-tip3d.result",
+   "sha256": "01fb9709d3a0ce10d57d6660fd67c9c6dfd4512f5488a7962114767f732c3a7e",
+   "size": 496972,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture_runs/p3d-gel-h0.1-tip3d/result.npz"
+   ],
+   "credit": "computed by the plugin's authors with MIME (examples/puncture.py, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture_run.p3d-gel-h0.2-tip3d.result",
+   "sha256": "4848cc5b3d9d85c8141004c04f53126ade656825d1362817f0097263e856f1e8",
+   "size": 175492,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture_runs/p3d-gel-h0.2-tip3d/result.npz"
+   ],
+   "credit": "computed by the plugin's authors with MIME (examples/puncture.py, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture_run.c3d-clot-h0.177.result",
+   "sha256": "cc420d50107f55d922f883a9108647839b90c53c7b0c01b13b3eb4c4967b0939",
+   "size": 505988,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture_runs/c3d-clot-h0.177/result.npz"
+   ],
+   "credit": "computed by the plugin's authors with MIME (examples/puncture.py, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture_run.c3d-clot-h0.25.result",
+   "sha256": "637596b67a9269e9acc6ac72ee4cffcffc510e2723fe218237fe4ce17ced237b",
+   "size": 230912,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture_runs/c3d-clot-h0.25/result.npz"
+   ],
+   "credit": "computed by the plugin's authors with MIME (examples/puncture.py, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture_runs",
+   "sha256": "3f8efbb275c4adc9fc510901e2b5c7a8f677297378ce7009330a10c8cfc6a642",
+   "size": 41977,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture_runs/index.json"
+   ],
+   "credit": "the plugin's authors (the puncture tutorial's run index; the sweep's and spike 3D-COST's rows computed by them)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.clot_cone_deletion_h0.125.rows",
+   "sha256": "a9a2419e35a4c3099c7607754a4c44891d752a62779d13808def96bf7a40f760",
+   "size": 328079,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/clot_cone_deletion_h0.125.npz"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.clot_cone_deletion_h0.125.meta",
+   "sha256": "aa5f965a739bc6cef32a510dd266a5e22e9367c36718460fac3893206048fffb",
+   "size": 2860,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/clot_cone_deletion_h0.125.json"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.clot_cone_deletion_h0.177.rows",
+   "sha256": "cde0ad22e28cdaec0cebd4267ad3dc8ed26f80d17075198157b136e580cb9034",
+   "size": 209272,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/clot_cone_deletion_h0.177.npz"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.clot_cone_deletion_h0.177.meta",
+   "sha256": "9ae4fbac0b58df20ba2173c56f2a6bc21f29e6b26271f52b58de41f02130944a",
+   "size": 2768,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/clot_cone_deletion_h0.177.json"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.clot_cone_deletion_h0.25.rows",
+   "sha256": "5cb702a3a75edd5934faa4909639689386b80b3eb8dc7f90ce4417ed6db4bfe6",
+   "size": 118167,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/clot_cone_deletion_h0.25.npz"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.clot_cone_deletion_h0.25.meta",
+   "sha256": "011f3cf31e2a334d4b76964d14b5db2c777b1aad6a243554b7a7845537591ed7",
+   "size": 2428,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/clot_cone_deletion_h0.25.json"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.clot_cone_h0.125.rows",
+   "sha256": "bd472ea3a6acf4834e41351c8964f8b18d56f1348c2d0b774ed2fe4267336d30",
+   "size": 464628,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/clot_cone_h0.125.npz"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.clot_cone_h0.125.meta",
+   "sha256": "89dc7b866cfda708b7a9ed1fa83f7d00841edd7fcc61ee5a6f05d011ce74f190",
+   "size": 2871,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/clot_cone_h0.125.json"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.clot_cone_h0.177.rows",
+   "sha256": "6453a0232d86ab0d393de0cb7a52da1adf98ddd7a29847645339c7684d30255b",
+   "size": 301271,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/clot_cone_h0.177.npz"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.clot_cone_h0.177.meta",
+   "sha256": "c9b32dcddac83661e2b3d5e3f8496a885e3819cd561334259ae615757cea57c2",
+   "size": 2776,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/clot_cone_h0.177.json"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.clot_cone_h0.25.rows",
+   "sha256": "b9866a007fe5cc2aadcc30c0209a489576081f8a60167bfe7b21aabed805c34c",
+   "size": 167763,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/clot_cone_h0.25.npz"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.clot_cone_h0.25.meta",
+   "sha256": "b94d9a7b1c7d3b0b5efa346803042914b79b52762b72b4224dc90a2d9bb1261c",
+   "size": 2438,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/clot_cone_h0.25.json"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.clot_cone_live.rows",
+   "sha256": "1b99c4c82ce50e50ef09bd408370e5eb965b9ee41a94113424423d1d68f97deb",
+   "size": 201008,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/clot_cone_live.npz"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.clot_cone_live.meta",
+   "sha256": "10ccc425d75b39a67674a416e29b0cce29b9506f461f7c4a2e1ceee25feeb6ea",
+   "size": 2376,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/clot_cone_live.json"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
    "role": "results",
    "kind": "authored"
   }

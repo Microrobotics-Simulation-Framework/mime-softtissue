@@ -96,3 +96,27 @@ def test_the_3d_block_refuses_a_symmetry_it_has_not_and_shows_the_part_it_solves
     wrong = GelBlock(radius=mm(2.0), height=mm(2.0), material="softtissue.whole_blood_clot", dimension="3d",
                         symmetry="eighth")
     assert any("symmetry" in line for line in wrong.setting_problems({}))
+
+
+def test_a_tip_whose_shape_does_not_fit_the_interface_is_refused_at_the_plan(monkeypatch):
+    """The contact hands the block the tip's shape parameters in one vector of a fixed length (``N_REGION``): a tip
+    whose shape has more is an input the plan refuses with its code and what to use instead, never a failure of the
+    build. The control: the same experiment plans while the shape fits; with the interface narrowed to one parameter
+    (the cone has three), it is refused, every time."""
+    from mime.build import BuildRefused
+    from mime_softtissue.interactions import tip_contact
+    from mime_softtissue.studies.puncture import puncture_experiment, tips
+
+    def planned() -> None:
+        puncture_experiment(material="softtissue.whole_blood_clot", tip=tips()["cone"], resolution=mm(0.5),
+                            depth=mm(0.1)).experiment.plan()
+
+    planned()
+    monkeypatch.setattr(tip_contact, "N_REGION", 1)
+    try:
+        planned()
+    except BuildRefused as refused:
+        assert refused.codes() == ["softtissue.tip-shape"], refused.codes()
+        assert "has 3 parameters" in str(refused)
+    else:
+        raise AssertionError("a shape of three parameters planned against an interface of one")

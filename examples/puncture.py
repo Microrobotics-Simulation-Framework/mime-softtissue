@@ -1,7 +1,8 @@
 """A rigid tip pushed into a soft block (gel or clot) through MIME, axisymmetric or in 3-D
 (``mime_softtissue.studies.puncture.puncture_experiment``, the experiment the notebook
 ``notebooks/tutorial_puncture_3d.ipynb`` builds cell by cell): the runs behind its converged curves, each written to a
-run folder with ``puncture.json`` (depth, force and crack area at every step). The run keeps the observations' series
+MIME run folder, read back by ``mime.results.RunResult.read(OUT)`` (depth, force and crack area at every step, with
+their units and flags; the experiment it ran, saved, in ``OUT/experiment``). The run keeps the observations' series
 (``record=``) and the stage's frames, not every node's fields (a 3-D block's history costs minutes to save).
 
     python examples/puncture.py OUT --tip cone --material softtissue.whole_blood_clot --depth 3 --h 0.125
@@ -9,12 +10,11 @@ run folder with ``puncture.json`` (depth, force and crack area at every step). T
 from __future__ import annotations
 
 import argparse
-import json
 import math
 import time
-from pathlib import Path
 
-from mime.units import N, m, m2, mm, mm_per_s
+import numpy as np
+from mime.units import mm, mm_per_s, mN
 from mime_softtissue.studies.puncture import CRACK, FORCE, puncture_experiment, tips
 
 
@@ -52,19 +52,11 @@ def main() -> None:
                                                                      f"{CRACK}.area"], stage_every=p.stage_every,
                                           stop=stop)
     wall = time.perf_counter() - t0
-    run = written.result
-    force = [float(v) for v in run[FORCE].force.values.to(N)]
-    depth = [float(v) * 1e3 for v in run[FORCE].depth.values.to(m)]
-    area = [float(v) * 1e6 for v in run[CRACK].area.values.to(m2)]
-    peak = max(range(len(force)), key=lambda k: force[k])
-    summary = dict(tip=a.tip, material=a.material, dimension=a.dimension, solver=a.solver, symmetry=a.symmetry,
-                   offset_mm=a.offset, h_mm=a.h, fine_mm=a.fine, fine_across_mm=a.fine_across, step_mm=a.step,
-                   speed_mm_s=a.speed, steps=p.steps,
-                   wall_s=wall, depth_mm=depth, force_N=force, crack_area_mm2=area,
-                   peak_N=force[peak], peak_depth_mm=depth[peak], stopped=written.stopped is not None)
-    Path(a.out).joinpath("puncture.json").write_text(json.dumps(summary, indent=1))
-    print(f"peak {force[peak] * 1e3:.3f} mN at {depth[peak]:.3f} mm; {p.steps} steps in {wall:.0f} s "
-          f"(build and compile included)", flush=True)
+    series = written.result[FORCE]
+    force, depth = np.asarray(series.force.values.to(mN)), np.asarray(series.depth.values.to(mm))
+    peak = int(np.argmax(force))
+    print(f"peak {force[peak]:.3f} mN at {depth[peak]:.3f} mm; {p.steps} steps in {wall:.0f} s (build and compile "
+          f"included){'; stopped: ' + str(written.stopped) if written.stopped is not None else ''}", flush=True)
     if not all(math.isfinite(f) for f in force):
         raise SystemExit("a force is not finite")
 

@@ -5,19 +5,19 @@ on Fregonese and Bacca's master curve, Fc / (mu R^2) against mu R / Gc (their Fi
 
 One experiment (``puncture.puncture_experiment``), one study: the needle's radius is the axis (its ``radius`` and its
 ``fillet``, equal for a spherical tip, moved together with ``along``). Everything else is held: the gel, the block, the
-grid, the step. ``python examples/needle_sweep.py OUT --dimension axisymmetric --h 0.1 --depth 8``"""
+grid, the step. The study runs into ``OUT``, a MIME study folder (``mime.results.StudyResult.read(OUT)``: each member's
+depth and force with their units, the base experiment saved, resumable if stopped).
+``python examples/needle_sweep.py OUT --dimension axisymmetric --h 0.1 --depth 8``"""
 from __future__ import annotations
 
 import argparse
-import json
 import time
-from pathlib import Path
 
 import numpy as np
 
 from mime_softtissue.scene import PunchTip
 from mime.study import Study, along
-from mime.units import N, m, mm
+from mime.units import mm, mN
 from mime_softtissue.studies.puncture import FORCE, puncture_experiment
 
 RADII_MM = (0.5, 1.0, 2.0, 4.0)
@@ -44,21 +44,14 @@ def main() -> None:
                                       duration=p.duration, record=[f"{FORCE}.force", f"{FORCE}.depth"])
     print(study.plan(), flush=True)
     t0 = time.perf_counter()
-    result = study.run()
-    wall = time.perf_counter() - t0
-    rows = []
+    result = study.run_to(a.out)
     for k, r in enumerate(radii):
         member = result.member(k)
-        force = np.asarray(member[FORCE].force.values.to(N)).reshape(-1)
-        depth = np.asarray(member[FORCE].depth.values.to(m)).reshape(-1)
+        force = np.asarray(member[FORCE].force.values.to(mN)).reshape(-1)
+        depth = np.asarray(member[FORCE].depth.values.to(mm)).reshape(-1)
         peak = int(np.argmax(force))
-        rows.append(dict(R_mm=r, depth_mm=(depth * 1e3).tolist(), force_N=force.tolist(), peak_N=float(force[peak]),
-                         peak_depth_mm=float(depth[peak] * 1e3)))
-        print(f"R {r} mm: peak {force[peak] * 1e3:.3f} mN at {depth[peak] * 1e3:.3f} mm", flush=True)
-    Path(a.out).mkdir(parents=True, exist_ok=True)
-    Path(a.out, "needle_sweep.json").write_text(json.dumps(dict(dimension=a.dimension, h_mm=a.h, fine_mm=a.fine,
-                                                                block_mm=a.block, step_mm=a.step, wall_s=wall,
-                                                                members=rows), indent=1))
+        print(f"R {r} mm: peak {force[peak]:.3f} mN at {depth[peak]:.3f} mm", flush=True)
+    print(f"{time.perf_counter() - t0:.0f} s; the study folder: {a.out}", flush=True)
 
 
 if __name__ == "__main__":

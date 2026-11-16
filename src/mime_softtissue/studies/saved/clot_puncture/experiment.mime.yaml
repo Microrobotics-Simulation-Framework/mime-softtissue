@@ -62,7 +62,7 @@ things:
       tip:
         solid:
           name: softtissue.cone_tip
-          version: 0.1.0
+          version: 0.2.0
           settings:
             radius:
               value: 0.001

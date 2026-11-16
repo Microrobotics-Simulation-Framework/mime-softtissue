@@ -284,7 +284,7 @@
   }
  ],
  "environment": {
-  "blas_threads": 24,
+  "blas_threads": 2,
   "cpu": {
    "flags_sha256": "5124b048901de4914eb2d5d6d584fa4cc9f80ed3bef810d7beea092108841d56",
    "model": "12th Gen Intel(R) Core(TM) i7-12850HX"
@@ -303,15 +303,15 @@
   "python": "3.12.15",
   "runner": {},
   "runner_info": {},
-  "usable_cpus": 24,
+  "usable_cpus": 2,
   "usd_core": "26.11",
   "x64": true,
   "xla_flags": ""
  },
  "hashes": {
   "derived": "sha256:6b5b530a0afd2bf5cd4b35b364ae2536f35f6d0aa5887dee24a335be1ee8a8c8",
-  "document": "sha256:76d85378c7121be2379ec170d6a8156d7e48d3a4ee34e76522d243d117fe305a",
-  "input": "sha256:b84f90ce3f41aab273bff9155f2aa29328bf18342cd0b1e4164bf4c8db48ae2f",
+  "document": "sha256:786bc36f1245854ae89f9530e53a9162a3cb6ef8f7312ee9f88715cf2ab581f7",
+  "input": "sha256:579b5e0766cc3ee511ff66b65e88dbd3d1de59033406e1608ef1042ffb8adec7",
   "observations": "sha256:becc5b23bd40633d6f28aa98dfde3d89da54473f807763aae4092e4d7b5518cc",
   "recipe": "mime.hash/1"
  },
@@ -324,56 +324,56 @@
     "1": 0.0
    },
    "clot.contact_energy": {
-    "J": 3.5866034372416434e-23
+    "J": 3.2311742677852644e-27
    },
    "clot.crack_area": {
-    "m^2": 8.594923552308803e-25
+    "m^2": 4.0389678347315804e-25
    },
    "clot.crack_energy": {
-    "J": 7.108583389127582e-25
+    "J": 3.3442653671577486e-25
    },
    "clot.d": {
-    "1": 4.683753385137379e-16
+    "1": 2.8102520310824275e-16
    },
    "clot.depth": {
     "m": 8.673617379884035e-19
    },
    "clot.energy": {
-    "J": 2.1750714207081863e-21
+    "J": 3.3699338155410347e-21
    },
    "clot.force": {
-    "N": 1.7943545954635098e-17
+    "N": 2.0328790734103208e-20
    },
    "clot.force_normal": {
-    "N": 1.7943545954635098e-17
+    "N": 2.0328790734103208e-20
    },
    "clot.friction_work": {
     "J": 0.0
    },
    "clot.history": {
-    "J/m^3": 9.606537787476555e-12
+    "J/m^3": 4.831690603168681e-12
    },
    "clot.surface_damage": {
-    "1": 4.683753385137379e-16
+    "1": 2.8102520310824275e-16
    },
    "clot.surface_points": {
-    "m": 1.734723475976807e-18
+    "m": 8.673617379884035e-19
    },
    "clot.tip_pose": {
     "1": 2.220446049250313e-16,
     "m": 8.673617379884035e-19
    },
    "clot.u": {
-    "m": 1.5043305143236374e-18
+    "m": 1.1926223897340549e-18
    },
    "clot.viscous_work": {
-    "J": 4.9729791465132584e-27
+    "J": 5.225414636183982e-27
    },
    "softtissue.crack_size:clot.area": {
-    "m^2": 8.594923552308803e-25
+    "m^2": 4.0389678347315804e-25
    },
    "softtissue.crack_size:clot.largest_area": {
-    "m^2": 8.594923552308803e-25
+    "m^2": 4.0389678347315804e-25
    },
    "softtissue.servo:tip.background": {
     "N": 2.842170943040401e-14,
@@ -391,17 +391,17 @@
     "1": 2.384185791015625e-07
    },
    "softtissue.tip_contact:tip-clot.wrench": {
-    "N": 1.7943545954635098e-17,
+    "N": 1.3552527156068805e-20,
     "N m": 0.0
    },
    "softtissue.tip_force:clot.depth": {
     "m": 8.673617379884035e-19
    },
    "softtissue.tip_force:clot.force": {
-    "N": 1.7943545954635098e-17
+    "N": 2.0328790734103208e-20
    },
    "softtissue.tip_force:clot.puncture_force": {
-    "N": 1.7943545954635098e-17
+    "N": 2.0328790734103208e-20
    },
    "softtissue.tip_force:clot.retrieval_force": {
     "N": 0.0
@@ -420,7 +420,7 @@
   },
   "resolution_factor": 30.0,
   "rtol": 2e-14,
-  "sha256": "sha256:dc9ad55d36004878d3aea782e5bb5933db8e9ce71625b5af7c3897c4264452ec",
+  "sha256": "sha256:2212ccc5c9e4d421b011bc90d1d3174e3521ea72e4ee15b25f5924c8d2911059",
   "steps": 8
  },
  "resolved": {
@@ -665,7 +665,7 @@
          "value": 5e-05
         }
        },
-       "version": "0.1.0"
+       "version": "0.2.0"
       },
       "volume": 1.884955592153876e-08
      }
@@ -816,7 +816,7 @@
  "stage": {
   "file": "scene/scene.usda",
   "layers": {},
-  "sha256": "6fa088e94772c7cf199eb0ab2ba06ca0d7f5ee92d790ea08a93e22cfd47ad5c4",
+  "sha256": "da4cbd22000b56801ba5197efcb6d4252ec755258174a9b8ef07b5e32ae548dc",
   "writer": 2
  }
 }

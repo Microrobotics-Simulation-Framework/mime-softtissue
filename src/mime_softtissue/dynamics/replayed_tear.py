@@ -1,5 +1,5 @@
-"""``softtissue.replayed_tear``: the pure-shear study's saved run (the frames in ``studies/results``) replayed as a body
-whose surface MIME records and shows, coloured by damage. It is a replay, not a simulation: step ``k`` holds frame ``k`` of
+"""``softtissue.replayed_tear``: a saved run of the pure-shear study (its frames, a declared record named by the setting
+``frames``) replayed as a body whose surface MIME records and shows, coloured by damage. It is a replay, not a simulation: step ``k`` holds frame ``k`` of
 a run the engine made outside MIME, so it computes nothing and says so in its validity and its gradient record."""
 
 from __future__ import annotations
@@ -18,13 +18,12 @@ from typing_extensions import ReadOnly, TypedDict
 from mime.build import DynamicsBuilder, ResolvedRegistration
 from mime.core import MimeNode, NodeFields, Units, node_fields, typed_view
 from mime.gradients import GradientStatus
-from mime.registry import (NUMERICAL, BuildContext, Dynamics, GradientRecord, MeshField, Port, SurfaceMesh,
+from mime.registry import (DESIGN, NUMERICAL, BuildContext, Dynamics, GradientRecord, MeshField, Port, SurfaceMesh,
                            convention, register_dynamics)
 from mime.things import ThingKind
 from mime.units import LENGTH, Length, Quantity, mm
 
 from ..studies import results
-from .._vocabulary import VERSION
 
 #: The sheet's thickness (mm) and the test's grip rate (mm/s): the thinning drawn on the front face, and the clock one
 #: frame spacing takes at the rate the specimens were pulled.
@@ -38,12 +37,13 @@ class ReplayState(TypedDict, closed=True):
 
 
 @cache
-def replay(every_column: int, every_frame: int, to_mm: float) -> tuple[Any, ...]:
+def replay(every_column: int, every_frame: int, to_mm: float, frames: str = results.PURE_SHEAR_FRAMES) -> tuple[Any, ...]:
     """The saved run as a surface: ``rest`` ``(V, 3)``, ``faces``, each frame's ``points`` ``(K, V, 3)`` and ``damage``
     ``(K, V)`` (both halves of the sheet, standing upright, the crack plane opened) and the seconds a frame takes.
     Every ``every_column``-th column of the grid and every ``every_frame``-th frame up to ``to_mm`` of grip displacement
-    are kept. The front face is displaced by the sheet's thinning, ``1 / det F`` (display only)."""
-    f = results.frames()
+    are kept, from the record ``frames``. The front face is displaced by the sheet's thinning, ``1 / det F`` (display
+    only)."""
+    f = results.frames(frames)
     x, y = f["x_nodes_mm"], f["y_nodes_mm"]
     cols = np.unique(np.r_[np.arange(0, len(x), every_column), len(x) - 1])
     steps = f["frames_step"]
@@ -77,11 +77,13 @@ def replay(every_column: int, every_frame: int, to_mm: float) -> tuple[Any, ...]
 class ReplayNode(MimeNode):
     """Frame ``k`` at step ``k``, the last one held after the run's end."""
 
-    def __init__(self, name: str, timestep: float, *, every_column: int, every_frame: int, to_mm: float) -> None:
+    def __init__(self, name: str, timestep: float, *, every_column: int, every_frame: int, to_mm: float,
+                 frames: str) -> None:
         super().__init__(name, timestep, every_column=int(every_column), every_frame=int(every_frame),
-                         to_mm=float(to_mm))
+                         to_mm=float(to_mm), frames=str(frames))
         own = self.constants()
-        _, _, self._points, self._damage, _ = replay(own["every_column"], own["every_frame"], own["to_mm"])
+        _, _, self._points, self._damage, _ = replay(own["every_column"], own["every_frame"], own["to_mm"],
+                                                     own["frames"])
 
     def _at(self, frame: Array, dtype: Any) -> NodeFields:
         k = jnp.clip(frame, 0, len(self._points) - 1)
@@ -102,14 +104,15 @@ class ReplayNode(MimeNode):
 @register_dynamics
 @dataclass(frozen=True, kw_only=True)
 class ReplayedTear(Dynamics):
-    """The pure-shear study's group-4 sheet tearing, replayed from its saved frames (both halves, the crack plane
-    opened), its surface coloured by the phase field's damage (0 to 1). Every ``every_column``-th grid column and
+    """A pure-shear sheet tearing, replayed from the saved frames the record ``frames`` holds (by default the study's
+    group-4 run; both halves, the crack plane opened), its surface coloured by the phase field's damage (0 to 1). Every ``every_column``-th grid column and
     every ``every_frame``-th frame up to the grip displacement ``to_mm`` are kept, which sets the size of the page. One
     step is one kept frame: set the experiment's base step to ``step_seconds`` (the test's clock at 0.1 mm/s) for the
     page's time to be the test's."""
 
     name = "softtissue.replayed_tear"
-    version = VERSION
+    #: 0.2.0: the frames are a declared record, named by the setting ``frames`` (0.1.0 read a file in the package).
+    version = "0.2.0"
     unmetered = "a replay of a run the engine made outside MIME, which kept its own energy account"
     differentiability = GradientStatus.CUT
     gradient = GradientRecord(
@@ -125,16 +128,23 @@ class ReplayedTear(Dynamics):
     builds = {"": (ReplayNode,)}
     applies_to = frozenset({ThingKind.BODY})
     initial_state = {"position": LENGTH}
-    setting_roles = {"every_column": convention(NUMERICAL, "the grid columns kept, a size choice for the page"),
+    setting_roles = {"frames": convention(DESIGN, "the study's group-4 run at h = 0.0625 mm, the tear its notebook shows"),
+                     "every_column": convention(NUMERICAL, "the grid columns kept, a size choice for the page"),
                      "every_frame": convention(NUMERICAL, "the frames kept, a size choice for the page"),
                      "to_mm": convention(NUMERICAL, "the last grip displacement shown, just past the crack's run "
                                                     "through the sheet")}
+    #: The record of the run's frames (``studies.results.frames`` reads it).
+    frames: str = results.PURE_SHEAR_FRAMES
     every_column: int = 4
     every_frame: int = 1
     to_mm: Annotated[Quantity, Length] = mm(3.6)
 
+    @override
+    def assets_read(self) -> tuple[str, ...]:
+        return (self.frames,)
+
     def _replayed(self) -> tuple[Any, ...]:
-        return replay(self.every_column, self.every_frame, float(getattr(self.to_mm, "value")) * 1e3)
+        return replay(self.every_column, self.every_frame, float(self.to_mm.to(mm)), self.frames)
 
     @property
     def step_seconds(self) -> float:
@@ -148,7 +158,7 @@ class ReplayedTear(Dynamics):
 
     @override
     def surface_meshes(self, settings: Mapping[str, Any]) -> tuple[SurfaceMesh, ...]:
-        rest, faces, *_ = replay(self.every_column, self.every_frame, float(settings["to_mm"]) * 1e3)
+        rest, faces, *_ = replay(self.every_column, self.every_frame, float(settings["to_mm"]) * 1e3, self.frames)
         return (SurfaceMesh("sheet", rest, faces, Port("points"),
                             (MeshField("damage", "1", Port("damage"), (0.0, 1.0), reduction="max"),),
                             display="extruded"),)
@@ -156,4 +166,4 @@ class ReplayedTear(Dynamics):
     @override
     def build(self, ctx: BuildContext, b: DynamicsBuilder, registrations: Sequence[ResolvedRegistration]) -> None:
         b.add_node(ReplayNode(ctx.node_name(), ctx.timestep, every_column=self.every_column,
-                              every_frame=self.every_frame, to_mm=ctx.scalar("to_mm") * 1e3))
+                              every_frame=self.every_frame, to_mm=ctx.scalar("to_mm") * 1e3, frames=self.frames))
