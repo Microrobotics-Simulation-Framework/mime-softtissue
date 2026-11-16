@@ -47,3 +47,18 @@ x1.03-1.10; mean 0.977-1.008 at every kappa on both grids. The axisymmetric punc
 - **The punch, finer and with half the step** (step 0.02 mm at h 0.0354 and 0.025, both treatments; h 0.0177 at 0.04 mm,
   both): the gap at the peak <= 4 % at h 0.025 and 0.0177 (it closes); the mean peak at h 0.0177 in 11.0-12.2 mN; halving
   the step moves the sampled peak by <= 2 %; peak / F(0.04) within 3 % across h 0.05 to 0.0177 for mean.
+
+## Round 3 (runners): the punch at HERTZ-CHECK's axisymmetric settings, written 21:3x CET (the commit time rules)
+
+(Round 2's header said 21:20; its commit is 21:17:59.) HERTZ-CHECK's apparent limit, 11.5-11.7 mN, is its axisymmetric
+build at h 0.0354 / 0.025: full integration (spike 3D-PUNCTURE's arm 2: steps 0.02 mm, no viscosity, Newton cap 100,
+block 5, fine 1.0). Its ladder: 10.26 / 10.99 / 11.99 / 11.51 / 11.67 mN at h 0.1 / 0.0707 / 0.05 / 0.0354 / 0.025.
+Informed by round 1 (the same punch through MIME, 0.04 mm steps, viscosity 0.1 Gc/l: gauss 10.46 / 11.18 / 12.19 / 12.04,
+mean 9.01 / 10.01 / 11.27 / 11.75 / 11.29).
+
+- **Settings identity:** gauss on this engine reproduces that ladder within 0.5 % at every depth (the same arithmetic;
+  bit for bit only if nothing in the engine's path moved since).
+- **mean**, h 0.1 / 0.0707 / 0.05 / 0.0354 / 0.025: 8.6-9.4 / 9.6-10.4 / 10.8-11.6 / 11.0-11.7 / 11.0-11.7 mN; the gap to
+  gauss 12-18 / 8-14 / 4-10 / 0-4 / 0-4 %. At h 0.0177 both within 11.0-11.9 mN and within 3 % of each other.
+- **Judgement it would support:** the converged peak about 11.2-11.7 mN; full integration's limit inflated by locking by at
+  most about 4 % at h/l <= 0.35. If mean at h 0.025 and 0.0177 reads below 10.9 mN, I am wrong and the limit is inflated.
