@@ -17,8 +17,8 @@ import numpy as np
 
 import mime_softtissue.entries as st
 from mime.study import Study, along
-from mime.units import N, m, mm
-from mime_softtissue.studies.puncture import FORCE, puncture_experiment
+from mime.units import N, m, m2, mm
+from mime_softtissue.studies.puncture import CRACK, FORCE, puncture_experiment
 
 RADII_MM = (0.5, 1.0, 2.0, 4.0)
 
@@ -33,15 +33,17 @@ def main() -> None:
     ap.add_argument("--step", type=float, default=0.05, help="mm")
     ap.add_argument("--depth", type=float, default=8.0, help="mm")
     ap.add_argument("--radii", default=",".join(str(r) for r in RADII_MM), help="mm")
+    ap.add_argument("--material", default="softtissue.puncture_gel", help="the gel's record")
     a = ap.parse_args()
     radii = [float(r) for r in a.radii.split(",")]
     needle = st.PunchTip(radius=mm(radii[0]), fillet=mm(radii[0]), length=mm(a.block))
-    p = puncture_experiment(material="softtissue.puncture_gel", tip=needle, dimension=a.dimension, resolution=mm(a.h),
+    p = puncture_experiment(material=a.material, tip=needle, dimension=a.dimension, resolution=mm(a.h),
                             step=mm(a.step), depth=mm(a.depth), block_radius=mm(a.block), block_height=mm(a.block),
                             fine=mm(a.fine), name="needle_sweep")
     study = Study(p.experiment).sweep(along({"tip.parts.tip.radius": [mm(r) for r in radii],
                                              "tip.parts.tip.fillet": [mm(r) for r in radii]}),
-                                      duration=p.duration, record=[f"{FORCE}.force", f"{FORCE}.depth"])
+                                      duration=p.duration,
+                                      record=[f"{FORCE}.force", f"{FORCE}.depth", f"{CRACK}.area"])
     print(study.plan(), flush=True)
     t0 = time.perf_counter()
     result = study.run()
@@ -51,12 +53,14 @@ def main() -> None:
         member = result.member(k)
         force = np.asarray(member[FORCE].force.values.to(N)).reshape(-1)
         depth = np.asarray(member[FORCE].depth.values.to(m)).reshape(-1)
+        area = np.asarray(member[CRACK].area.values.to(m2)).reshape(-1)
         peak = int(np.argmax(force))
         rows.append(dict(R_mm=r, depth_mm=(depth * 1e3).tolist(), force_N=force.tolist(), peak_N=float(force[peak]),
-                         peak_depth_mm=float(depth[peak] * 1e3)))
+                         peak_depth_mm=float(depth[peak] * 1e3), crack_area_m2=area.tolist()))
         print(f"R {r} mm: peak {force[peak] * 1e3:.3f} mN at {depth[peak] * 1e3:.3f} mm", flush=True)
     Path(a.out).mkdir(parents=True, exist_ok=True)
-    Path(a.out, "needle_sweep.json").write_text(json.dumps(dict(dimension=a.dimension, h_mm=a.h, fine_mm=a.fine,
+    Path(a.out, "needle_sweep.json").write_text(json.dumps(dict(material=a.material, dimension=a.dimension, h_mm=a.h,
+                                                                fine_mm=a.fine,
                                                                 block_mm=a.block, step_mm=a.step, wall_s=wall,
                                                                 members=rows), indent=1))
 

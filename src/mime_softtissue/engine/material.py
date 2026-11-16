@@ -10,7 +10,17 @@ feeds it (plane strain, incompressible plane stress, axisymmetric; a 3-D kinemat
 
 Damage degrades the isochoric, fibre and dilatational parts, never volumetric compression. With c2 = c3 = 0 the law is
 neo-Hookean; the Yeoh terms are polynomials in x, so every derivative is smooth at the undeformed state (an Ogden law's
-are not). No MIME import."""
+are not). No MIME import.
+
+Gent's stiffening (optional, ``Material.gent_jm``): the neo-Hookean term (mu / 2) x is replaced by
+
+    psi_gent = -(mu Jm / 2) ln(1 - x / Jm)          for x <= x* = Jm (1 - GENT_CUT),
+    psi_gent(x*) + psi_gent'(x*) (x - x*)            beyond (continued linearly: C1, finite everywhere),
+
+the same shear modulus mu at small strain, stiffening without bound as x nears Jm. The continuation keeps the energy
+finite, so a damaged band can still open past the limit (k_res times a locking law would hold a crack shut), and a
+Newton trial step past the limit reads a finite energy; an undamaged point reaches it only at a stress 1 / GENT_CUT
+times the neo-Hookean one at the same x. Invariant-based like the rest (no eigenvalues); Yeoh's c2, c3 still add."""
 
 from __future__ import annotations
 
@@ -31,7 +41,7 @@ class Fibre(NamedTuple):
 class Material(NamedTuple):
     """The numbers a step reads (a pytree: derivatives reach every field). ``gc`` and ``l`` are the fracture
     model's toughness and length scale; ``stretch_limit`` is read only by the element-deletion control. ``c2``, ``c3``:
-    Yeoh's stiffening (Pa; C1 = mu / 2)."""
+    Yeoh's stiffening (Pa; C1 = mu / 2). ``gent_jm``: Gent's limit on x (None: no Gent term)."""
 
     mu: Any
     kappa: Any
@@ -42,6 +52,19 @@ class Material(NamedTuple):
     fibre: Fibre | None = None
     c2: Any = 0.0
     c3: Any = 0.0
+    gent_jm: Any = None
+
+
+#: Where Gent's logarithm hands over to its linear continuation: 1 - x* / Jm (the stress there is 1 / GENT_CUT times
+#: the neo-Hookean one at the same x).
+GENT_CUT = 1e-3
+
+
+def gent_energy(x: jax.Array, mu: Any, jm: Any) -> jax.Array:
+    """Gent's isochoric energy at ``x`` = J^(-2/3) I1 - 3, continued linearly past x* = jm (1 - GENT_CUT)."""
+    x_star = jm * (1.0 - GENT_CUT)
+    inside = -0.5 * mu * jm * jnp.log1p(-jnp.minimum(x, x_star) / jm)
+    return inside + (0.5 * mu / GENT_CUT) * jnp.maximum(x - x_star, 0.0)
 
 
 def shear_and_bulk(young: Any, poisson: Any) -> tuple[Any, Any]:
@@ -55,7 +78,8 @@ def energy_parts(J: jax.Array, I1: jax.Array, fibre_invariants: tuple[jax.Array,
     ok = J > 0
     Js = jnp.where(ok, J, 1.0)
     x = Js ** (-2.0 / 3.0) * I1 - 3.0
-    iso = 0.5 * mat.mu * x + mat.c2 * x ** 2 + mat.c3 * x ** 3
+    base = 0.5 * mat.mu * x if mat.gent_jm is None else gent_energy(x, mat.mu, mat.gent_jm)
+    iso = base + mat.c2 * x ** 2 + mat.c3 * x ** 3
     vol = 0.25 * mat.kappa * (Js ** 2 - 1.0 - 2.0 * jnp.log(Js))
     fibre = jnp.zeros((), dtype=J.dtype)
     if mat.fibre is not None:
