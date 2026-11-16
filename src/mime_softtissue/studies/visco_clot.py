@@ -263,11 +263,11 @@ def rate_consistent_scale(prony: Prony, grip_rate: float = BASE_GRIP_RATE, stret
     return s, float(np.sqrt(np.mean((s * v - e) ** 2)) / e.max())
 
 
-#: The demo's betas: fitted on samples 4..7 with tau held at ``PUBLISHED_TAU`` (RMS 3.4 % of each sample's peak; per
-#: sample beta_1 runs 0.51..2.29 from 10 to 40 % strain, beta_2 0.12..0.15). Valid for clamp stretch 1.0..1.4, a grip
+#: The demo's betas: fitted on samples 4..7 with tau held at ``PUBLISHED_TAU`` (RMS 3.5 % of each sample's peak; per
+#: sample beta_1 runs 0.51..2.46 from 10 to 40 % strain, beta_2 0.15..0.19). Valid for clamp stretch 1.0..1.4, a grip
 #: rate of 0.01 /s and times 0.1..300 s, on this data set's clot (species not stated, 3 to 4 times stiffer than
 #: Lohr's human clots); anything else (puncture's stretches, other rates, the human clot) is an extrapolation.
-DEMO_BETA = (0.9206, 0.1832)
+DEMO_BETA = (0.8759, 0.2189)
 
 
 def demo_prony() -> Prony:
