@@ -131,6 +131,12 @@ class BlockInputs(TypedDict, closed=True):
     indenter: NotRequired[ReadOnly[Float[Array, " n"]]]
 
 
+def gent_leaf(gent_jm: float) -> dict[str, float]:
+    """The node's ``gent_jm`` leaf where the record has Gent's limit; none otherwise, so that a record without it
+    builds the same parameters as before Gent was added."""
+    return {"gent_jm": float(gent_jm)} if gent_jm else {}
+
+
 def unpack(v: Array, names: Sequence[str]) -> dict[str, Any]:
     """The law's vector as the contact's traced numbers (``ShapeTip``'s fields and the interface's)."""
     k = 19 + N_REGION  # a shape of fewer parameters is padded (``softtissue.tip_contact``)
@@ -145,13 +151,13 @@ class BlockNode(MimeNode):
     def __init__(self, name: str, timestep: float, *, radius: float, height: float, h: float, fine: float,
                  young: float, poisson: float, toughness: float, length_scale: float, stretch_limit: float,
                  residual: float, viscosity: float, origin: Sequence[float], shape: str, mode: str,
-                 lag_relaxation: float = 0.5, yeoh_c2: float = 0.0) -> None:
+                 lag_relaxation: float = 0.5, yeoh_c2: float = 0.0, gent_jm: float = 0.0) -> None:
         super().__init__(name, timestep, radius=float(radius), height=float(height), h=float(h), fine=float(fine),
                          young=float(young), poisson=float(poisson), toughness=float(toughness),
                          length_scale=float(length_scale), stretch_limit=float(stretch_limit),
                          residual=float(residual), viscosity=float(viscosity),
                          origin=tuple(float(c) for c in origin), shape=str(shape), mode=str(mode),
-                         lag_relaxation=float(lag_relaxation), yeoh_c2=float(yeoh_c2))
+                         lag_relaxation=float(lag_relaxation), yeoh_c2=float(yeoh_c2), **gent_leaf(gent_jm))
         self._solvers: tuple[Solver, Solver] | None = None
 
     def solvers(self) -> tuple[Solver, Solver]:
@@ -214,7 +220,7 @@ class BlockNode(MimeNode):
         given = unpack(jnp.asarray(v, dtype=dtype), names)
         depth = self.tip_depth(given, dtype)
         tip = dict(given, depth_ref=depth)
-        mat = engine_material(p, self.constants()["mode"])
+        mat = engine_material(p, self.constants()["mode"], gent="gent_jm" in self.constants())
         inserting, withdrawing = self.solvers()
         start = State(last["u"], last["d"], last["history"], jnp.maximum(last["depth"], 0.0))
 
@@ -297,13 +303,14 @@ class Block3DNode(MimeNode):
     def __init__(self, name: str, timestep: float, *, radius: float, height: float, h: float, fine: float,
                  young: float, poisson: float, toughness: float, length_scale: float, stretch_limit: float,
                  residual: float, origin: Sequence[float], shape: str, yeoh_c2: float = 0.0,
-                 solver: str = "tip3d", symmetry: str = "quarter", fine_across: float = 0.8e-3) -> None:
+                 solver: str = "tip3d", symmetry: str = "quarter", fine_across: float = 0.8e-3,
+                 gent_jm: float = 0.0) -> None:
         super().__init__(name, timestep, radius=float(radius), height=float(height), h=float(h), fine=float(fine),
                          fine_across=float(fine_across),
                          young=float(young), poisson=float(poisson), toughness=float(toughness),
                          length_scale=float(length_scale), stretch_limit=float(stretch_limit),
                          residual=float(residual), origin=tuple(float(c) for c in origin), shape=str(shape),
-                         yeoh_c2=float(yeoh_c2), solver=str(solver), symmetry=str(symmetry))
+                         yeoh_c2=float(yeoh_c2), solver=str(solver), symmetry=str(symmetry), **gent_leaf(gent_jm))
         self._engine: _LawTip | None = None
 
     def engine(self) -> _LawTip:
@@ -311,7 +318,8 @@ class Block3DNode(MimeNode):
             own = self.constants()
             mu, kappa = shear_and_bulk(own["young"], own["poisson"])
             mat = Material(mu=mu, kappa=kappa, gc=own["toughness"], l=own["length_scale"], k_res=own["residual"],
-                           stretch_limit=own["stretch_limit"], c2=own["yeoh_c2"])
+                           stretch_limit=own["stretch_limit"], c2=own["yeoh_c2"],
+                           gent_jm=own.get("gent_jm"))
             block = p3.Block(half_width=own["radius"], height=own["height"], h=own["h"], symmetry=own["symmetry"],
                              fine_xy=own["fine_across"], fine_z=own["fine"])
             self._engine = _LawTip(block, mat, SOLVERS[own["solver"]], own["shape"], own["origin"])
@@ -396,7 +404,8 @@ class GelBlock(Dynamics):
     ``position``), its side and top free, pressed and pulled by a coaxial rigid tip through a law
     (``softtissue.tip_contact``); grid spacing ``h`` within ``fine`` of the axis and of the top (in 3-D within
     ``fine_across`` of the axis and ``fine`` of the top), graded beyond; the
-    material from the record ``material`` (a Yeoh term where the record has ``yeoh_c2``); fracture by the AT2 phase
+    material from the record ``material`` (a Yeoh term where the record has ``yeoh_c2``, Gent's where it has
+    ``gent_jm``); fracture by the AT2 phase
     field with a viscous term ``viscosity`` (in units of Gc/l), or, as a control, element deletion (``mode="local"``).
     ``tip_shape`` names the registered shape the tip's geometry kind evaluates (the law cannot hand a name to the
     block's build). ``dimension``: ``"axisymmetric"`` (a cylinder of ``radius``), or ``"3d"`` (a square block
@@ -508,7 +517,7 @@ class GelBlock(Dynamics):
                 poisson=values["poisson_ratio"], toughness=values["toughness"], length_scale=values["length_scale"],
                 stretch_limit=values["stretch_limit"], residual=values.get("residual_stiffness", 1e-6), origin=origin,
                 shape=self.tip_shape, yeoh_c2=values.get("yeoh_c2", 0.0), solver=self.solver,
-                symmetry=self.symmetry))
+                symmetry=self.symmetry, gent_jm=values.get("gent_jm", 0.0)))
             return
         b.add_node(BlockNode(
             ctx.node_name(), ctx.timestep, radius=ctx.scalar("radius"), height=ctx.scalar("height"),
@@ -516,7 +525,8 @@ class GelBlock(Dynamics):
             poisson=values["poisson_ratio"], toughness=values["toughness"], length_scale=values["length_scale"],
             stretch_limit=values["stretch_limit"], residual=values.get("residual_stiffness", 1e-6),
             viscosity=self.viscosity, origin=origin, shape=self.tip_shape, mode=self.mode,
-            lag_relaxation=self.lag_relaxation, yeoh_c2=values.get("yeoh_c2", 0.0)))
+            lag_relaxation=self.lag_relaxation, yeoh_c2=values.get("yeoh_c2", 0.0),
+            gent_jm=values.get("gent_jm", 0.0)))
 
 
 def _components(value: Any) -> tuple[Any, ...]:

@@ -37,7 +37,7 @@ def test_every_record_is_listed():
     listed = json.loads((RECORDS / "records.json").read_text())["assets"]
     materials = {a["name"] for a in listed if not a["name"].startswith(RESULTS)}
     assert materials == {"softtissue_fibrin_plasma", "softtissue_gel_placeholder", "softtissue_clot_lab_placeholder",
-                         "softtissue.whole_blood_clot", "softtissue.puncture_gel"}
+                         "softtissue.whole_blood_clot", "softtissue.puncture_gel", "softtissue.puncture_gel_gent"}
     for entry in listed:
         assert reference(entry["name"]).name == entry["name"]
 

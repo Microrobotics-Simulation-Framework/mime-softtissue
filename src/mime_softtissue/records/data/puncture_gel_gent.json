@@ -1,0 +1,22 @@
+{
+ "about": "The soft triblock-copolymer gel of Fakhouri, Hutchens and Crosby (2015, Soft Matter 11, 4723), punctured by sphere-tipped needles, with the constants as Fregonese and Bacca (2021, J. Mech. Phys. Solids, doi:10.1016/j.jmps.2021.104497; arXiv 2412.09809, p. 9) state them, and a Gent stiffening refitted to stand in for their unmeasured Ogden alpha = 9. Every value is labelled by its source; a value marked placeholder is not a measurement.",
+ "values": {
+  "young_modulus": 21456.0,
+  "poisson_ratio": 0.49,
+  "toughness": 25.0,
+  "length_scale": 0.0005,
+  "stretch_limit": 2.0,
+  "residual_stiffness": 1e-06,
+  "gent_jm": 9.3119
+ },
+ "labels": {
+  "young_modulus": "derived: 2 mu (1 + nu) with mu = 7.2 kPa (read: Fregonese and Bacca, p. 9, from Fakhouri et al.) and the placeholder nu",
+  "poisson_ratio": "placeholder: the gel is nearly incompressible; 0.49 (kappa about 49.7 mu) is declared, not measured: at the neo-Hookean record's 0.45 a compressible Gent dilates instead of stiffening near its limit",
+  "toughness": "read: Fregonese and Bacca, p. 9: Gc = 25 J/m^2 for Fakhouri et al.'s gel",
+  "length_scale": "placeholder: the AT2 length scale is not a property the source states; it sets the model's strength (about sqrt(E Gc / l)), so it is a declared choice to be tested, not a value; 0.5 mm as the neo-Hookean record",
+  "stretch_limit": "placeholder (read only by the element-deletion control)",
+  "residual_stiffness": "numerical: the fully damaged material's share of stiffness",
+  "gent_jm": "refit: a Gent stand-in for Fregonese and Bacca's Ogden alpha = 9 (their choice, not measured: p. 9); mu held at 7.2 kPa, Jm fitted to alpha = 9's incompressible uniaxial and equibiaxial nominal stress over x = I1 - 3 up to 9.31 (the range the neo-Hookean needle runs reach at puncture, measured); two modes, equal weight; Gent cannot follow alpha = 9 over that range (rms of the log stress ratio 2.86), so Jm sits just above the range's top; it does not reproduce alpha = 9's indentation force (-31 % at d/R = 3, where Jm = 2.0 does)"
+ },
+ "model": "compressible Gent (the plugin's law with gent_jm) with an AT2 phase field; Gent depends on I1 alone, so it cannot match Ogden alpha = 9 in uniaxial and equibiaxial tension at once (see the gent_jm label)"
+}
