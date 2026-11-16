@@ -1,0 +1,11 @@
+{
+ "force_last": 0.025590959979068306,
+ "displacement_last": 0.0005500000000000001,
+ "n": 11,
+ "wall_s": 18.246083974838257,
+ "hashes": {
+  "force": "438a38c5b82ac522175bd2715045f4e5ea32a0ea1c1ff889a88e6b24bf6f88f3",
+  "displacement": "eba366d1bff37ed571403faab9cd07d8d172a6ce55cf317057b7c17630330c8b",
+  "crack_length": "ee2bb968b3c55690b164e7e01b88ce03cf2edaaaa464f42068ef6f7b5d114731"
+ }
+}

@@ -1,0 +1,11 @@
+{
+ "peak_step": 48,
+ "peak_force": 0.21968179212502445,
+ "derivative": -11.334597932101328,
+ "log_derivative": -0.5417530380457365,
+ "wall_s": 229.0144772529602,
+ "hashes": {
+  "force": "d782a05f732e0adda89c16737a4d3c2411600b59405b85df6b1f59edcf5007dd",
+  "dforce": "949e7e548e3eaf065f55e4f655df8bdf735e4dab7fcd3a3fc57cbb24cbe15119"
+ }
+}

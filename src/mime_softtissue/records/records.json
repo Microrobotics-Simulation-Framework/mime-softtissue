@@ -1,0 +1,52 @@
+{
+ "about": "The soft-tissue plugin's records: published fibrin values (open, in the package), a placeholder gel, and a placeholder for a lab's private data (its own licence, referenced, never shipped).",
+ "assets": [
+  {
+   "name": "softtissue_fibrin_plasma",
+   "sha256": "da7fcacbb27a226792c980e7ce57f5cfaf93a087dd4acafa64b576a1a37827a9",
+   "size": 1301,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/fibrin_plasma_tutwiler2020.json"
+   ],
+   "credit": "values from Tutwiler et al. 2020 (Sci. Adv. 6:eabc0496) and 2021 (Acta Biomater. 131:355); record by the plugin's authors",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue_clot_lab_placeholder",
+   "sha256": "b4b497a8bcd8602f892589a908eb57f9eb29bdef19ca7f1cae5df4dce42adef3",
+   "size": 293,
+   "licence": "LicenseRef-softtissue-lab-placeholder",
+   "licences": {
+    "LicenseRef-softtissue-lab-placeholder": {
+     "title": "A lab's data licence (placeholder) 0.1",
+     "url": "https://example.org/softtissue-lab-placeholder-licence",
+     "redistribution": "unknown",
+     "conditions": [
+      "non-commercial use only",
+      "cite the lab's dataset"
+     ]
+    }
+   },
+   "locations": [
+    "https://example.org/softtissue-lab/clot_lab_placeholder.json"
+   ],
+   "credit": "a lab (placeholder)",
+   "role": "results",
+   "kind": "measured"
+  },
+  {
+   "name": "softtissue_gel_placeholder",
+   "sha256": "6404f198fa721920935372386280081fc6720acb51c3639eb4e137b02eaf42f1",
+   "size": 704,
+   "licence": "CC0-1.0",
+   "locations": [
+    "package:softtissue/data/gel_placeholder.json"
+   ],
+   "credit": "placeholder values by the plugin's authors",
+   "role": "results",
+   "kind": "authored"
+  }
+ ]
+}

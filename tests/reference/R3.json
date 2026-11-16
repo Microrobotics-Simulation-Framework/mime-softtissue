@@ -1,0 +1,15 @@
+{
+ "peak_force": 0.2136146193888195,
+ "delta_star": 0.0057,
+ "peak_step": 56,
+ "G_exact": 4.951014136436547,
+ "G_linear": 5.8902122838947895,
+ "wall_s": 67.4202344417572,
+ "hashes": {
+  "force": "35c3dbda7eed5cd6200dcfca35ed9ab9e43a0e9d7113054ed547e164b5164d66",
+  "energy": "af5b489aa2d5caf0cfcaac1019079ac0a505c0fe73a7b3c74c5ab7d9f4315ddd",
+  "delta": "18d54c30cfed2c3fe7188449f86f4e8c22d77782afa835680dfa7bcd147b0066",
+  "iterations": "3f357346c2f8bfd1779f4877d65fdc460717bda57abf1c15699a6f409e63e127",
+  "final_u": "0e1668cb801496e7b6487bdfa09286b6b806b270af1bffa144170a910c931bf7"
+ }
+}

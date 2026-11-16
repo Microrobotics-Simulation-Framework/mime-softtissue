@@ -1,0 +1,17 @@
+{
+ "peak_force_parabola": 0.21973400280427058,
+ "delta_star_parabola": 0.00740525436527826,
+ "peak_step": 98,
+ "peak_force_raw": 0.2197273123705492,
+ "steps": 102,
+ "wall_s": 85.4885663986206,
+ "hashes": {
+  "force": "08338c896fd8d296e2d821bba96ced64b6b2da1c45ef6bd4de2d5e7f8a73ee0d",
+  "energy": "5e3ff1eb5b0ef61e82d06d67d5c5fd9d9645a5cbe2796f85d5348b4ce31f8524",
+  "crack_energy": "53dccfc246f6b27c22573a527367c3c52b3e6cf1e31c024ad59ffd0b84628a57",
+  "delta": "285f50e4aa758911dcf171e00aad80f35479d9fb42886dc00030832d8e35cdef",
+  "iterations": "1b4e3d028479de23ce11f9f8127433c61eb82f116c54067cb50bd85b8f98fa6f",
+  "newton": "c62a1d292f3b7d833346673ed4964688d850be91fcb2dff1d1fe4725ff71cd24",
+  "final_u": "153017b8ae85451bcbf2265aa4ce62fd5e9db0a61eb89473167b3e6ceabd192a"
+ }
+}

@@ -1,0 +1,10 @@
+{"about": "Human plasma fibrin gel (fibrinogen 2.7 g/L), quasi-static tension. Every value is labelled by its source; a value marked placeholder or derived is not a measurement.",
+ "values": {"young_modulus": 5700.0, "poisson_ratio": 0.3, "toughness": 7.6, "length_scale": 0.0003, "stretch_limit": 2.8, "residual_stiffness": 1e-06},
+ "labels": {
+  "young_modulus": "read: Tutwiler et al. 2021, Acta Biomater. 131:355, Table II, network modulus Y_max of the uncracked gel (5.7 +- 0.2 kPa), used as a small-strain Young's modulus (an approximation)",
+  "poisson_ratio": "placeholder (the gel loses volume in tension; no value read)",
+  "toughness": "read: Tutwiler et al. 2020, Sci. Adv. 6:eabc0496, Gc = 7.6 +- 0.45 J/m^2, edge-notch tension",
+  "length_scale": "derived: AT2 l = 27 E Gc / (256 sigma_c^2) = 0.27 mm with sigma_c = 4.1 kPa (read: Tutwiler et al. 2021, Table I, uncracked critical stress), rounded to 0.3 mm",
+  "stretch_limit": "read: Tutwiler et al. 2020, stretch 2.8 (log strain 1.04) 100 um ahead of the tip at fracture; used only by the local-softening control",
+  "residual_stiffness": "numerical: the fully damaged material's share of stiffness"},
+ "model": "decoupled compressible neo-Hookean; the paper's fibre law is not used (its parameters are not stated in the text read)"}

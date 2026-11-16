@@ -1,0 +1,7 @@
+{"about": "A placeholder gel for the puncture and retrieval prototype: every value is a placeholder chosen to sit near soft hydrogels, not a measurement of any gel or clot.",
+ "values": {"young_modulus": 50000.0, "poisson_ratio": 0.4, "toughness": 1.0, "length_scale": 0.0001, "stretch_limit": 2.0, "residual_stiffness": 1e-06},
+ "labels": {
+  "young_modulus": "placeholder", "poisson_ratio": "placeholder", "toughness": "placeholder",
+  "length_scale": "placeholder", "stretch_limit": "placeholder (read only by the element-deletion control)",
+  "residual_stiffness": "numerical: the fully damaged material's share of stiffness"},
+ "model": "decoupled compressible neo-Hookean with an AT2 phase field"}

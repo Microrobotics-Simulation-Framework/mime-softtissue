@@ -1,0 +1,48 @@
+# The record's manifest for `mime push`: what is shared ([bundle]) and the record's metadata ([record]).
+# [record] is metadata: a change there is a metadata edit of the record, never a new version. `mime pack`
+# neither carries nor refuses this file. Edit it by hand or with `mime push <folder> --setup`; `mime check
+# <folder>` checks it.
+format = "mime.toml/1"
+
+# The experiment's own licence, which covers its files: it must equal the licence the experiment declares
+# (exp.licence(...), bound to its files when it is saved). The experiment declares CC-BY-4.0.
+[bundle]
+licence = "CC-BY-4.0"
+
+[record]
+title = "Edge-notched fibrin strip in tension, phase-field model (softtissue plugin benchmark)"
+# A paragraph shown above the card, which is the record's description; empty for the card alone.
+description = "A plane-strain edge-notched strip pulled at 3 mm/min, notch 10.5 mm, h = 0.3 mm, from the mime-softtissue plugin. The model, not a measurement of fibrin: the grip spacing is assumed and the Poisson ratio is a placeholder."
+# Each person who made it, as the record names them: family and given names, an ORCID iD where they
+# have one, an affiliation (with its ROR identifier where you know it). Everyone named must have
+# agreed to be named. One a line, for example:
+#   { family = "Carberry", given = "Josiah", orcid = "0000-0002-1825-0097", affiliation = "Brown University" },
+creators = []
+# Others credited, each with a DataCite contributor type (DataCurator, Supervisor,
+# HostingInstitution, ...). The rights holder of each third-party file is added by push from the
+# files' terms.
+contributors = []
+# Searchable words; push adds mime-experiment.
+keywords = ["microrobotics", "fracture", "phase field", "fibrin"]
+# Papers and other works: a DOI or an https:// address, and DataCite's relation (IsSupplementTo for a
+# paper it supports, References, IsDerivedFrom, ...). push adds the MIME release it requires.
+related = []
+# Works whoever uses this is asked to cite as well (a paper, once published: a metadata edit): a DOI
+# or an https:// address, and how it is cited. The card ends with them, and push states each as
+# IsSupplementTo unless related names it.
+also_cite = []
+# The person whose token pushes, and their institution: a declared permission's grantee must be one
+# of them.
+# uploader = { name = "<family name>, <given name>", institution = "<your institution>" }
+# Who funded the work: each funder's name (with its ROR identifier where you know it), and the
+# award's number and title. For example:
+#   { funder = "European Commission", ror = "00k4n6c32", award = "101001234", title = "<the award's title>" },
+funding = []
+# A conference it was shown at (Zenodo's meeting field): title, acronym, dates, place, url,
+# session, part.
+# conference = { title = "<the conference's name>", acronym = "<...>", dates = "3-7 May 2027", place = "<city>" }
+# Any other field of the record, in the records API's own names and shapes, checked before anything
+# is sent: subjects, dates, languages, references, additional_titles, additional_descriptions, and
+# Zenodo's own journal:journal, imprint:imprint, thesis:university and thesis:type. For example:
+#   fields = { languages = [{ id = "eng" }], dates = [{ date = "2026-10", type = { id = "collected" } }] }
+fields = {}

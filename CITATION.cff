@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "If you use this plugin, please cite it, and Tutwiler et al. 2020 (Sci. Adv. 6:eabc0496) for the benchmark."
+title: "mime-softtissue (working name): a soft-tissue plugin for MIME"
+version: 0.1.0
+license: "Apache-2.0"
+authors:
+  - family-names: "Author"
+    given-names: "A."
+# a placeholder: replace it with the people who wrote the code
