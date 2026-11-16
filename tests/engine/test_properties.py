@@ -5,10 +5,11 @@ from."""
 import jax
 import jax.numpy as jnp
 import numpy as np
-from hypothesis import given, settings, strategies as st
+from hypothesis import example, given, settings, strategies as st
 
 import strategies as sx
 from mime_softtissue.engine import material as law
+from mime_softtissue.engine.material import Fibre, Material, shear_and_bulk
 from mime_softtissue.engine.fracture import phase_field
 from mime_softtissue.engine.grid import Grid
 from mime_softtissue.engine.assembly import Assembly
@@ -60,12 +61,26 @@ def check_rotation_invariance_with_fibres(F, mat, angle):
     assert err <= 256 * EPS * scale * (1.0 + 4.0 * float(mat.fibre.k2) * I4 ** 2), (err, scale)
 
 
+def _stiffest_fibre_in_the_softest_matrix() -> Material:
+    """The corner the draws reach only by chance: E = 1e3, nu = 0 (the smallest mu + kappa) with k1 = 1e5 (the largest
+    fibre stiffness) at the angle where I4 - 1 rounds worst. The stationarity check of the old bound failed here on every run."""
+    mu, kappa = shear_and_bulk(1e3, 0.0)
+    return Material(mu=jnp.asarray(mu), kappa=jnp.asarray(kappa), gc=jnp.asarray(1.0), l=jnp.asarray(1e-4),
+                    k_res=jnp.asarray(1e-6), stretch_limit=jnp.asarray(2.8),
+                    fibre=Fibre(k1=jnp.asarray(1e5), k2=jnp.asarray(1.0), angle=jnp.asarray(0.04363323129985824)))
+
+
 @settings(max_examples=100)
+@example(_stiffest_fibre_in_the_softest_matrix())
 @given(sx.materials(fibre=True))
 def check_zero_and_stationary_at_identity(mat):
-    """psi(I) = 0 and the first Piola stress vanishes there."""
+    """psi(I) = 0 and the first Piola stress vanishes there. The rounding is judged on the stiffness that carries it: the
+    matrix's mu + kappa, and, with fibres, k1 as well. The fibre invariant I4 = a . C a is 1 plus one rounding of order
+    eps at the identity, and the fibre stress is k1 (I4 - 1) dI4/dF summed over the two families: measured 4 eps k1 at its
+    worst (k1 = 1e5, angle 0.04 rad, float64), which is 7.5 times the old bound of 64 eps (mu + kappa) at E = 1e3, nu = 0 (833;
+    CI's failure: 1.188e-11 against 1.184e-11)."""
     I = jnp.eye(2, dtype=sx.DTYPE)
-    scale = float(mat.mu + mat.kappa)
+    scale = float(mat.mu + mat.kappa) + (float(mat.fibre.k1) if mat.fibre is not None else 0.0)
     plus, minus = ps.energy_parts(I, mat)
     assert abs(float(plus + minus)) <= 64 * EPS * scale
     P = jax.grad(total_energy)(I, mat)
