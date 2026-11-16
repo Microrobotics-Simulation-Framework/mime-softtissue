@@ -96,3 +96,12 @@ never exist. Engine-direct (`axi_run.py`, stopping 5 % after the drop) matched M
 
 - engine-direct gauss at h 0.1, R 2: within 5 % of MIME's 14.61.
 - mean against gauss, engine-direct, h 0.1: R 2 within 0.75-1.25 x; R 4 within 12 %.
+
+## Round 7 (runners): noise floors at h 0.1 (the commit time rules)
+
+(Round 6's header said "22:4x"; its commit is 22:41:58.) Seen: engine-direct h 0.1, gauss / mean: R 2 14.49 / 14.25 (-1.7 %),
+R 4 9.67 / 9.23 (-4.6 %); gauss's block-24 floor at h 0.1: R 0.5 +0.2 %, R 1 +5.1 %.
+
+- block 24 instead of 25: engine-direct gauss at R 2 and R 4 moves y by 1-6 %; MIME mean at R 0.5 and R 1 moves y by 0-8 %.
+- Judgement it would support: at h 0.1 the treatment's effect is inside the noise floor at R 1, 2 and 4, and above it only
+  at R 0.5 (-10.7 %), unless mean's own floor at R 0.5 reaches 10 %.
