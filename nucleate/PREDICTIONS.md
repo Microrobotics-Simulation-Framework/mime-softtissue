@@ -12,7 +12,7 @@ flat-punch panels (Fig. 5(a)/(b)) returns their legend's G' to 0.3 to 3 % (10 po
 caption says (Pc/(pi R^2) would give 0.32 of the legend). P0.1, P0.2, P0.3, P0.5 held; P0.4 failed (Fig. 7(a)'s punctures are
 Fig. 5(d)'s small-R points).
 
-## Round 1: the cheap arm (written 2026-11-16 21:24 CET, `date`, before any arm ran)
+## Round 1: the cheap arm (written 2026-11-16 about 21:17 CET (the commit time; an earlier draft of this line carried a guessed 21:24), before any arm ran)
 
 Neo-Hookean AT2 through MIME's `Study` (`examples/needle_sweep.py`), l 0.5 mm, nu 0.45, step 0.05 mm, as the tutorial and GENT
 ran it; R 0.5 and 1 mm in the 25 mm block (fine 5 mm), R 2 and 4 mm in a 50 mm block (fine 10 mm), because the arms with a
