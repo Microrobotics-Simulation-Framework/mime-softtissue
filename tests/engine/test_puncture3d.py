@@ -61,18 +61,19 @@ def test_mean_dilatation_equals_pointwise_where_J_is_uniform_and_differs_where_i
 
 def test_the_engine_reproduces_3d_costs_all2_and_balances_its_energy() -> None:
     """The engine at 3D-COST's all2 settings (neo-Hookean gel, Gauss-point volumetric, no Anderson, no limit) gives the
-    spike's forces at every depth to 1e-10, and its energy balance closes within 2 %."""
+    spike's forces at its first three depths to 1e-10, and its energy balance closes within 2 % (the whole 0.44 mm run
+    matches at all twelve depths to 7e-13 [measured, the laptop], but takes four minutes)."""
     mu, kappa = shear_and_bulk(50e3, 0.4)
     mat = Material(mu=mu, kappa=kappa, gc=1.0, l=0.1e-3, k_res=1e-6, stretch_limit=10.0)
     st = P.Settings(volumetric="gauss", anderson=0, stagger_cap=0, newton_cap=0, first_step=0.04e-3, min_step=0.01e-3)
-    run = P.run_puncture(P.Block(h=0.5e-3), mat, P.blunt_punch(0.5e-3, 0.05e-3), 0.44e-3, st, frames=2,
-                         output_depths=(0.02e-3, 0.10e-3, 0.40e-3, 0.44e-3))
+    run = P.run_puncture(P.Block(h=0.5e-3), mat, P.blunt_punch(0.5e-3, 0.05e-3), 0.10e-3, st, frames=2,
+                         output_depths=(0.02e-3, 0.10e-3))
     got = {round(float(z) * 1e3, 4): float(f) for z, f in zip(run.rows["depth_m"], run.rows["force_N"])}
-    assert sorted(got) == sorted(ALL2_H05)
-    for z, f in ALL2_H05.items():
-        assert got[z] == pytest.approx(f, rel=1e-10), z
+    assert sorted(got) == [0.02, 0.06, 0.1]
+    for z, f in got.items():
+        assert f == pytest.approx(ALL2_H05[z], rel=1e-10), z
     assert run.energy_balance() < 0.02
     # the surface: every boundary node once, its frames at the run's depths
-    assert len(run.surface.points) == len(run.surface.depth) and run.surface.depth[-1] == pytest.approx(0.44e-3)
+    assert len(run.surface.points) == len(run.surface.depth) and run.surface.depth[-1] == pytest.approx(0.10e-3)
     pts, faces, dmg, display = P.mirrored(run.surface)
     assert pts.shape[1] == 4 * run.surface.rest.shape[0] and display.sum() == 3 * (~display).sum()

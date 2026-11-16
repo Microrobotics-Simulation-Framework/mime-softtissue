@@ -26,10 +26,11 @@ import jax.numpy as jnp
 import numpy as np
 
 from . import contact as ct
+from .fracture import deletion
 from .fracture.phase_field import discretisation_toughness
 from .grid import graded_rows
 from .kinematics import solid3d as S
-from .material import Material
+from .material import Material, degradation
 from .solvers import multigrid3d as MG
 
 F32 = jnp.float32
@@ -108,13 +109,17 @@ class Settings:
     #: "neo" keeps k_res times the neo-Hookean part only, so a fully damaged point carries no Yeoh stiffening.
     residual: str = "residual"
     trace: bool = False  # print a line a staggered pass (depth, pass, damage change, Newton count, converged, Krylov)
+    #: "phase_field" (AT2) or "deletion": the plugin's control without a length scale, an element deleted for good once
+    #: the largest principal stretch at its centre passes ``Material.stretch_limit`` (mesh-dependent by construction).
+    fracture: str = "phase_field"
 
 
 class State(NamedTuple):
     u: jax.Array
-    d: jax.Array
+    d: jax.Array  # nodal damage (with deletion: the largest of the node's elements')
     history: jax.Array
     depth: jax.Array
+    deleted: jax.Array  # (nx, ny, nz): 1 where an element is deleted (the deletion control only)
 
 
 class StepOut(NamedTuple):
@@ -254,7 +259,9 @@ class Puncture3D:
         self.tol = s.newton_tol * b.height
         self.opts = MG.GMGOptions(galerkin=s.galerkin, degree=s.chebyshev_degree)
         self.dopts = MG.GMGOptions(galerkin=False)
-        self.step = jax.jit(self._step)
+        if s.fracture not in ("phase_field", "deletion"):
+            raise ValueError("fracture is phase_field or deletion")
+        self.step = jax.jit(self._step if s.fracture == "phase_field" else self._step_deletion)
         self.unknowns = 3 * nx * ny * nz
 
     # ---- energies --------------------------------------------------------------------------------------------
@@ -397,7 +404,7 @@ class Puncture3D:
     def initial(self, dtype: Any = jnp.float64) -> State:
         gr = self.grid
         return State(jnp.zeros(gr.nodes + (3,), dtype), jnp.zeros(gr.nodes, dtype),
-                     jnp.zeros((2, 2, 2) + gr.shape, dtype), jnp.zeros((), dtype))
+                     jnp.zeros((2, 2, 2) + gr.shape, dtype), jnp.zeros((), dtype), jnp.zeros(gr.shape, dtype))
 
     def _tol(self, err):
         s = self.settings
@@ -472,7 +479,54 @@ class Puncture3D:
                       krylov=kry, shifts=shifts, damage_krylov=c["dk"], residual=c["err"], converged=converged,
                       aa_restarts=c["rs"], d_max=jnp.max(d),
                       penetration=jnp.min(self.phi(self.X, u, depth)) / self.block.h)
-        return State(u, d, c["hist"], depth), out
+        return State(u, d, c["hist"], depth, state.deleted), out
+
+    # ---- the deletion control --------------------------------------------------------------------------------
+    def _deletion_g(self, deleted):
+        return jnp.broadcast_to(degradation(deleted, self.mat.k_res), (2, 2, 2) + deleted.shape)
+
+    def _step_deletion(self, state: State, depth):
+        """Newton at the deleted set, then delete every element whose centre's largest principal stretch passes the
+        limit (``fracture.deletion``), repeated until none is newly deleted (at most ``stagger_cap`` or
+        ``max_staggered`` rounds; a step that is still deleting there is not converged)."""
+        s, m = self.settings, self.mat
+        depth = jnp.asarray(depth, state.u.dtype)
+        prev = state.depth
+        u0 = state.u * jnp.where(prev > 0, depth / jnp.where(prev > 0, prev, 1.0), 1.0)
+        u0 = jnp.where(jnp.isfinite(self.solid(u0, self._deletion_g(state.deleted))), u0, state.u)
+        cap = s.stagger_cap if s.stagger_cap > 0 else s.max_staggered
+        zi = jnp.zeros((), jnp.int32)
+
+        def body(c):
+            u, n, ok, (kry, shifts) = self.newton(c["u"], self._deletion_g(c["de"]), depth, jnp.asarray(self.tol))
+            Fc = S.element_mean(S.deformation(u, self.grid))
+            stretch = jnp.sqrt(jnp.linalg.eigvalsh(jnp.swapaxes(Fc, -1, -2) @ Fc)[..., -1])
+            new = deletion.newly_deleted(stretch, c["de"], m.stretch_limit)
+            return dict(u=u, de=jnp.where(new, 1.0, c["de"]), k=c["k"] + 1, nk=c["nk"] + n, kry=c["kry"] + kry,
+                        shifts=c["shifts"] + shifts, capped=c["capped"] + (~ok).astype(jnp.int32), more=jnp.any(new))
+
+        def cond(c):
+            return (c["k"] < cap) & c["more"] & (c["capped"] == 0)
+
+        c = jax.lax.while_loop(cond, body, dict(u=u0, de=state.deleted, k=zi, nk=zi, kry=zi, shifts=zi, capped=zi,
+                                                more=jnp.ones((), bool)))
+        u, de = c["u"], c["de"]
+        converged = (~c["more"]) & (c["capped"] == 0)
+        nx, ny, nz = self.grid.shape
+        pad = jnp.pad(de, 1)
+        d = jnp.max(jnp.stack([pad[a:a + nx + 1, b:b + ny + 1, e:e + nz + 1] for a in (0, 1) for b in (0, 1)
+                               for e in (0, 1)]), axis=0)
+        mult = self.multiplier
+        vol = jnp.sum(de * 8.0 * S.gauss_weight(self.grid, u.dtype))
+        force = mult * jax.grad(lambda z: self.contact(u, z))(depth)
+        out = StepOut(force=force, energy=mult * self.solid(u, self._deletion_g(de)),
+                      # no surface energy: the deleted volume over h, times Gc, so that crack_area reads volume / h
+                      crack_energy=mult * vol / self.block.h * self.gc_physical,
+                      contact_energy=mult * self.contact(u, depth), staggered=c["k"], newton=c["nk"],
+                      newton_capped=c["capped"], krylov=c["kry"], shifts=c["shifts"], damage_krylov=zi,
+                      residual=jnp.zeros((), u.dtype), converged=converged, aa_restarts=zi, d_max=jnp.max(de),
+                      penetration=jnp.min(self.phi(self.X, u, depth)) / self.block.h)
+        return State(u, d, state.history, depth, de), out
 
     # ---- readouts --------------------------------------------------------------------------------------------
     def crack_extent(self, d: np.ndarray, threshold: float = 0.9) -> tuple[float, float, float]:
