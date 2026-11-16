@@ -9,7 +9,7 @@ import pytest
 import mime_softtissue.entries as st
 
 ENTRIES = [st.NotchedStrip, st.GripForce, st.GelBlock, st.TipContact, st.Servo, st.TipForce, st.HeadedTip,
-           st.ReplayedTear]
+           st.ReplayedTear, st.PunchTip, st.ConeTip, st.CrackSize]
 #: Found by this test at the port [measured]: round 4's tip entries (the contact law, the servo, the tip-force observation and
 #: the headed-tip kind) declare NO validity line. Their limits are in the report (one-step lag, axisymmetric only, a coaxial
 #: tip), not on the entries. Held here as the exact set, so that writing the lines (the set shrinks: delete the name) or a new

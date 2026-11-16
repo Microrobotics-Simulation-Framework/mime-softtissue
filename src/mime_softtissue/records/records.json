@@ -47,6 +47,30 @@
    "credit": "placeholder values by the plugin's authors",
    "role": "results",
    "kind": "authored"
+  },
+  {
+   "name": "softtissue.whole_blood_clot",
+   "sha256": "63d4ddbc3b50638c6b63cc4090e8c6687bd32ff7a068a39e0a4a74375d108a39",
+   "size": 1828,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/whole_blood_clot_lohr2025.json"
+   ],
+   "credit": "calibrated by the plugin's pure-shear study from data digitised from Lohr et al. 2025 (Int. J. Fract., doi:10.1007/s10704-024-00820-4); record by the plugin's authors",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture_gel",
+   "sha256": "5f8890970f7a2c3a8c9c9c4403a02d6bd8fd84dcfde8b1264c0d9d0539c7d619",
+   "size": 1469,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture_gel_fakhouri2015.json"
+   ],
+   "credit": "values from Fakhouri, Hutchens and Crosby 2015 (Soft Matter 11, 4723) as stated by Fregonese and Bacca 2021 (J. Mech. Phys. Solids, doi:10.1016/j.jmps.2021.104497); record by the plugin's authors",
+   "role": "results",
+   "kind": "authored"
   }
  ]
 }

@@ -17,6 +17,8 @@ RECORDS = Path(__file__).resolve().parent.parent / "src" / "mime_softtissue" / "
 ENTRIES = {("dynamics", "softtissue.notched_strip"), ("observation", "softtissue.grip_force"),
            ("dynamics", "softtissue.gel_block"), ("interaction", "softtissue.tip_contact"),
            ("interaction", "softtissue.servo"), ("observation", "softtissue.tip_force"), ("geometry", "softtissue.headed_tip"),
+           ("geometry", "softtissue.punch_tip"), ("geometry", "softtissue.cone_tip"),
+           ("observation", "softtissue.crack_size"),
            ("dynamics", "softtissue.replayed_tear")}
 
 
@@ -34,7 +36,8 @@ def test_every_record_is_listed_and_names_its_bytes():
     file it names (the lab's placeholder names only a URL, and never ships)."""
     listed = json.loads((RECORDS / "records.json").read_text())["assets"]
     assert {a["name"] for a in listed} == {"softtissue_fibrin_plasma", "softtissue_gel_placeholder",
-                                           "softtissue_clot_lab_placeholder"}
+                                           "softtissue_clot_lab_placeholder", "softtissue.whole_blood_clot",
+                                           "softtissue.puncture_gel"}
     for entry in listed:
         record = reference(entry["name"])
         assert record.name == entry["name"]

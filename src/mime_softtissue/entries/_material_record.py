@@ -19,10 +19,11 @@ def read_material(name: str) -> dict[str, float]:
 
 def engine_material(p: Mapping[str, Any], mode: str) -> Material:
     """The engine's :class:`Material` from a node's parameters (``young``, ``poisson``, ``toughness``,
-    ``length_scale``, ``residual``, ``stretch_limit``, ``h``); the phase field's input toughness carries the grid bias."""
+    ``length_scale``, ``residual``, ``stretch_limit``, ``h``, and ``yeoh_c2`` where the record has Yeoh's stiffening);
+    the phase field's input toughness carries the grid bias."""
     mu, kappa = shear_and_bulk(p["young"], p["poisson"])
     gc = p["toughness"]
     if mode == "phase_field":
         gc = discretisation_toughness(gc, p["h"], p["length_scale"])
     return Material(mu=mu, kappa=kappa, gc=gc, l=p["length_scale"], k_res=p["residual"],
-                    stretch_limit=p["stretch_limit"])
+                    stretch_limit=p["stretch_limit"], c2=p.get("yeoh_c2", 0.0))
