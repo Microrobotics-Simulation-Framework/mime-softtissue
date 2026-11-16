@@ -72,16 +72,22 @@ def check_zero_and_stationary_at_identity(mat):
     assert float(jnp.max(jnp.abs(P))) <= 64 * EPS * scale, np.asarray(P)
 
 
-@settings(max_examples=60)
-@given(sx.materials(), st.lists(st.floats(-0.3, 0.3, allow_nan=False), min_size=8, max_size=8),
-       st.floats(1e-4, 1e-3), st.floats(1e-4, 1e-3), st.lists(st.floats(0.0, 0.9), min_size=4, max_size=4))
-def check_hessian_symmetric(mat, u, dx, dy, d):
-    """The element energy's Hessian in the nodal displacements is symmetric, damaged or not."""
-    ue = jnp.asarray(np.asarray(u, dtype=sx.DTYPE).reshape(4, 2) * dx)
-    dq = jnp.asarray(np.asarray(d, dtype=sx.DTYPE))
-    H = np.asarray(ps.element_hessian(ue, dq, dx, dy, mat))
-    assert np.all(np.isfinite(H))
-    assert np.max(np.abs(H - H.T)) <= 1e3 * EPS * np.max(np.abs(H)), np.max(np.abs(H - H.T)) / np.max(np.abs(H))
+def check_hessian_symmetric():
+    """The element energy's Hessian in the nodal displacements is symmetric, damaged or not. The Hessian is jitted once
+    per call, here, not at import: a plant (tests/plants.py) patches ``ps.element_hessian`` before the call, and an
+    eager Hessian costs seconds per example (the 60 examples of this property took minutes, shrinking included)."""
+    hessian = jax.jit(lambda ue, dq, dx, dy, mat: ps.element_hessian(ue, dq, dx, dy, mat))
+
+    @settings(max_examples=60)
+    @given(sx.materials(), st.lists(st.floats(-0.3, 0.3, allow_nan=False), min_size=8, max_size=8),
+           st.floats(1e-4, 1e-3), st.floats(1e-4, 1e-3), st.lists(st.floats(0.0, 0.9), min_size=4, max_size=4))
+    def prop(mat, u, dx, dy, d):
+        ue = jnp.asarray(np.asarray(u, dtype=sx.DTYPE).reshape(4, 2) * dx)
+        dq = jnp.asarray(np.asarray(d, dtype=sx.DTYPE))
+        H = np.asarray(hessian(ue, dq, dx, dy, mat))
+        assert np.all(np.isfinite(H))
+        assert np.max(np.abs(H - H.T)) <= 1e3 * EPS * np.max(np.abs(H)), np.max(np.abs(H - H.T)) / np.max(np.abs(H))
+    prop()
 
 
 _GRID = Grid(np.linspace(0.0, 4.0e-3, 5), np.linspace(0.0, 3.0e-3, 4))
@@ -93,46 +99,59 @@ _DX, _DY = (jnp.asarray(a) for a in _GRID.element_sizes())
 _VEC = Assembly(_GRID, 2)
 
 
-@settings(max_examples=40)
-@given(st.lists(st.floats(-0.2, 0.2, allow_nan=False), min_size=(5 * 4 * 2), max_size=(5 * 4 * 2)),
-       st.lists(st.floats(-1.0, 1.0, allow_nan=False), min_size=(5 * 4 * 2), max_size=(5 * 4 * 2)),
-       st.lists(st.floats(0.0, 0.9), min_size=_GRID.n_elements * 4, max_size=_GRID.n_elements * 4), sx.materials())
-def check_assembled_stiffness_matches_the_gradient(u, v, damage, mat):
+def check_assembled_stiffness_matches_the_gradient():
     """The assembled block-tridiagonal tangent stiffness times v equals the directional derivative of the gradient of
-    the total energy along v (assembly and element Hessian agree with the energy), on a 4 x 3 grid."""
+    the total energy along v (assembly and element Hessian agree with the energy), on a 4 x 3 grid. Both sides are jitted
+    once per call (not at import, so a plant is traced into them): eagerly, the 40 examples took minutes."""
     from mime_softtissue.engine.solvers import blocktri
     nx, ny = _GRID.nx + 1, _GRID.ny + 1
     scale = float(_DX.min())
-    U = jnp.asarray(np.asarray(u, dtype=sx.DTYPE).reshape(nx, ny, 2) * scale)
-    V = jnp.asarray(np.asarray(v, dtype=sx.DTYPE).reshape(nx, ny, 2))
-    dq = jnp.asarray(np.asarray(damage, dtype=sx.DTYPE).reshape(_GRID.n_elements, 4))
 
-    def energy(w):
-        e = jax.vmap(lambda ue, d, dx, dy: ps.element_strain_energy(ue, d, dx, dy, mat))(w[_I, _J], dq, _DX, _DY)
-        return jnp.sum(e)
+    @jax.jit
+    def both_sides(U, V, dq, mat):
+        def energy(w):
+            e = jax.vmap(lambda ue, d, dx, dy: ps.element_strain_energy(ue, d, dx, dy, mat))(w[_I, _J], dq, _DX, _DY)
+            return jnp.sum(e)
 
-    ke = jax.vmap(lambda ue, d, dx, dy: ps.element_hessian(ue, d, dx, dy, mat))(U[_I, _J], dq, _DX, _DY)
-    diag, upper = _VEC.blocks(ke)
-    got = blocktri.matvec(diag, upper, V.reshape(nx, -1))
-    want = jax.jvp(jax.grad(energy), (U,), (V,))[1].reshape(nx, -1)
-    assert float(jnp.max(jnp.abs(got - want))) <= 1e-9 * float(jnp.max(jnp.abs(want)) + 1e-300), \
-        float(jnp.max(jnp.abs(got - want)) / jnp.max(jnp.abs(want)))
+        ke = jax.vmap(lambda ue, d, dx, dy: ps.element_hessian(ue, d, dx, dy, mat))(U[_I, _J], dq, _DX, _DY)
+        diag, upper = _VEC.blocks(ke)
+        got = blocktri.matvec(diag, upper, V.reshape(nx, -1))
+        want = jax.jvp(jax.grad(energy), (U,), (V,))[1].reshape(nx, -1)
+        return got, want
+
+    @settings(max_examples=40)
+    @given(st.lists(st.floats(-0.2, 0.2, allow_nan=False), min_size=(5 * 4 * 2), max_size=(5 * 4 * 2)),
+           st.lists(st.floats(-1.0, 1.0, allow_nan=False), min_size=(5 * 4 * 2), max_size=(5 * 4 * 2)),
+           st.lists(st.floats(0.0, 0.9), min_size=_GRID.n_elements * 4, max_size=_GRID.n_elements * 4), sx.materials())
+    def prop(u, v, damage, mat):
+        U = jnp.asarray(np.asarray(u, dtype=sx.DTYPE).reshape(nx, ny, 2) * scale)
+        V = jnp.asarray(np.asarray(v, dtype=sx.DTYPE).reshape(nx, ny, 2))
+        dq = jnp.asarray(np.asarray(damage, dtype=sx.DTYPE).reshape(_GRID.n_elements, 4))
+        got, want = both_sides(U, V, dq, mat)
+        assert float(jnp.max(jnp.abs(got - want))) <= 1e-9 * float(jnp.max(jnp.abs(want)) + 1e-300), \
+            float(jnp.max(jnp.abs(got - want)) / jnp.max(jnp.abs(want)))
+    prop()
 
 
 def test_assembled_stiffness_matches_the_gradient():
     check_assembled_stiffness_matches_the_gradient()
 
 
-@settings(max_examples=100)
-@given(st.lists(st.floats(0.0, 1e7, allow_nan=False), min_size=_GRID.n_elements * 4, max_size=_GRID.n_elements * 4),
-       st.integers(0, _GRID.n_elements - 1), st.floats(1e-4, 1e-3), st.floats(1.0, 100.0))
-def check_damage_in_unit_interval(history, spike, length, gc):
-    """The damage for any nonnegative history, a single hot element included, lies in [0, 1]."""
-    H = np.asarray(history, dtype=sx.DTYPE).reshape(_GRID.n_elements, 4)
-    H[spike] = 1e9  # a hot element beside cold ones: the consistent mass matrix overshoots there
-    d = phase_field.solve_damage(jnp.asarray(H), gc, length, _DX, _DY, _GRID, _ASSEMBLY, _I, _J)
-    d = np.asarray(d)
-    assert np.all(np.isfinite(d)) and d.min() >= 0.0 and d.max() <= 1.0, (d.min(), d.max())
+def check_damage_in_unit_interval():
+    """The damage for any nonnegative history, a single hot element included, lies in [0, 1]. The solve is jitted once
+    per call, here, so a plant that patches ``phase_field`` is traced into it; eager, one solve costs 0.7 s and the
+    property (with its shrinking) took five minutes."""
+    solve = jax.jit(lambda H, gc, length: phase_field.solve_damage(H, gc, length, _DX, _DY, _GRID, _ASSEMBLY, _I, _J))
+
+    @settings(max_examples=100)
+    @given(st.lists(st.floats(0.0, 1e7, allow_nan=False), min_size=_GRID.n_elements * 4, max_size=_GRID.n_elements * 4),
+           st.integers(0, _GRID.n_elements - 1), st.floats(1e-4, 1e-3), st.floats(1.0, 100.0))
+    def prop(history, spike, length, gc):
+        H = np.asarray(history, dtype=sx.DTYPE).reshape(_GRID.n_elements, 4)
+        H[spike] = 1e9  # a hot element beside cold ones: the consistent mass matrix overshoots there
+        d = np.asarray(solve(jnp.asarray(H), gc, length))
+        assert np.all(np.isfinite(d)) and d.min() >= 0.0 and d.max() <= 1.0, (d.min(), d.max())
+    prop()
 
 
 @settings(max_examples=100)

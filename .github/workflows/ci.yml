@@ -1,44 +1,101 @@
 # CI of mime-softtissue, written by `mime scaffold plugin`: delete what you do not need.
-#   default   every push and pull request: the tests (-m "not slow"), the registry listing, the README's Use section
-#             (its `bash ci` blocks, including `mime check` and `mime verify` of the benchmark), and `mime assets audit`
-#             of the built wheel and sdist (it fails if a file that may not be redistributed is in either)
+#   smoke     a DRAFT pull request: the tests that need no solve (registry, validity lines, import rules, closed forms), about
+#             two minutes. Agents push to draft pull requests often; they should not each cost a full run.
+#   default   a pull request that is not a draft, every push to main, every week: the tests (-m "not slow"), the registry
+#             listing, the README's Use section (its `bash ci` blocks, including `mime check` and `mime verify` of the
+#             benchmark), and `mime assets audit` of the built wheel and sdist (it fails if a file that may not be
+#             redistributed is in either). Python 3.12 on a pull request; 3.12 and 3.14 on main, every week, and on a pull
+#             request labelled `ready` (put the label on the head you mean to merge; mirrors MIME's practice)
 #   slow      a pull request labelled `slow`, and every week: `pytest -m slow` (a physics assertion behind the marker is
 #             documentation unless a lane runs it)
 #   release   every week, against the tip of MIME's release branch: the early warning when MIME moves under this plugin
-#   typing    pyright, strict, over the package and tests/assert_types.py
-# Pin to one core, CPU only, for any run you time (README, "Tests").
+#   typing    pyright, strict, over the package and tests/assert_types.py (every pull request, drafts too)
+# A push to a pull request cancels that pull request's earlier run. A change that only touches docs/, notebooks, the licence
+# or the citation file runs nothing (a required check would then stay pending: there is none today).
+# Pin to one core, CPU only, for any run you time (README, "Tests"); CI itself runs the tests on both of its cores with
+# pytest-xdist, each worker with one XLA thread, and keeps JAX's compilation cache between runs.
 name: ci
 on:
   pull_request:
-    types: [opened, synchronize, reopened, labeled]
+    types: [opened, synchronize, reopened, labeled, ready_for_review]
+    paths-ignore: ["docs/**", "**/*.ipynb", "LICENSE", "CITATION.cff"]
   push:
     branches: [main]
+    paths-ignore: ["docs/**", "**/*.ipynb", "LICENSE", "CITATION.cff"]
   schedule:
     - cron: "17 3 * * 1"   # Mondays, 03:17 UTC
   workflow_dispatch:
 
+# One run per pull request at a time; a label event has its own group, so adding `slow` or `ready` does not cancel the run of
+# the push. A push to main, the weekly run and a manual run are never cancelled.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.run_id }}-${{ github.event.action == 'labeled' && 'label' || 'push' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   JAX_PLATFORMS: cpu
+  JAX_COMPILATION_CACHE_DIR: ${{ github.workspace }}/.jax-cache
+  # One XLA thread per xdist worker: an unpinned JAX run oversubscribes the cores (README, "Tests").
+  XLA_FLAGS: --xla_cpu_multi_thread_eigen=false intra_op_parallelism_threads=1
 
 jobs:
+  smoke:
+    name: smoke (draft pull request)
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == true && github.event.action != 'labeled'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          python-version: "3.12"
+      - run: uv venv --python 3.12
+      # The plugin needs what MIME's 0.3.0.dev1 on PyPI lacks (mime.core.Units, among others): MIME from its public release
+      # branch first; return to the PyPI pin once a release carries them.
+      - run: uv pip install "mime-engine[verify] @ git+https://github.com/Microrobotics-Simulation-Framework/MIME@release/v0.3.0"
+      - run: uv pip install -e ".[test]"
+      - name: the tests that need no solve
+        run: uv run --no-sync pytest -n 2 tests/test_validity.py tests/test_engine_imports.py tests/test_relative_imports.py tests/test_registry.py tests/engine/test_closed_forms.py
+      - name: the plugin is listed by `mime registry`
+        run: |
+          uv run --no-sync mime registry --json > registry.json
+          uv run --no-sync python -c "import json; d = json.load(open('registry.json')); assert any(e['name'].startswith('softtissue.') for e in d['entries']), 'the plugin is not listed'; assert not d['not_loaded'], d['not_loaded']"
+
   default:
     name: default (Python ${{ matrix.python }})
-    # Adding the `slow` label must not re-run this matrix: only the `slow` job below wants the label event.
-    if: github.event.action != 'labeled'
+    # Not a draft. Adding the `slow` label must not re-run this matrix: only the `slow` job below wants that label event;
+    # the `ready` label wants it (for 3.14, below).
+    if: >-
+      github.event_name != 'pull_request' ||
+      (github.event.pull_request.draft == false &&
+       (github.event.action != 'labeled' || github.event.label.name == 'ready'))
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.12", "3.14"]
+        # Not a pull request: both. The `ready` label itself: 3.14 only (3.12 ran on that head). Otherwise a pull request
+        # with the label: both; without it: 3.12.
+        python: ${{ fromJSON(github.event_name != 'pull_request' && '["3.12","3.14"]' || github.event.action == 'labeled' && '["3.14"]' || contains(github.event.pull_request.labels.*.name, 'ready') && '["3.12","3.14"]' || '["3.12"]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
           python-version: ${{ matrix.python }}
       - run: uv venv --python ${{ matrix.python }}
+      # The plugin needs what MIME's 0.3.0.dev1 on PyPI lacks (mime.core.Units, among others): MIME from its public release
+      # branch first; return to the PyPI pin once a release carries them.
+      - run: uv pip install "mime-engine[verify] @ git+https://github.com/Microrobotics-Simulation-Framework/MIME@release/v0.3.0"
       - run: uv pip install -e ".[test]"
+      - name: JAX's compilation cache (a miss costs only the compile; the cache never changes a result)
+        id: jaxversion
+        run: echo "jaxlib=$(uv run --no-sync python -c 'import jaxlib; print(jaxlib.__version__)')" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .jax-cache
+          key: jax-${{ runner.os }}-py${{ matrix.python }}-jaxlib${{ steps.jaxversion.outputs.jaxlib }}-${{ hashFiles('src/**', 'tests/**', 'examples/**') }}
+          restore-keys: |
+            jax-${{ runner.os }}-py${{ matrix.python }}-jaxlib${{ steps.jaxversion.outputs.jaxlib }}-
       - name: tests (the default lane)
-        run: uv run --no-sync pytest
+        run: uv run --no-sync pytest -n 2 --dist worksteal
       - name: the plugin is listed by `mime registry`
         run: |
           uv run --no-sync mime registry --json > registry.json
@@ -59,9 +116,19 @@ jobs:
         with:
           python-version: "3.12"
       - run: uv venv --python 3.12
+      - run: uv pip install "mime-engine[verify] @ git+https://github.com/Microrobotics-Simulation-Framework/MIME@release/v0.3.0"
       - run: uv pip install -e ".[test]"
+      - name: JAX's compilation cache
+        id: jaxversion
+        run: echo "jaxlib=$(uv run --no-sync python -c 'import jaxlib; print(jaxlib.__version__)')" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .jax-cache
+          key: jax-slow-${{ runner.os }}-jaxlib${{ steps.jaxversion.outputs.jaxlib }}-${{ hashFiles('src/**', 'tests/**', 'examples/**', 'scripts/**') }}
+          restore-keys: |
+            jax-slow-${{ runner.os }}-jaxlib${{ steps.jaxversion.outputs.jaxlib }}-
       - name: tests (the slow lane)
-        run: uv run --no-sync pytest -m slow
+        run: uv run --no-sync pytest -n 2 --dist worksteal -m slow
 
   release:
     name: against MIME's release branch
@@ -76,12 +143,14 @@ jobs:
       - run: uv pip install "mime-engine[verify] @ git+https://github.com/Microrobotics-Simulation-Framework/MIME@release/v0.3.0"
       - run: uv pip install -e ".[test]"
       - name: tests, against MIME's release branch
-        run: uv run --no-sync pytest
+        run: uv run --no-sync pytest -n 2 --dist worksteal
       - name: the README's Use section, against MIME's release branch
         run: awk '/^```bash ci$/{on=1;next} /^```$/{on=0} on' README.md | uv run --no-sync bash -e -o pipefail
 
   typing:
     name: typing (pyright, strict)
+    # Not on a label event: nothing in the head changed.
+    if: github.event.action != 'labeled'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -89,6 +158,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: uv venv --python 3.12
+      - run: uv pip install "mime-engine[verify] @ git+https://github.com/Microrobotics-Simulation-Framework/MIME@release/v0.3.0"
       - run: uv pip install -e ".[test,typing]"
       # pyright reads the environment it is told to, whether or not pyrightconfig.json names a `.venv`.
       - name: pyright, strict over the package, with the assert_type file
