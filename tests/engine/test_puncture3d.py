@@ -65,7 +65,8 @@ def test_the_engine_reproduces_3d_costs_all2_and_balances_its_energy() -> None:
     matches at all twelve depths to 7e-13 [measured, the laptop], but takes four minutes)."""
     mu, kappa = shear_and_bulk(50e3, 0.4)
     mat = Material(mu=mu, kappa=kappa, gc=1.0, l=0.1e-3, k_res=1e-6, stretch_limit=10.0)
-    st = P.Settings(volumetric="gauss", anderson=0, stagger_cap=0, newton_cap=0, first_step=0.04e-3, min_step=0.01e-3)
+    st = P.Settings(volumetric="gauss", anderson=0, stagger_cap=0, newton_cap=0, first_step=0.04e-3, min_step=0.01e-3,
+                    damage_bound="clip")
     run = P.run_puncture(P.Block(h=0.5e-3), mat, P.blunt_punch(0.5e-3, 0.05e-3), 0.10e-3, st, frames=2,
                          output_depths=(0.02e-3, 0.10e-3))
     got = {round(float(z) * 1e3, 4): float(f) for z, f in zip(run.rows["depth_m"], run.rows["force_N"])}
@@ -77,3 +78,32 @@ def test_the_engine_reproduces_3d_costs_all2_and_balances_its_energy() -> None:
     assert len(run.surface.points) == len(run.surface.depth) and run.surface.depth[-1] == pytest.approx(0.10e-3)
     pts, faces, dmg, display = P.mirrored(run.surface)
     assert pts.shape[1] == 4 * run.surface.rest.shape[0] and display.sum() == 3 * (~display).sum()
+
+
+def test_the_damage_bounds_give_a_minimiser_where_the_clip_does_not() -> None:
+    """One element driven hard (the node under a sharp tip): the unconstrained damage solve leaves [0, 1], so its clip is
+    feasible but not stationary inside (0, 1) (the energy's gradient there is not zero); the active set's field is feasible,
+    stationary inside, and has the lower energy. Where nothing leaves [0, 1], the two are the same field."""
+    mu, kappa = shear_and_bulk(50e3, 0.4)
+    mat = Material(mu=mu, kappa=kappa, gc=1.0, l=0.1e-3, k_res=1e-6, stretch_limit=10.0)
+    blk = P.Block(half_width=1e-3, height=1e-3, h=0.25e-3, fine_xy=0.5e-3, fine_z=0.5e-3)
+    tip = P.sharp_cone(0.35, 0.05e-3)
+    bound = P.Puncture3D(blk, mat, tip, P.Settings(mixed=False))
+    clip = P.Puncture3D(blk, mat, tip, P.Settings(mixed=False, damage_bound="clip"))
+    shape = (2, 2, 2) + bound.grid.shape
+    gc, l = bound.mat.gc, bound.mat.l
+    energy = lambda d, H: float(S.damage_energy(d, H, bound.grid, gc, l))
+    hard = jnp.zeros(shape).at[:, :, :, 0, 0, -1].set(1e4 * gc / l)
+    d_b, _ = jax.jit(bound.solve_damage)(hard)
+    d_c, _ = jax.jit(clip.solve_damage)(hard)
+    assert float(jnp.max(d_c)) == 1.0 and float(jnp.max(d_b)) <= 1.0
+    assert energy(d_b, hard) < energy(d_c, hard)
+
+    def stationarity(d):  # the largest |dE/dd| over nodes strictly inside (0, 1), against the largest overall
+        g = jax.grad(lambda x: S.damage_energy(x, hard, bound.grid, gc, l))(d)
+        inside = (d > 1e-9) & (d < 1 - 1e-9)
+        return float(jnp.max(jnp.where(inside, jnp.abs(g), 0.0)) / jnp.max(jnp.abs(g)))
+
+    assert stationarity(d_b) < 1e-6 < 1e-3 < stationarity(d_c)
+    mild = jnp.full(shape, 0.1 * gc / l)
+    assert jnp.allclose(jax.jit(bound.solve_damage)(mild)[0], jax.jit(clip.solve_damage)(mild)[0], rtol=0, atol=0)
