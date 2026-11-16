@@ -75,3 +75,15 @@ R 0.5 h 0.1 8.79 against 8.79 (+0.0 %); Gent R 2 h 0.2 10.69 against 16.61 (-36 
   (pending on GENT's run; if it never lands, no comparison is claimed).
 - **Engine-direct, mean, h 0.05** (GENT's pf-line arguments plus `--volumetric mean`): each within 15 % of its
   full-integration twin; with mean, 1 or 2 of R 0.5 / 1 / 2 inside Exp. 1's bars (gauss: 1 of 3).
+
+## Round 5 (runners): the noise floor of Fc, and the nu question at h 0.2; written after round 1's six needle arms
+
+Seen: mean against gauss, y = Fc / (mu R^2): neo-Hookean h 0.1 R 0.5 / 1: 8.79 / 7.03 against 8.79 / 7.24; Gent h 0.1
+R 0.5 / 1: 58.4 / 30.4 against 65.4 / 28.6; Gent h 0.2 R 2 / 4: 10.69 / 11.50 against 16.61 / 10.88. The signs differ, so
+the question is whether these are locking or the puncture's own sensitivity.
+
+- **A perturbation that physics ignores** (the block 24 mm instead of 25; gauss): it moves Gent's Fc by 0-10 % at R 0.5 and
+  1 (h 0.1) and by 0-30 % at R 2 (h 0.2). If it moves them by as much as the treatment does, the treatment's needle effect
+  is not attributed to locking. The same perturbation on mean at R 2 (h 0.2) moves it by 0-30 %.
+- **nu at h 0.2:** mean, Gent nu 0.49, R 0.5 and 1: within 0.6-1.4 x of gauss's 24.3 / 24.7. GENT's nu 0.45 (15.8 / 12.5)
+  is not reproduced by removing the locking: mean at 0.49 lands nearer gauss at 0.49 than gauss at 0.45 at R 1.
