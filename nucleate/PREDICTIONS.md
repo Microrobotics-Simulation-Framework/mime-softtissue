@@ -36,3 +36,33 @@ the corrected mu), `nuc_mu7p2_g142` (Gc 142 at Fregonese's mu, the mu sensitivit
 - **P1.8** h 0.1 against h 0.2 at R 0.5: Fc falls by 15 to 35 % (as the Gc 25 arm did); at R 1 within 10 %.
 - **Expected verdict:** the cheap arm misses the energy-limited level at small R by 3 to 7 times and shows no transition; any
   agreement at R 4 comes through the placeholder l, so it is not a test there.
+
+### Round 1 status at 21:45 CET (`date`), read before round 2 was written
+Control held: the Gc 25 arm equals GENT's MIME run of the tutorial's R 1 member at every one of 41 steps (0 difference);
+R 0.5 / 2 match the tutorial's peaks. **Found:** at h 0.2 and R 0.5 every arm's first drop (1.35 to 1.40 mm, a 20 % fall)
+is a contact artefact, not a puncture: the elastic run (no damage at all) drops 20 % at 1.40 to 1.45 mm too, and the Gc 142
+and 290 arms drop there with no crack (area under 0.001 mm^2); their force then rises, with a sawtooth of period about h, to
+95 and 190 mN by 8 and 10 mm. The h 0.1 elastic run has a 3.7 % drop at 1.30 mm. So GENT's committed rule (first 2 % drop)
+reads an artefact wherever no crack forms first. **Added rule (set at 21:40, after the h 0.2 R 0.5 arms were read; the h
+0.1 arms not yet):** Fc (crack-confirmed) = the first local maximum that the force later falls 2 % below AND over whose
+next three steps the crack area grows by at least 0.01 mm^2 (14 times the largest growth at the artefact drops); both
+readings are reported.
+
+## Round 2a: the strength-surface model, engine-direct (written 2026-11-16 21:45 CET, `date`, before any arm ran)
+
+`nucleate/needle.py` with `--sts` (uniaxial tensile strength, Biot, kPa) and `--ratio 1.5` (hydrostatic / tensile, a
+declared placeholder: Kamarei et al.'s PDMS ballpark), Gc 27 J/m^2 (propagation), mu 3.66 kPa, nu 0.45, l 0.5 mm, h 0.2,
+block 50 mm (fine 5 for R 0.5 and 1, step 0.05; fine 8 for R 2 and 4, step 0.1); s_ts 5, 10, 20, 43, 100, 250 kPa at
+R 0.5, 1, 2, 4, and 1100 kPa at R 0.5 and 4; the l test: l 0.25 at h 0.1 (h/l 0.4, as l 0.5 at h 0.2) for s_ts 10 and
+43 at R 0.5 and 2. Local controls so far: option off is bit-equal to AT2 (40 steps of the R 1 needle, every force and
+iteration count); the bar's peak nominal stress is 0.9989 of the declared 10 kPa (l 0.5).
+
+- **P2.1** No single s_ts puts Fc within 30 % of the data at all four radii (lean 0.8).
+- **P2.2** For each s_ts the model's Fc rises with R with a log-log slope of 1.5 to 2.2 throughout 0.5 to 4 mm: no
+  stretch of Fc proportional to R (lean 0.65).
+- **P2.3** Fc rises with s_ts at every R; at s_ts >= 100 kPa no puncture by the run's depth at R <= 1 (lean 0.6).
+- **P2.4** l 0.5 to 0.25 (h/l fixed) moves Fc by under 10 % at R 0.5 and R 2 where it punctures (lean 0.6); AT2 moved
+  38 % at R 2 (l 0.5 to 0.1, GENT).
+- **P2.5** At a puncture the model's depth is 1.5 to 3 times the data's (the neo-Hookean at mu 3.66 is too soft at
+  depth: Fregonese's own alpha = 2 law through the data's (Pc, dc) needs mu 4.9 to 8.8 kPa) (lean 0.7).
+- **P2.6** The first damage (d > 0.5) sits in the surface skin around the tip, not on the axis below it (lean 0.5).
