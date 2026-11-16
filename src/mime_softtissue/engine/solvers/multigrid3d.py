@@ -8,7 +8,7 @@ float32 care). No MIME import."""
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 import jax
 import jax.numpy as jnp
@@ -129,7 +129,7 @@ class Level:
     def _lam_max(self, opts, key):
         v = jax.random.normal(key, self.shape, self.free.dtype) * self.free
         def body(_, c):
-            v, lam = c
+            v, _ = c
             w = self.M(self.A(v))
             nw = jnp.sqrt(jnp.sum(w * w))
             return w / nw, nw / jnp.sqrt(jnp.sum(v * v))
@@ -167,7 +167,7 @@ def stencil_apply(S: jax.Array, v: jax.Array) -> jax.Array:
     return out
 
 
-def probe_stencil(A: Callable, shape: tuple, dtype) -> jax.Array:
+def probe_stencil(A: Callable[..., Any], shape: tuple[int, ...], dtype) -> jax.Array:
     """The 27-point block stencil of a linear operator on nodal fields whose coupling reaches one node in each index
     (a Galerkin coarse operator of trilinear transfers), by 27 x c coloured probes (period 3 in each index)."""
     nx, ny, nz, c = shape
@@ -191,8 +191,8 @@ def probe_stencil(A: Callable, shape: tuple, dtype) -> jax.Array:
     return jax.lax.fori_loop(0, 27 * c, body, jnp.zeros((nx, ny, nz, 27, c, c), dtype))
 
 
-def build_hierarchy(make_energy: Callable, coeffs: dict, u_lin: jax.Array, grid: Grid3, free: jax.Array,
-                    opts: GMGOptions, gauss_keys: tuple[str, ...], fine_K=None):
+def build_hierarchy(make_energy: Callable[..., Any], coeffs: dict[str, Any], u_lin: jax.Array, grid: Grid3,
+                    free: jax.Array, opts: GMGOptions, gauss_keys: tuple[str, ...], fine_K=None):
     """Levels from fine to coarse. ``make_energy(grid, coeffs)`` returns u -> energy; ``coeffs`` holds Gauss-point
     arrays under ``gauss_keys`` (coarsened by the mean) and scalars. Each coarse level linearises its own energy's
     gradient at the injected state (rediscretised coarse operators), or with ``opts.galerkin`` is R A P of the level
@@ -200,12 +200,12 @@ def build_hierarchy(make_energy: Callable, coeffs: dict, u_lin: jax.Array, grid:
     levels, transfers = [], []
     key = jax.random.PRNGKey(0)
     g, c, u, f = grid, dict(coeffs), u_lin, free
-    K = None
+    Kop = None
     for depth in range(opts.max_levels):
         if depth == 0 and fine_K is not None:
-            K = fine_K
+            Kop = fine_K
         elif depth == 0 or not opts.galerkin:
-            K = jax.linearize(jax.grad(make_energy(g, c)), u)[1]
+            Kop = jax.linearize(jax.grad(make_energy(g, c)), u)[1]
         else:
             fine_lv = levels[-1]
             fg, fax = transfers[-1]
@@ -217,14 +217,14 @@ def build_hierarchy(make_energy: Callable, coeffs: dict, u_lin: jax.Array, grid:
                 return cfree * restrict(y)[0] + (1.0 - cfree) * v
 
             S = probe_stencil(Ac, f.shape, f.dtype)
-            K = (lambda S: (lambda v: stencil_apply(S, v)))(S)
+            Kop = (lambda S: (lambda v: stencil_apply(S, v)))(S)
         axes = g.coarse_axes(opts.min_cells)
         n = int(np.prod(f.shape))
         if n <= opts.max_coarse or not any(axes) or depth == opts.max_levels - 1:
-            levels.append(Coarsest(g, f, K))
+            levels.append(Coarsest(g, f, Kop))
             break
         key, sub = jax.random.split(key)
-        levels.append(Level(g, f, K, opts, sub))
+        levels.append(Level(g, f, Kop, opts, sub))
         transfers.append((g, axes))
         c = {k: (coarsen_gauss(v, axes, opts.harmonic and k == "g") if k in gauss_keys else v) for k, v in c.items()}
         g, u, f = g.coarse(axes), inject(u, axes), inject(f, axes)
@@ -279,7 +279,7 @@ def pcg(A, M, b, x0, rtol, maxit, atol=0.0, flexible=False):
     stop = jnp.maximum(rtol * bnorm, atol)
 
     def cond(c):
-        x, r, z, p, rz, k, hist, neg = c
+        _, r, _, _, rz, k, _, neg = c
         return (k < maxit) & (jnp.sqrt(jnp.sum(r * r)) > stop) & (~neg) & jnp.isfinite(rz)
 
     def body(c):
@@ -297,7 +297,8 @@ def pcg(A, M, b, x0, rtol, maxit, atol=0.0, flexible=False):
         hist = hist.at[k + 1].set(jnp.sqrt(jnp.sum(r * r)) / bnorm)
         return x, r, z_new, p, rz_new, k + 1, hist, neg
 
-    x, r, z, p, rz, k, hist, neg = jax.lax.while_loop(cond, body, (x0, r, z, z, rz, 0, hist, jnp.zeros((), bool)))
+    x, r, z, _, rz, k, hist, neg = cast("tuple[jax.Array, ...]", jax.lax.while_loop(
+        cond, body, (x0, r, z, z, rz, 0, hist, jnp.zeros((), bool))))
     return x, k, hist, neg
 
 def gmg_solver(levels, transfers, opts):

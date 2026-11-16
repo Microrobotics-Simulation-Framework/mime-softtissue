@@ -19,7 +19,7 @@ from __future__ import annotations
 import time
 from collections.abc import Callable, Sequence
 from dataclasses import asdict, dataclass, field, replace
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, cast
 
 import jax
 import jax.numpy as jnp
@@ -178,17 +178,17 @@ def aa_update(s: AAState, x: jax.Array, g: jax.Array, f: jax.Array, m: int, reg:
     a non-finite update replaced by g. Returns (next iterate, state, restarted)."""
     fn = jnp.sqrt(jnp.sum(f * f))
     restart = s.started & (fn > s.fn_prev)
-    DF = jnp.where(restart, 0.0, s.DF)
-    DG = jnp.where(restart, 0.0, s.DG)
+    df_kept = jnp.where(restart, 0.0, s.DF)
+    dg_kept = jnp.where(restart, 0.0, s.DG)
     nh = jnp.where(restart, 0, s.nh)
     pos = jnp.where(restart, 0, s.pos)
     store = s.started & ~restart
-    DF = jnp.where(store, DF.at[pos].set(f - s.fp), DF)
-    DG = jnp.where(store, DG.at[pos].set(g - s.gp), DG)
+    df_new = jnp.where(store, df_kept.at[pos].set(f - s.fp), df_kept)
+    dg_new = jnp.where(store, dg_kept.at[pos].set(g - s.gp), dg_kept)
     nh = jnp.where(store, jnp.minimum(nh + 1, m), nh)
     pos = jnp.where(store, (pos + 1) % m, pos)
     mask = (jnp.arange(m) < nh).astype(f.dtype)
-    A = DF * mask[:, None]
+    A = df_new * mask[:, None]
     Gm = A @ A.T
     b = A @ f
     dg = jnp.diagonal(Gm)
@@ -196,10 +196,10 @@ def aa_update(s: AAState, x: jax.Array, g: jax.Array, f: jax.Array, m: int, reg:
     mm = mask[:, None] * mask[None, :]
     Gs = mm * Gm / (sc[:, None] * sc[None, :]) + (1.0 - mm) * jnp.eye(m, dtype=f.dtype) + reg * jnp.eye(m, dtype=f.dtype)
     gam = jnp.linalg.solve(Gs, mask * b / sc) / sc * mask
-    xn = g - (DG * mask[:, None]).T @ gam
+    xn = g - (dg_new * mask[:, None]).T @ gam
     bad = ~(jnp.all(jnp.isfinite(xn)) & jnp.all(jnp.isfinite(gam)))
     xn = jnp.where((nh > 0) & ~bad, xn, g)
-    return jnp.clip(xn, 0.0, 1.0), AAState(DF, DG, nh, pos, f, g, fn, jnp.ones((), bool)), restart
+    return jnp.clip(xn, 0.0, 1.0), AAState(df_new, dg_new, nh, pos, f, g, fn, jnp.ones((), bool)), restart
 
 
 def staggered_converged(err: jax.Array, passes: jax.Array, tol: float) -> jax.Array:
@@ -270,10 +270,11 @@ class Puncture3D:
         # Python floats, so a float32 preconditioner is not promoted by a numpy scalar (3D-COST's dtype finding)
         self.tip = replace(tip, top=float(b.height), **{k: float(v) for k, v in tip.geometry().items()})
         self.axis = (b.axis_x, 0.0)
-        floats = {k: (None if v is None else (v if isinstance(v, tuple) else float(v)))
-                  for k, v in material._asdict().items() if k != "fibre"}
+        floats = cast("dict[str, Any]", {k: (None if v is None else (v if isinstance(v, tuple) else float(v)))
+                                         for k, v in material._asdict().items() if k != "fibre"})
         self.gc_physical = floats["gc"]
-        self.mat = Material(**{**floats, "gc": discretisation_toughness(floats["gc"], b.h, floats["l"])})
+        fields: dict[str, Any] = {**floats, "gc": discretisation_toughness(floats["gc"], b.h, floats["l"])}
+        self.mat = Material(**fields)
         self.kpen = s.penalty_factor * initial_modulus(self.mat) / b.h
         if s.contact_at == "gauss":  # a volume penalty: the material inside the tip, at the Gauss points
             self.kpen = s.penalty_factor * initial_modulus(self.mat) / b.h ** 2
@@ -299,7 +300,8 @@ class Puncture3D:
 
     def phi(self, X, u, depth):
         p = X + u
-        R = ct._norm(p[..., 0] - self.axis[0], p[..., 1] - self.axis[1])
+        # ct._norm is contact's own helper; contact.py is outside this change
+        R = ct._norm(p[..., 0] - self.axis[0], p[..., 1] - self.axis[1])  # pyright: ignore[reportPrivateUsage]
         return ct.signed_distance(self.tip, R, p[..., 2], depth)
 
     def _gauss_points(self, X, u):
@@ -364,17 +366,18 @@ class Puncture3D:
         zi = jnp.zeros((), jnp.int32)
 
         def body(c):
-            u, k, size, kry, shifts, stuck = c
+            u, k, size, kry, shifts, _ = c
             r = gradE(u) * free
             K = jax.linearize(gradE, u)[1]
-            Kp = jax.linearize(gradE32, u.astype(F32))[1] if s.mixed else None
+            # gradE32 is bound whenever s.mixed
+            Kp: Any = jax.linearize(gradE32, u.astype(F32))[1] if s.mixed else None  # pyright: ignore[reportPossiblyUnboundVariable]
             x, kk, neg, diag = self._solve(K, r, u, g, Kp)
             kk = kk.astype(jnp.int32)
             du = -x * free
             scale = jnp.sum(jnp.abs(diag) * free) / jnp.maximum(jnp.sum(free), 1.0)
 
             def not_descent(st):
-                tau, d, ng, n, kk = st
+                _, d, ng, n, _ = st
                 slope = jnp.sum(r * d)
                 return (ng | (slope >= -1e-14 * jnp.sqrt(jnp.sum(r * r) * jnp.sum(d * d)))) & (n < 14)
 
@@ -391,7 +394,7 @@ class Puncture3D:
             slack = 1e-10 * jnp.abs(e0) + 1e-30
 
             def worse(st):
-                a, e, n = st
+                _, e, n = st
                 return ((~jnp.isfinite(e)) | (e > e0 + slack)) & (n < 20)
 
             def halve(st):
@@ -536,7 +539,7 @@ class Puncture3D:
         init = dict(u=u0, x=state.d, d=state.d, d_used=state.d, hist=state.history, k=zi, nk=zi, err=inf, capped=zi,
                     kry=zi, shifts=zi, dk=zi, conv=jnp.zeros((), bool), failed=jnp.zeros((), bool),
                     aa=aa_init(M, nd, u0.dtype), rs=zi)
-        c = jax.lax.while_loop(cond, body, init)
+        c = cast("dict[str, Any]", jax.lax.while_loop(cond, body, init))
         u, d, d_used = c["u"], c["d"], c["d_used"]
         converged = c["conv"] & ~c["failed"] & (c["capped"] == 0)
         nk, capped, kry, shifts = c["nk"], c["capped"], c["kry"], c["shifts"]
@@ -593,8 +596,8 @@ class Puncture3D:
         def cond(c):
             return (c["k"] < cap) & c["more"] & (c["capped"] == 0)
 
-        c = jax.lax.while_loop(cond, body, dict(u=u0, de=state.deleted, k=zi, nk=zi, kry=zi, shifts=zi, capped=zi,
-                                                more=jnp.ones((), bool)))
+        c = cast("dict[str, Any]", jax.lax.while_loop(cond, body, dict(u=u0, de=state.deleted, k=zi, nk=zi, kry=zi,
+                                                                     shifts=zi, capped=zi, more=jnp.ones((), bool))))
         u, de = c["u"], c["de"]
         converged = (~c["more"]) & (c["capped"] == 0)
         nx, ny, nz = self.grid.shape
@@ -768,11 +771,12 @@ class PunctureRun:
         """``path``.npz (rows and surface arrays) and ``path``.json (counts and meta)."""
         import json
         sf = self.surface
-        np.savez_compressed(path + ".npz", **{f"row_{k}": v for k, v in self.rows.items()}, rest=sf.rest,
-                            faces=sf.faces, face_kind=sf.face_kind, node=sf.node,
-                            points=np.asarray(sf.points, np.float32).reshape(-1, *sf.rest.shape),
-                            damage=np.asarray(sf.damage, np.float32).reshape(-1, sf.rest.shape[0]),
-                            frame_depth=np.asarray(sf.depth))
+        arrays: dict[str, Any] = {f"row_{k}": v for k, v in self.rows.items()}
+        arrays.update(rest=sf.rest, faces=sf.faces, face_kind=sf.face_kind, node=sf.node,
+                      points=np.asarray(sf.points, np.float32).reshape(-1, *sf.rest.shape),
+                      damage=np.asarray(sf.damage, np.float32).reshape(-1, sf.rest.shape[0]),
+                      frame_depth=np.asarray(sf.depth))
+        np.savez_compressed(path + ".npz", **arrays)
         with open(path + ".json", "w") as fh:
             json.dump({"counts": self.counts, "meta": self.meta, "symmetry_planes": list(sf.symmetry_planes)}, fh,
                       indent=1, default=float)
