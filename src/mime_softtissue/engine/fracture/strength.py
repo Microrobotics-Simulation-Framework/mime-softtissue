@@ -15,7 +15,10 @@ principal values the derivatives of the degraded energy in the principal stretch
 Drucker-Prager in the Biot stress, set by the uniaxial tensile strength ``s_ts`` and the hydrostatic strength ``s_hs``:
 sqrt(J2) + gamma1 I1 + gamma0 = 0, gamma1 = s_ts / (sqrt3 (3 s_hs - s_ts)), gamma0 = -sqrt3 s_hs s_ts / (3 s_hs - s_ts).
 
-Differences from the papers, declared: the elastic driving is this engine's history field (the papers use the current
+Differences from the papers, declared: c_e's Biot stress is degraded by the load step's starting damage, frozen over
+the staggered iterations (degraded by the current iterate, a uniform bar's damage swings between two values and the
+iteration never settles; the two agree until damage starts and as the step shrinks); the elastic driving is this
+engine's history field (the papers use the current
 energy; with a monotone load the two agree until damage starts); the energy split is this engine's (volumetric
 compression is not degraded; the papers degrade all of W); an active set enforces the bounds (the 2024 paper uses a
 penalty). ``coefficients`` computes W_ts and W_hs for this engine's own law (neo-Hookean or Gent, compressible), so the

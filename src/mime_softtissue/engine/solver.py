@@ -175,7 +175,9 @@ class Solver:
                      u: Any = None, d: Any = None) -> jax.Array:
         dx, dy = self.sizes(notch)
         if mat.strength is not None:
-            ce, tension = self.strength_driving(u, d, mat, notch)
+            # c_e's stress is degraded by the step's starting damage (frozen over the staggered iterations): degraded by
+            # the current iterate, a uniform bar's damage swings between two values and the iteration never settles
+            ce, tension = self.strength_driving(u, d_prev, mat, notch)
             return strength.solve_damage(history, ce, tension, mat.gc, mat.l, mat.strength.delta, dx, dy, self.grid,
                                          self.sca, self.I, self.J, self.gauss_weights(), self.viscosity, d_prev)
         return phase_field.solve_damage(history, mat.gc, mat.l, dx, dy, self.grid, self.sca, self.I, self.J,
