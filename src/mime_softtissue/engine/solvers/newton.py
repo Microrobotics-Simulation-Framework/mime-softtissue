@@ -39,7 +39,7 @@ def minimise(energy: Callable[[jax.Array], jax.Array],
             shift = jax.vmap(jnp.diag)(fb * scale)
 
             def not_descent(s):
-                tau, d, n = s
+                _, d, n = s
                 slope = jnp.sum(r * d)
                 return (slope >= -1e-14 * jnp.sqrt(jnp.sum(r * r) * jnp.sum(d * d))) & (n < 14)
 
@@ -54,14 +54,14 @@ def minimise(energy: Callable[[jax.Array], jax.Array],
         slack = 1e-10 * jnp.abs(e0) + 1e-30
 
         def worse(s):
-            a, e, n = s
+            _, e, n = s
             return ((~jnp.isfinite(e)) | (e > e0 + slack)) & (n < 20)
 
         def halve(s):
             a, _, n = s
             return a / 2, energy(u + (a / 2) * du), n + 1
 
-        a, e_a, n_a = jax.lax.while_loop(worse, halve, (jnp.ones((), u.dtype), energy(u + du), 0))
+        a, e_a, _ = jax.lax.while_loop(worse, halve, (jnp.ones((), u.dtype), energy(u + du), 0))
         size = a * jnp.max(jnp.abs(du))
         if stall_step:
             stalled = (size <= stall_step) & (jnp.abs(e_a - e0) <= 1e-13 * jnp.abs(e0))
@@ -76,4 +76,4 @@ def minimise(energy: Callable[[jax.Array], jax.Array],
         return (k < max_iter) & (size > step_tol)
 
     u, k, size = jax.lax.while_loop(cond, body, (u, 0, jnp.asarray(jnp.inf, u.dtype)))
-    return u, k, size <= step_tol
+    return u, jnp.asarray(k), size <= step_tol

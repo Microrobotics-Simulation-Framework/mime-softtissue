@@ -53,7 +53,7 @@ class Indenter:
 
 @dataclass(frozen=True)
 class Contact:
-    indenter: Indenter
+    indenter: Any  # an ``Indenter``, or whatever a caller's own ``distance`` reads (the registered tip's ``ShapeTip``)
     stiffness: float  # k, Pa/m
     weights: np.ndarray  # (nx+1, ny+1) nodal ring areas
     active: np.ndarray  # (nx+1, ny+1) 1 where a node may touch the indenter
@@ -197,7 +197,7 @@ def pressure_and_normal(c: Contact, X: jax.Array, u: jax.Array, depth: jax.Array
     return c.stiffness * jnp.maximum(-phi, 0.0) * jnp.asarray(c.active), n
 
 
-def nodal_hessian(c: Contact, X: jax.Array, u: jax.Array, depth: jax.Array, lag: Lag) -> jax.Array:
+def nodal_hessian(c: Contact, X: jax.Array, u: jax.Array, depth: jax.Array, lag: Lag | None) -> jax.Array:
     """The contact energy's 2 x 2 Hessian at each node (it couples no two nodes): (nx+1, ny+1, 2, 2)."""
     w = jnp.asarray(c.active * c.weights)
 

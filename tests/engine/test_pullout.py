@@ -30,7 +30,7 @@ def lame_pressure(delta: float, k: float) -> float:
     return p / (1 + p / (k * delta))
 
 
-def pulled(*, friction=MU, adhesion=0.0, weight_plant=False) -> tuple[float, float]:
+def pulled(*, friction=MU, adhesion=0.0, weight_plant=False, max_newton=40) -> tuple[float, float]:
     """The steady force after four slides of 0.02 mm, and the closed form's."""
     k, delta = 100 * E / H, 1e-3 * A
     sp = tube_on_rod(inner=A, outer=B, length=LEN, h=H, interference=delta, stiffness=k, friction=friction,
@@ -38,7 +38,7 @@ def pulled(*, friction=MU, adhesion=0.0, weight_plant=False) -> tuple[float, flo
     mu, kappa = shear_and_bulk(E, NU)
     mat = Material(mu=jnp.asarray(mu), kappa=jnp.asarray(kappa), gc=jnp.asarray(1.0), l=jnp.asarray(1e-4),
                    k_res=jnp.asarray(1e-6), stretch_limit=jnp.asarray(10.0))
-    solver = Solver(sp, "elastic", max_newton=40)
+    solver = Solver(sp, "elastic", max_newton=max_newton)
     state = solver.initial()
     for slide in (0.0, 0.02e-3, 0.04e-3, 0.06e-3, 0.08e-3):
         state, out = solver.step(state, jnp.asarray(5e-3 + slide), mat)
@@ -68,7 +68,10 @@ def test_the_pull_out_force_is_lames_pressure_times_friction():
 @pytest.mark.parametrize("plant", ["no_2_pi_r", "normal_along_axis"])
 def test_the_planted_errors_fail_the_line(plant):
     if plant == "no_2_pi_r":
-        force, exact = pulled(weight_plant=True)
+        # Newton diverges under this plant (measured: the force is 5e4 to 3e5 times the closed form, with the cap at 40, 10
+        # or 5 iterations), and a diverged step runs to its cap: 40 iterations took 60 s here against 9 s for 10. The honest
+        # arm above keeps 40 and converges (ratio 1.002 at 40, 10 and 5).
+        force, exact = pulled(weight_plant=True, max_newton=10)
     else:
         with normal_along_axis():
             force, exact = pulled()

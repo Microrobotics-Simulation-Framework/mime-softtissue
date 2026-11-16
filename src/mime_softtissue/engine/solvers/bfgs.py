@@ -15,8 +15,8 @@ import jax.numpy as jnp
 from . import blocktri
 
 
-def solve(residual: Callable[[jax.Array], jax.Array], blocks: Callable[[jax.Array], tuple], z0: jax.Array,
-          n_u: int, shape_u: tuple, shape_d: tuple, *, memory: int = 20, max_iter: int = 1000, refresh: int = 100, tol_u: float, tol_d: float
+def solve(residual: Callable[[jax.Array], jax.Array], blocks: Callable[[jax.Array], tuple[tuple[jax.Array, jax.Array], tuple[jax.Array, jax.Array]]],
+          z0: jax.Array, n_u: int, shape_u: tuple[int, ...], shape_d: tuple[int, ...], *, memory: int = 20, max_iter: int = 1000, refresh: int = 100, tol_u: float, tol_d: float
           ) -> tuple[jax.Array, jax.Array, jax.Array]:
     """``(z, iterations, converged)``. ``z`` = (displacement, damage) flattened, the first ``n_u`` the displacement;
     ``blocks(z)`` gives ((diag_u, upper_u), (diag_d, upper_d)) of the initial matrix at ``z``, the displacement's
@@ -81,7 +81,7 @@ def solve(residual: Callable[[jax.Array], jax.Array], blocks: Callable[[jax.Arra
         m0 = merit(fac, r)
 
         def worse(s):
-            a, zt, rt, i = s
+            a, _, rt, i = s
             return (~(merit(fac, rt) < (1.0 - 1e-4 * a) * m0) | ~jnp.all(jnp.isfinite(rt))) & (i < 12)
 
         def halve(s):
@@ -96,13 +96,13 @@ def solve(residual: Callable[[jax.Array], jax.Array], blocks: Callable[[jax.Arra
         sy = jnp.dot(s, y)
         ok = sy > 1e-12 * jnp.sqrt(jnp.dot(s, s) * jnp.dot(y, y))
         j = k % S.shape[0]
-        S = jnp.where(ok, S.at[j].set(s), S)
-        Y = jnp.where(ok, Y.at[j].set(y), Y)
+        S_next = jnp.where(ok, S.at[j].set(s), S)
+        Y_next = jnp.where(ok, Y.at[j].set(y), Y)
         rho = jnp.where(ok, rho.at[j].set(1.0 / jnp.where(ok, sy, 1.0)), rho)
         k = k + ok.astype(k.dtype)
         du = jnp.max(jnp.abs(s[:n_u]))
         dd = jnp.max(jnp.abs(s[n_u:]))
-        return zt, rt, fac, S, Y, rho, k, kk + 1, du, dd, a
+        return zt, rt, fac, S_next, Y_next, rho, k, kk + 1, du, dd, a
 
     def done(du, dd, a):  # a small step that was not cut short by the line search
         return (du <= tol_u) & (dd <= tol_d) & (a >= 0.25)
@@ -114,5 +114,5 @@ def solve(residual: Callable[[jax.Array], jax.Array], blocks: Callable[[jax.Arra
     init = (z0, r0, fac0, jnp.zeros((memory, n), dt), jnp.zeros((memory, n), dt), jnp.zeros(memory, dt),
             jnp.zeros((), jnp.int32), jnp.zeros((), jnp.int32), jnp.asarray(jnp.inf, dt), jnp.asarray(jnp.inf, dt),
             jnp.ones((), dt))
-    z, r, fac, S, Y, rho, k, kk, du, dd, a = jax.lax.while_loop(cond, body, init)
+    z, _, _, _, _, _, _, kk, du, dd, a = jax.lax.while_loop(cond, body, init)
     return z, kk, done(du, dd, a)

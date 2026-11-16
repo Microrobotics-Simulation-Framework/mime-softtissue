@@ -24,11 +24,18 @@ from mime.core import MimeNode, NodeFields, Units, node_fields, shape_named, typ
 from mime.gradients import GradientStatus
 from mime.registry import (DESIGN, NUMERICAL, PHYSICAL, BuildContext, Delivery, GradientRecord, Interaction, Read,
                            RoleKind, convention, register_interaction)
-from mime.units import Force, Length, N, Quantity, Velocity, m_per_s, mm
+from mime.units import Force, Magnitude, N, Quantity, Velocity, m_per_s
 from mime.vocabulary import APPLIED_WRENCH, BACKGROUND_LOAD, POSE, RESISTANCE
 
 from ._vocabulary import VERSION
-from .gel_block import INDENTER, N_INDENTER, N_REGION, TIP_FORCE
+from .gel_block import INDENTER, N_REGION, TIP_FORCE
+
+
+def _scalar(parameters: Mapping[str, Magnitude], name: str) -> float:
+    value = parameters[name]
+    if isinstance(value, tuple):
+        raise TypeError(f"parameter {name!r} is one number, not {value!r}")
+    return float(value)
 
 
 class ContactState(TypedDict, closed=True):
@@ -135,7 +142,7 @@ class TipContact(Interaction):
         node = b.add_response_node(TipContactNode(
             ctx.node_name(), ctx.timestep, shape=shape, hull_centre=hull.centre,
             hull_rotation=tuple(c for row in hull.rotation for c in row), friction=self.friction,
-            adhesion=self.adhesion, stiffness=self.stiffness, **{n: float(region[n]) for n in names}))
+            adhesion=self.adhesion, stiffness=self.stiffness, **{n: _scalar(region, n) for n in names}))
         b.connect(b.read("pose"), into=node["pose"])
         b.connect(b.read("force"), into=node["force"])
         b.connect(node["indenter"], into=b.target("indenter"))

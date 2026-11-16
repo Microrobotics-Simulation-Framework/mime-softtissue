@@ -12,8 +12,6 @@ dimension-specific names are all imported here (``quasistatic``)."""
 
 from __future__ import annotations
 
-from typing import Any
-
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -25,7 +23,7 @@ from ..material import Material
 _XI = np.array([-1.0, 1.0, 1.0, -1.0])
 _ETA = np.array([-1.0, -1.0, 1.0, 1.0])
 _G = 1.0 / np.sqrt(3.0)
-_GAUSS = np.array([(-_G, -_G), (_G, -_G), (_G, _G), (-_G, _G)])
+GAUSS_POINTS = np.array([(-_G, -_G), (_G, -_G), (_G, _G), (-_G, _G)])
 COLUMN = np.array([0, 1, 1, 0])  # the node's column offset in its element
 ROW = np.array([0, 0, 1, 1])
 
@@ -36,8 +34,8 @@ def _shape(xi: float, eta: float) -> tuple[np.ndarray, np.ndarray]:
     return n, dn
 
 
-N_GAUSS = np.stack([_shape(*p)[0] for p in _GAUSS])  # (4 gauss, 4 nodes)
-DN_GAUSS = np.stack([_shape(*p)[1] for p in _GAUSS])  # (4 gauss, 4 nodes, 2)
+N_GAUSS = np.stack([_shape(*p)[0] for p in GAUSS_POINTS])  # (4 gauss, 4 nodes)
+DN_GAUSS = np.stack([_shape(*p)[1] for p in GAUSS_POINTS])  # (4 gauss, 4 nodes, 2)
 DN_CENTRE = _shape(0.0, 0.0)[1]
 
 

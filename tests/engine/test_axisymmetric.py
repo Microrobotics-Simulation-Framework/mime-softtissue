@@ -126,29 +126,39 @@ def _homogeneous_ue(x0, dx, dy, a, b, c):
     return jnp.asarray(np.stack([(a - 1.0) * R, c * R + (b - 1.0) * Z], axis=1))
 
 
+# The element functions are jitted once per check call, inside it (a plant of ``AXI_PLANTS`` patches the module's functions
+# before the call and is traced into the jit): eagerly, one example costs about a second, so the three properties took
+# minutes. The examples and the tolerances are unchanged.
 def check_homogeneous_energy():
+    energy = jax.jit(lambda ue, x0, dx, dy, mat: axi.element_strain_energy(ue, jnp.zeros(4), x0, dx, dy, mat))
+    psi = jax.jit(lambda F, mat: hom.psi(F, mat))
+
     @settings(max_examples=100, deadline=None, derandomize=False)
     @given(radii, sizes, sizes, stretches, stretches, shears)
     def prop(x0, dx, dy, a, b, c):
         mat = material()
         ue = _homogeneous_ue(x0, dx, dy, a, b, c)
-        e = float(axi.element_strain_energy(ue, jnp.zeros(4), jnp.asarray(x0), jnp.asarray(dx), jnp.asarray(dy), mat))
+        e = float(energy(ue, jnp.asarray(x0), jnp.asarray(dx), jnp.asarray(dy), mat))
         F = jnp.asarray([[a, 0.0, 0.0], [c, b, 0.0], [0.0, 0.0, a]])
         vol = np.pi * ((x0 + dx) ** 2 - x0 ** 2) * dy
-        expect = float(hom.psi(F, mat)) * vol
+        expect = float(psi(F, mat)) * vol
         assert e == pytest.approx(expect, rel=1e-11, abs=1e-14 * float(mat.mu) * vol)
     prop()
 
 
 def check_axial_translation_is_free():
+    @jax.jit
+    def energy_and_gradient(ue, x0, dx, dy, mat):
+        args = (jnp.zeros(4), x0, dx, dy, mat)
+        return axi.element_strain_energy(ue, *args), jax.grad(lambda v: axi.element_strain_energy(v, *args))(ue)
+
     @settings(max_examples=100, deadline=None, derandomize=False)
     @given(radii, sizes, sizes, st.floats(min_value=-1e-3, max_value=1e-3))
     def prop(x0, dx, dy, t):
         mat = material()
         ue = jnp.zeros((4, 2)).at[:, 1].set(t)
-        args = (jnp.zeros(4), jnp.asarray(x0), jnp.asarray(dx), jnp.asarray(dy), mat)
-        e = float(axi.element_strain_energy(ue, *args))
-        g = np.asarray(jax.grad(lambda v: axi.element_strain_energy(v, *args))(ue))
+        e, g = energy_and_gradient(ue, jnp.asarray(x0), jnp.asarray(dx), jnp.asarray(dy), mat)
+        e, g = float(e), np.asarray(g)
         scale = float(mat.mu) * np.pi * ((x0 + dx) ** 2 - x0 ** 2) * dy
         assert abs(e) <= 1e-12 * scale
         assert np.max(np.abs(g)) <= 1e-9 * scale / max(dx, dy)
@@ -156,14 +166,15 @@ def check_axial_translation_is_free():
 
 
 def check_hessian_symmetric():
+    hessian = jax.jit(lambda ue, x0, dx, dy, mat: axi.element_hessian(ue, jnp.full(4, 0.3), x0, dx, dy, mat))
+
     @settings(max_examples=100, deadline=None, derandomize=False)
     @given(radii, sizes, sizes, st.lists(st.floats(min_value=-0.1, max_value=0.1), min_size=8, max_size=8))
     def prop(x0, dx, dy, v):
         mat = material(1e-6)
         ue = jnp.asarray(v).reshape(4, 2) * min(dx, dy)
         ue = ue.at[:, 0].multiply(jnp.where(x0 == 0.0, jnp.asarray([0.0, 1.0, 1.0, 0.0]), 1.0))  # u_R = 0 on the axis
-        H = np.asarray(axi.element_hessian(ue, jnp.full(4, 0.3), jnp.asarray(x0), jnp.asarray(dx), jnp.asarray(dy),
-                                           mat))
+        H = np.asarray(hessian(ue, jnp.asarray(x0), jnp.asarray(dx), jnp.asarray(dy), mat))
         assert np.all(np.isfinite(H))
         np.testing.assert_allclose(H, H.T, rtol=1e-10, atol=1e-12 * np.max(np.abs(H)))
     prop()

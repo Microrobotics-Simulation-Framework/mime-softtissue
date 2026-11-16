@@ -299,7 +299,7 @@ class Solver:
         sp = self.specimen
         con = None if self.contact is None else self.contact.at(tip)
         u = apply_load(sp.load, state.u, delta, state.delta, self.y_frac)
-        depth = jnp.asarray(delta, u.dtype) if con is not None else None
+        depth = jnp.asarray(delta, u.dtype)  # read only where there is a contact
         if con is not None:  # a predictor that inverts an element (infinite energy) falls back to the last state
             e_pred = self.energy(u, self.damage_at_gauss(state.d), mat, notch)
             u = jnp.where(jnp.isfinite(e_pred), u, state.u)
@@ -315,7 +315,7 @@ class Solver:
             d_used = d
             dq = self.damage_at_gauss(d)
         elif self.mode == "phase_field":
-            def body(c):
+            def staggered_body(c):
                 u, d, hist, k, nk, _, _, capped, lag, _ = c
                 dq = self.damage_at_gauss(d)
                 u, n, ok = self.newton(u, dq, mat, notch, depth, lag, con)
@@ -324,6 +324,7 @@ class Solver:
                 dp = jnp.zeros((), u.dtype)
                 if friction:
                     new_lag = self._lag(u, depth, lag, con)
+                    assert new_lag is not None  # friction: the contact slides
                     dp = (jnp.max(jnp.abs(new_lag.pressure - lag.pressure)) / self.lag_relaxation
                           / (self._pressure_scale(new_lag, p_start) + 1e-300))
                     lag = new_lag
@@ -334,10 +335,10 @@ class Solver:
 
             init = (u, state.d, state.history, 0, 0, jnp.asarray(jnp.inf, u.dtype), state.d, 0, lag,
                     jnp.zeros((), u.dtype))
-            u, d, hist, k, nk, err, d_used, capped, lag, _ = jax.lax.while_loop(cond, body, init)
+            u, d, hist, k, nk, err, d_used, capped, lag, _ = jax.lax.while_loop(cond, staggered_body, init)
             dq = self.damage_at_gauss(d_used)
         elif self.mode == "local":
-            def body(c):
+            def local_body(c):
                 u, d, k, nk, _, capped, lag = c
                 u, n, ok = self.newton(u, self.damage_at_gauss(d), mat, notch, depth, lag, con)
                 stretch = self.centre_stretch(u, notch)
@@ -350,16 +351,17 @@ class Solver:
                 return (c[2] < self.max_staggered) & (c[4] > 0)
 
             u, d, k, nk, err, capped, lag = jax.lax.while_loop(
-                cond, body, (u, state.d, 0, 0, jnp.ones((), u.dtype), 0, lag))
+                cond, local_body, (u, state.d, 0, 0, jnp.ones((), u.dtype), 0, lag))
             hist = state.history
             dq = self.damage_at_gauss(d)  # equals the damage the last solve used (no new deletion)
         else:
             dq = self.damage_at_gauss(state.d)
             if friction:
-                def body(c):
+                def friction_body(c):
                     u, k, nk, _, capped, lag = c
                     u, n, ok = self.newton(u, dq, mat, notch, depth, lag, con)
                     new_lag = self._lag(u, depth, lag, con)
+                    assert new_lag is not None  # friction: the contact slides
                     dp = (jnp.max(jnp.abs(new_lag.pressure - lag.pressure)) / self.lag_relaxation
                           / (self._pressure_scale(new_lag, p_start) + 1e-300))
                     return u, k + 1, nk + n, dp, capped + (~ok), new_lag
@@ -368,7 +370,7 @@ class Solver:
                     return (c[1] < self.max_staggered) & (c[3] > self.tol_p)
 
                 u, k, nk, err, capped, lag = jax.lax.while_loop(
-                    cond, body, (u, 0, 0, jnp.asarray(jnp.inf, u.dtype), 0, lag))
+                    cond, friction_body, (u, 0, 0, jnp.asarray(jnp.inf, u.dtype), 0, lag))
             else:
                 u, nk, ok = self.newton(u, dq, mat, notch, depth, lag, con)
                 k, err, capped = 1, jnp.zeros((), u.dtype), (~ok).astype(jnp.int32)
@@ -383,7 +385,7 @@ class Solver:
             f_n = self.indenter_force(u, depth, None, con) * sp.thickness * sp.force_factor
             e_c = ct.penalty_energy(con, self.X, u, depth) * sp.thickness * sp.force_factor
             w_f = (ct.friction_energy(con, self.X, u, depth, lag) * sp.thickness * sp.force_factor
-                   if friction else zero)
+                   if lag is not None else zero)
         w_v = zero
         if self.viscosity and self.mode == "phase_field":
             dd = phase_field.damage_at_gauss(d, self.I, self.J) - phase_field.damage_at_gauss(state.d, self.I, self.J)
