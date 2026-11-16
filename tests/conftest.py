@@ -23,9 +23,11 @@ from tutwiler_strip import strip_experiment  # noqa: E402 - examples/tutwiler_st
 
 
 def coarse_strip() -> Experiment:
-    """The strip at h = 0.75 mm, standing in for the benchmark's 0.3 mm: the adapter checks are about the entries' contracts,
-    not the physics, and a node battery steps the solve hundreds of times."""
-    return strip_experiment(h_mm=0.75, notch_mm=10.5)
+    """The strip at h = 1.5 mm, standing in for the benchmark's 0.3 mm: the adapter checks are about the entries' contracts,
+    not the physics, and a node battery steps the solve hundreds of times. (Was 0.75 mm. At 1.5 mm the battery's failing set
+    and the parameter-reach set are the same, to the name, and the three tests that use it take a fifth of the time; 3 mm is
+    refused by the specimen.)"""
+    return strip_experiment(h_mm=1.5, notch_mm=10.5)
 
 
 @pytest.fixture

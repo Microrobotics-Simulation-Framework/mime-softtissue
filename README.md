@@ -102,9 +102,13 @@ JAX_PLATFORMS=cpu taskset -c 0 pytest -m slow  # the slow lane: the benchmark in
 **Pin to one core and the CPU** (`taskset -c 0`, `JAX_PLATFORMS=cpu`). An unpinned JAX run on a shared machine
 oversubscribes the cores: one measurement took 51 s unpinned for what takes 11 s pinned.
 
-CI (`.github/workflows/ci.yml`) has a `default` job, a `slow` job that runs on a pull request labelled `slow` and every
-week, a weekly job against MIME's release branch (it tells you the week MIME moves under you), and a `typing` job. Run
-the suite in float32 and in float64 (`JAX_ENABLE_X64=1`) before you trust a number. A property test that flakes is
+CI (`.github/workflows/ci.yml`) has a `smoke` job (a draft pull request: the tests that need no solve, about two minutes), a
+`default` job (a pull request that is not a draft, main, every week: the tests on both cores with `pytest -n 2`, JAX's
+compilation cache kept between runs, Python 3.12; 3.14 too on main, every week and on a pull request labelled `ready`), a
+`slow` job that runs on a pull request labelled `slow` and every week, a weekly job against MIME's release branch (it tells
+you the week MIME moves under you), and a `typing` job. A push to a pull request cancels its earlier run; a change that only
+touches `docs/`, notebooks, the licence or `CITATION.cff` runs nothing. Run the suite in float32 and in float64
+(`JAX_ENABLE_X64=1`) before you trust a number. A property test that flakes is
 read, not loosened: see the comments of `tests/engine/test_properties.py`.
 
 ## Editor support
