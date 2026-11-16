@@ -27,7 +27,8 @@ def test_every_shipped_run_loads_with_its_rows_counts_and_surface_frames() -> No
         run = R.load(name)
         assert len(run.rows["depth_m"]) > 0 and np.all(np.isfinite(run.rows["force_N"])), name
         assert len(run.surface.points) == len(run.surface.damage) == len(run.surface.depth) >= 2, name
-        assert run.counts["status"] in ("depth reached", "wall time"), name
+        status = run.counts["status"]  # a run may stop after its puncture (a step past it below the minimum step)
+        assert status in ("depth reached", "wall time") or (status.startswith("stopped") and run.puncture()[2]), name
 
 
 def test_deletions_first_peak_halves_with_each_refinement_while_the_phase_fields_force_settles() -> None:
