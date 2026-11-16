@@ -40,10 +40,10 @@ ADVANCE = 0.5e-3
 
 @dataclass(frozen=True)
 class Stiffness:
-    """Yeoh's two constants (Pa): W = C1 (I1 - 3) + C2 (I1 - 3)^2."""
+    """Yeoh's two constants (Pa): W = C1 (I1 - 3) + C2 (I1 - 3)^2 (arrays where the fit traces them)."""
 
-    c1: float
-    c2: float
+    c1: float | jax.Array
+    c2: float | jax.Array
 
 
 def data() -> dict[str, Any]:
