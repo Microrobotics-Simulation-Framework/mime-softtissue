@@ -67,12 +67,6 @@ def uniform_grid(n: tuple[int, int, int], lengths: tuple[float, float, float]) -
     return Grid3(*[np.linspace(0.0, L, k + 1) for k, L in zip(n, lengths)])
 
 
-def _interp(f: jax.Array, axis: int, side: int) -> jax.Array:
-    wl, wr = SIDES[side]
-    n = f.shape[axis]
-    return wl * jax.lax.slice_in_dim(f, 0, n - 1, axis=axis) + wr * jax.lax.slice_in_dim(f, 1, n, axis=axis)
-
-
 def _diff(f: jax.Array, axis: int) -> jax.Array:
     n = f.shape[axis]
     return jax.lax.slice_in_dim(f, 1, n, axis=axis) - jax.lax.slice_in_dim(f, 0, n - 1, axis=axis)
