@@ -83,7 +83,7 @@ def fit_stiffness(delta_mm: np.ndarray, force_n: np.ndarray, gc: float, l: float
     y = np.asarray(force_n)
     p = np.array([start.c1, start.c2])
 
-    def model(q):
+    def model(q: jax.Array) -> jax.Array:
         return forces(s, material(Stiffness(q[0], q[1]), gc, l, h), deltas)
 
     history = []

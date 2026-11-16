@@ -46,18 +46,16 @@ def invariants(F: jax.Array, mat: Material, stress: bool = False) -> tuple[jax.A
     incompressible plane stress (F33 = 1 / det F; J is 1, or det F where det F <= 0 so that the law reads it inverted)."""
     area = F[0, 0] * F[1, 1] - F[0, 1] * F[1, 0]
     C = F.T @ F
-    if stress:  # the sheet's thickness stretch is 1 / area: J = 1 where the element is not inverted
-        ok = area > 0
-        safe = jnp.where(ok, area, 1.0)
-        J, I1 = jnp.where(ok, jnp.ones_like(area), area), C[0, 0] + C[1, 1] + 1.0 / (safe * safe)
-    else:
-        J, I1 = area, C[0, 0] + C[1, 1] + 1.0
+    # In plane stress the sheet's thickness stretch is 1 / area: J = 1 where the element is not inverted.
+    safe = jnp.where(area > 0, area, 1.0)
+    jac = jnp.where(area > 0, jnp.ones_like(area), area) if stress else area
+    i1 = C[0, 0] + C[1, 1] + (1.0 / (safe * safe) if stress else 1.0)
     fibres: list[jax.Array] = []
     if mat.fibre is not None:
         for sign in (1.0, -1.0):
             a = jnp.stack([jnp.cos(sign * mat.fibre.angle), jnp.sin(sign * mat.fibre.angle)])
             fibres.append(a @ C @ a)
-    return J, I1, tuple(fibres)
+    return jac, i1, tuple(fibres)
 
 
 def energy_parts(F: jax.Array, mat: Material, stress: bool = False) -> tuple[jax.Array, jax.Array]:
