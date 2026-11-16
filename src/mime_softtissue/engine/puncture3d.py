@@ -732,6 +732,16 @@ class PunctureRun:
         i = int(np.argmax(self.rows["force_N"]))
         return float(self.rows["force_N"][i]), float(self.rows["depth_m"][i])
 
+    def puncture(self, drop: float = 0.02) -> tuple[float, float, bool]:
+        """(force N, depth m, found): the first local maximum after which the force falls by more than ``drop`` of it
+        (the puncture); without one, the largest force and found = False."""
+        F = self.rows["force_N"]
+        for i in range(1, len(F) - 1):
+            if F[i] >= F[i - 1] and F[i] >= F[i + 1] and np.min(F[i + 1:]) < (1.0 - drop) * F[i]:
+                return float(F[i]), float(self.rows["depth_m"][i]), True
+        f, z = self.peak()
+        return f, z, False
+
     def save(self, path: str) -> None:
         """``path``.npz (rows and surface arrays) and ``path``.json (counts and meta)."""
         import json
