@@ -15,9 +15,12 @@ are not).
 Viscoelasticity (optional, ``Material.prony``): Prony terms on the isochoric response, each a Maxwell branch with an
 internal strain Gamma_i (symmetric, at every quadrature point, carried by the solver's state as the history is):
 
-    psi_i = mu_i |E^ - Gamma_i|^2,     mu_i = beta_i mu,    E^ = kappa(x) (Cb - Cb^-1) / 4,    Cb = J^(-2/3) C
-    kappa^2 = 1 + (2 c2 / mu) x + (2 c3 / mu) x^2   (the Yeoh base's own stiffening, so that a step strain's
-                                                      overstress is about beta_i times the isochoric response)
+    psi_i = mu_i |E^ - Gamma_i|^2,     mu_i = beta_i mu,    E^ = kappa (Cb - Cb^-1) / 4,    Cb = J^(-2/3) C
+    kappa^2 = (1 + (2 c2 / mu) x + (2 c3 / mu) x^2) (x + delta) / (x* + delta),   x* = |Cb - Cb^-1|^2 / 8,
+    delta = 1e-6, so that mu_i |E^|^2 = beta_i psi_iso(x) at every deformation (to delta): a step strain's
+    overstress is beta_i times the isochoric response, decaying as exp(-t / tau_i) (Fung's quasi-linear form).
+    (E^ has the direction of (Cb - Cb^-1) / 4, the mean of the Green and Almansi strains, and the size that makes
+    the branch the Yeoh law's; x / x* -> 1 at small strain.)
     phi_i = eta_i |dGamma_i/dt|^2,     eta_i = mu_i tau_i   (the dissipation potential; tau_i the relaxation time)
 
 Each step is an incremental variational update: the solver minimises the elastic energy plus dt phi_i, and the
@@ -114,7 +117,10 @@ def degradation(d: Any, k_res: Any) -> Any:
 
 # --- viscoelastic branches ------------------------------------------------------------------------------------------
 VOIGT = ((0, 0), (1, 1), (2, 2), (0, 1), (0, 2), (1, 2))
-_SHEAR = (1.0, 1.0, 1.0, 2.0, 2.0, 2.0)  # the weights of a Voigt vector's squared norm (off-diagonals count twice)
+_SHEAR = (1.0, 1.0, 1.0, 2.0, 2.0, 2.0)
+#: Regularises the ratio x / x* (both vanish quadratically at the identity): its effect on the branch energy is below
+#: 1e-6 relative at stretches over 1.01, and it keeps every derivative finite (float32 included).
+BRANCH_DELTA = 1e-6  # the weights of a Voigt vector's squared norm (off-diagonals count twice)
 
 
 def voigt(C: jax.Array) -> jax.Array:
@@ -141,18 +147,22 @@ def _inverse(c: jax.Array, det: jax.Array) -> jax.Array:
 
 
 def branch_strain(c: jax.Array, mat: Material) -> jax.Array:
-    """E^ = kappa(x) (Cb - Cb^-1) / 4 from C in Voigt order (..., 6); zero where det C <= 0 (the law's energy is
-    infinite there anyway)."""
+    """E^ = kappa (Cb - Cb^-1) / 4 from C in Voigt order (..., 6), sized so that mu |E^|^2 / 2 is the Yeoh isochoric
+    energy (``BRANCH_DELTA`` regularises x / x* at the identity); zero where det C <= 0 (the law's energy is infinite
+    there anyway)."""
     det = _determinant(c)
     ok = det > 0
     det_s = jnp.where(ok, det, 1.0)
     eye = jnp.asarray((1.0, 1.0, 1.0, 0.0, 0.0, 0.0), dtype=c.dtype)
     cb = jnp.where(ok[..., None], c * det_s[..., None] ** (-1.0 / 3.0), eye)
     x = cb[..., 0] + cb[..., 1] + cb[..., 2] - 3.0
-    kappa2 = 1.0 + (2.0 * mat.c2 / mat.mu) * x + (2.0 * mat.c3 / mat.mu) * x * x
-    kappa = jnp.sqrt(jnp.maximum(kappa2, 1e-12))
     inv = _inverse(cb, _determinant(cb))
-    return (0.25 * kappa)[..., None] * (cb - inv)
+    diff = cb - inv
+    x_star = squared_norm(diff) / 8.0
+    shape = 1.0 + (2.0 * mat.c2 / mat.mu) * x + (2.0 * mat.c3 / mat.mu) * x * x
+    kappa2 = shape * (jnp.maximum(x, 0.0) + BRANCH_DELTA) / (x_star + BRANCH_DELTA)
+    kappa = jnp.sqrt(jnp.maximum(kappa2, 1e-12))
+    return (0.25 * kappa)[..., None] * diff
 
 
 def _ratios(mat: Material, dt: Any, dtype: Any) -> tuple[jax.Array, jax.Array]:

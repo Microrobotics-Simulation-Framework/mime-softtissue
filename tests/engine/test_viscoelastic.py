@@ -4,7 +4,8 @@ The lines, stated before the checks:
 - **relaxation:** after a step strain the force is the Prony closed form, F_inf + sum F_i prod (1 + r_i)^-1 for the
   backward-Euler steps, to 1e-9 at the material point and 1e-5 on the FE sheet with its width held (Newton's
   tolerance); against exp(-t / tau_i) to 1 % at r = dt / tau <= 0.01. The closed form is written out here (Yeoh's
-  pure-shear stress and the branch energy's derivative), not taken from the law. Planted: tau_1 x 1.1, x 1.5, x 0.67
+  pure-shear stress and the branch energy in the stretch), not taken from the law; F_i is beta_i times the Yeoh
+  stress to 1e-6 (quasi-linear). Planted: tau_1 x 1.1, x 1.5, x 0.67
   in the model must each fail the 1e-9 line.
 - **creep:** at small strain (stress 1e-4 of mu) under a constant load, one branch is the standard linear solid:
   strain(t) = s / E_inf - (s / E_inf - s / E_0) exp(-t / tau_c), tau_c = tau (1 + beta), to 1 % (r <= 1e-3).
@@ -47,14 +48,19 @@ def long_term_stress(lam, c2=C2):
     return 2 * (lam - lam ** -3) * (C1 + 2 * c2 * x)
 
 
-def branch_stress(lam, beta, c2=C2):
-    """d/dlam of beta mu kappa^2 |E*|^2 in pure shear: E* = diag(0, l^2 - l^-2, l^-2 - l^2) / 4, kappa^2 = 1 + 2 c2 x / mu."""
+def branch_energy(lam, beta, c2=C2):
+    """beta mu |E^|^2 in pure shear, written out: x = l^2 + l^-2 - 2, x* = |Cb - Cb^-1|^2 / 8 = (l^2 - l^-2)^2 / 4,
+    |E^|^2 = kappa^2 x* / 2, kappa^2 = (1 + 2 c2 x / mu) (x + delta) / (x* + delta)."""
     mu = 2 * C1
     x = lam ** 2 + lam ** -2 - 2
-    dx = 2 * lam - 2 * lam ** -3
-    s = lam ** 2 - lam ** -2
-    ds = 2 * lam + 2 * lam ** -3
-    return beta * mu * ((2 * c2 / mu) * dx * s ** 2 / 8 + (1 + 2 * c2 * x / mu) * 2 * s * ds / 8)
+    xs = (lam ** 2 - lam ** -2) ** 2 / 4
+    k2 = (1 + 2 * c2 * x / mu) * (x + law.BRANCH_DELTA) / (xs + law.BRANCH_DELTA)
+    return beta * mu * k2 * xs / 2
+
+
+def branch_stress(lam, beta, c2=C2):
+    """d/dlam of ``branch_energy`` (by JAX on the scalar closed form, not the law's tensors)."""
+    return float(jax.grad(branch_energy)(jnp.asarray(float(lam)), beta, c2))
 
 
 def closed_form_relaxation(lam, dts, beta=BETA, tau=TAU):
@@ -69,6 +75,12 @@ def step_and_hold(n=400, dt=0.05, first=1e-9):
     dts = np.full(n, dt)
     dts[0] = first
     return dts
+
+
+@pytest.mark.parametrize("lam", [1.1, 1.3, 1.6, 2.5])
+def test_the_step_overstress_is_beta_times_the_isochoric_response(lam):
+    for beta in BETA:
+        assert branch_stress(lam, beta) == pytest.approx(beta * long_term_stress(lam), rel=1e-6)
 
 
 @pytest.mark.parametrize("lam", [1.1, 1.3, 1.6])
