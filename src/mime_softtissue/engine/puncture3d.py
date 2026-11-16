@@ -107,6 +107,7 @@ class Settings:
     #: The material's tension part past full damage: "residual" keeps k_res times the whole law (round 1's arithmetic);
     #: "neo" keeps k_res times the neo-Hookean part only, so a fully damaged point carries no Yeoh stiffening.
     residual: str = "residual"
+    trace: bool = False  # print a line a staggered pass (depth, pass, damage change, Newton count, converged, Krylov)
 
 
 class State(NamedTuple):
@@ -181,6 +182,11 @@ def aa_update(s: AAState, x: jax.Array, g: jax.Array, f: jax.Array, m: int, reg:
     bad = ~(jnp.all(jnp.isfinite(xn)) & jnp.all(jnp.isfinite(gam)))
     xn = jnp.where((nh > 0) & ~bad, xn, g)
     return jnp.clip(xn, 0.0, 1.0), AAState(DF, DG, nh, pos, f, g, fn, jnp.ones((), bool)), restart
+
+
+def _pass_line(depth, k, err, n, ok, kry, shifts) -> None:
+    print(f"    pass depth {float(depth) * 1e3:.4f} mm k {int(k)} err {float(err):.2e} newton {int(n)} ok {bool(ok)} "
+          f"krylov {int(kry)} shifts {int(shifts)} t {time.strftime('%H:%M:%S')}", flush=True)
 
 
 # ------------------------------------------------------------------------------------------------------ the rows ---
@@ -429,6 +435,8 @@ class Puncture3D:
             u, n, ok, kry, shifts, hist, d_new, kd = self._pass(c["u"], c["x"], state.history, depth, self._tol(c["err"]))
             f = d_new - c["x"]
             err = jnp.max(jnp.abs(f))
+            if s.trace:
+                jax.debug.callback(_pass_line, depth, c["k"] + 1, err, n, ok, kry, shifts)
             if s.anderson > 0:
                 xn, aa, rs = aa_update(c["aa"], c["x"].ravel(), d_new.ravel(), f.ravel(), s.anderson)
                 xn = xn.reshape(c["x"].shape)
