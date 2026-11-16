@@ -44,15 +44,14 @@ DN_CENTRE = _shape(0.0, 0.0)[1]
 def invariants(F: jax.Array, mat: Material, stress: bool = False) -> tuple[jax.Array, jax.Array, tuple[jax.Array, ...]]:
     """J, I1 and the fibre invariants of a 2 x 2 deformation gradient in plane strain (F33 = 1), or with ``stress`` in
     incompressible plane stress (F33 = 1 / det F; J is 1, or det F where det F <= 0 so that the law reads it inverted)."""
-    J = F[0, 0] * F[1, 1] - F[0, 1] * F[1, 0]
+    area = F[0, 0] * F[1, 1] - F[0, 1] * F[1, 0]
     C = F.T @ F
-    if stress:
-        ok = J > 0
-        Js = jnp.where(ok, J, 1.0)
-        I1 = C[0, 0] + C[1, 1] + 1.0 / (Js * Js)
-        J = jnp.where(ok, jnp.ones_like(J), J)
+    if stress:  # the sheet's thickness stretch is 1 / area: J = 1 where the element is not inverted
+        ok = area > 0
+        safe = jnp.where(ok, area, 1.0)
+        J, I1 = jnp.where(ok, jnp.ones_like(area), area), C[0, 0] + C[1, 1] + 1.0 / (safe * safe)
     else:
-        I1 = C[0, 0] + C[1, 1] + 1.0
+        J, I1 = area, C[0, 0] + C[1, 1] + 1.0
     fibres: list[jax.Array] = []
     if mat.fibre is not None:
         for sign in (1.0, -1.0):
