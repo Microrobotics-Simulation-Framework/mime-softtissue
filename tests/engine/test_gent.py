@@ -145,3 +145,37 @@ def test_without_the_limit_the_law_is_unchanged_to_the_last_bit(I1, J):
     vol = 0.25 * mat.kappa * (Jj ** 2 - 1.0 - 2.0 * jnp.log(Jj))
     assert float(plus) == float(iso + jnp.where(Jj >= 1.0, vol, 0.0))
     assert float(minus) == float(jnp.where(Jj < 1.0, vol, 0.0))
+
+
+# --- the two pairings Gent's term would make wrong, refused (``MaterialRefused``) -------------------------------------
+PRONY = law.Prony(beta=jnp.asarray([0.5, 0.2]), tau=jnp.asarray([1.0, 30.0]))
+C_STRETCHED = jnp.asarray([1.44, 1 / 1.2, 1 / 1.2, 0.0, 0.0, 0.0])  # incompressible uniaxial stretch 1.2, Voigt order
+
+
+def test_gent_with_prony_branches_is_refused():
+    """The branches are sized to the Yeoh law's slope (``branch_strain``), which does not follow Gent's: every entry to
+    them refuses a material with both, and each alone is taken."""
+    both = material()._replace(prony=PRONY)
+    for call in (lambda: law.branch_strain(C_STRETCHED, both),
+                 lambda: law.initial_strains((2,), both),
+                 lambda: law.viscous_energies(C_STRETCHED, jnp.zeros((2, 6)), both, 0.1)):
+        with pytest.raises(law.MaterialRefused) as refused:
+            call()
+        assert refused.value.code == "softtissue.gent-viscous"
+    assert np.isfinite(np.asarray(law.branch_strain(C_STRETCHED, material(jm=None)._replace(prony=PRONY)))).all()
+    assert np.isfinite(float(law.energy_parts(jnp.asarray(1.0), jnp.asarray(3.3), (), material())[0]))
+
+
+def test_gent_with_the_3d_neo_residual_is_refused():
+    """``residual="neo"`` strips Yeoh's terms past full damage but not Gent's excess over the neo-Hookean term: the 3-D
+    engine refuses the pair when it is built, and takes each alone."""
+    from mime_softtissue.engine import puncture3d as P
+
+    blk = P.Block(half_width=1e-3, height=1e-3, h=0.5e-3, fine_xy=0.5e-3, fine_z=0.5e-3)
+    tip = P.sharp_cone(0.35, 0.05e-3)
+    gent = Material(mu=MU, kappa=50 * MU, gc=1.0, l=0.25e-3, k_res=1e-6, stretch_limit=10.0, gent_jm=JM)
+    with pytest.raises(law.MaterialRefused) as refused:
+        P.Puncture3D(blk, gent, tip, P.Settings(residual="neo"))
+    assert refused.value.code == "softtissue.gent-neo-residual"
+    assert P.Puncture3D(blk, gent, tip, P.Settings(residual="residual")).mat.gent_jm == JM
+    assert P.Puncture3D(blk, gent._replace(gent_jm=None), tip, P.Settings(residual="neo")).mat.gent_jm is None

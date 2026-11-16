@@ -31,7 +31,7 @@ from .fracture import phase_field
 from .fracture.phase_field import discretisation_toughness
 from .grid import graded_rows
 from .kinematics import solid3d as S
-from .material import Material, degradation
+from .material import Material, MaterialRefused, degradation
 from .solvers import multigrid3d as MG
 
 F32 = jnp.float32
@@ -107,7 +107,8 @@ class Settings:
     shrink_at: int = 25
     volumetric: str = "mean"
     #: The material's tension part past full damage: "residual" keeps k_res times the whole law (round 1's arithmetic);
-    #: "neo" keeps k_res times the neo-Hookean part only, so a fully damaged point carries no Yeoh stiffening.
+    #: "neo" keeps k_res times the neo-Hookean part only, so a fully damaged point carries no Yeoh stiffening (refused
+    #: with Gent's term, ``MaterialRefused``: it would keep Gent's excess).
     residual: str = "residual"
     trace: bool = False  # print a line a staggered pass (depth, pass, damage change, Newton count, converged, Krylov)
     #: "phase_field" (AT2) or "deletion": the plugin's control without a length scale, an element deleted for good once
@@ -275,6 +276,11 @@ class Puncture3D:
         self.gc_physical = floats["gc"]
         fields: dict[str, Any] = {**floats, "gc": discretisation_toughness(floats["gc"], b.h, floats["l"])}
         self.mat = Material(**fields)
+        if s.residual == "neo" and self.mat.gent_jm is not None:
+            raise MaterialRefused("softtissue.gent-neo-residual",
+                                  'Gent\'s stiffening (gent_jm) with residual="neo": past full damage it strips Yeoh\'s '
+                                  "terms but not Gent's excess over the neo-Hookean term, so a broken point would keep "
+                                  "k_res times Gent's stiffening")
         self.kpen = s.penalty_factor * initial_modulus(self.mat) / b.h
         if s.contact_at == "gauss":  # a volume penalty: the material inside the tip, at the Gauss points
             self.kpen = s.penalty_factor * initial_modulus(self.mat) / b.h ** 2

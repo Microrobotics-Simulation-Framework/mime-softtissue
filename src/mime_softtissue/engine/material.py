@@ -45,6 +45,9 @@ finite, so a damaged band can still open past the limit (k_res times a locking l
 Newton trial step past the limit reads a finite energy; an undamaged point reaches it only at a stress 1 / GENT_CUT
 times the neo-Hookean one at the same x. Invariant-based like the rest (no eigenvalues); Yeoh's c2, c3 still add.
 
+Gent's term is refused (``MaterialRefused``) with two options it would make wrong: Prony branches (``branch_strain``
+sizes them to the Yeoh law's slope, not Gent's; code ``softtissue.gent-viscous``), and the 3-D engine's
+``residual="neo"`` (it strips Yeoh's terms past full damage, not Gent's excess; ``softtissue.gent-neo-residual``).
 No MIME import."""
 
 from __future__ import annotations
@@ -97,6 +100,23 @@ class Material(NamedTuple):
     c3: Any = 0.0
     prony: Prony | None = None
     gent_jm: Any = None
+
+
+class MaterialRefused(ValueError):
+    """A combination of the law's options that it would compute wrongly, refused instead; ``code`` names which."""
+
+    def __init__(self, code: str, message: str) -> None:
+        self.code = code
+        super().__init__(f"{message} ({code})")
+
+
+def refuse_gent_with_prony(mat: Material) -> None:
+    """Refuses Gent's term with Prony branches: the branches are sized to the Yeoh law's slope (``branch_strain``),
+    which does not follow Gent's 1 / (1 - x / Jm)."""
+    if mat.gent_jm is not None and mat.prony is not None:
+        raise MaterialRefused("softtissue.gent-viscous",
+                              "Gent's stiffening (gent_jm) with Prony branches: the branches follow the Yeoh law's slope, "
+                              "not Gent's, so the viscous stress would be wrong")
 
 
 #: Where Gent's logarithm hands over to its linear continuation: 1 - x* / Jm (the stress there is 1 / GENT_CUT times
@@ -176,6 +196,7 @@ def branch_strain(c: jax.Array, mat: Material) -> jax.Array:
     """E^ = kappa (Cb - Cb^-1) / 4 from C in Voigt order (..., 6), sized so that mu |E^|^2 / 2 is the Yeoh isochoric
     energy (``BRANCH_DELTA`` regularises x / x* at the identity); zero where det C <= 0 (the law's energy is infinite
     there anyway)."""
+    refuse_gent_with_prony(mat)
     det = _determinant(c)
     ok = det > 0
     det_s = jnp.where(ok, det, 1.0)
@@ -233,4 +254,5 @@ def branch_dissipation(c_start: jax.Array, c_end: jax.Array, gamma_start: jax.Ar
 def initial_strains(shape: tuple[int, ...], mat: Material, dtype: Any = jnp.float64) -> jax.Array:
     """Zero internal strains (the undeformed, relaxed state) for ``shape`` quadrature points: shape + (n, 6)."""
     assert mat.prony is not None
+    refuse_gent_with_prony(mat)
     return jnp.zeros(tuple(shape) + (len(mat.prony.tau), 6), dtype=dtype)
