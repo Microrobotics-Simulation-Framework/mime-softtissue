@@ -6,10 +6,10 @@ load computed from states; the law hands the block the tip instead). The tip's s
 geometry kind names, evaluated through ``mime.core.shape_named`` at each node (no formula here).
 
 The block's axis is the world z through its body's initial ``position`` (the centre of its bottom face); the tip must
-be coaxial (the build cannot see it, so it is a validity line). In 3-D the block is square, ``2 radius`` across, and a
-quarter of it is solved (x >= 0, y >= 0 in the block's frame, symmetric about both planes through the axis) by TIP3D's
-engine (``engine.puncture3d``: spike 3D-COST's ``all2`` levers, Anderson acceleration, a step limit, the mean dilatation);
-its surface shows that quarter."""
+be coaxial (the build cannot see it, so it is a validity line). In 3-D the block is square, ``2 radius`` across, solved
+by TIP3D's engine (``engine.puncture3d``: spike 3D-COST's ``all2`` levers, Anderson acceleration, a step limit, the mean
+dilatation) on its ``symmetry``: a quarter (x >= 0, y >= 0 in the block's frame, symmetric about both planes through the
+axis), a half (y >= 0) or the whole block; its surface shows the part solved."""
 
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ from ..engine import puncture3d as p3
 from ..engine.material import Material, shear_and_bulk
 from ..engine.solver import Solver, State
 from ..engine.specimen import axisymmetric_block
-from ._display import placed, quarter_boundary, revolved
+from ._display import box_boundary, placed, revolved
 from ._material_record import engine_material, read_material
 from ._vocabulary import VERSION
 
@@ -60,9 +60,6 @@ TIP_DEPTH = define(Interface("softtissue.block.tip_depth", ReadKind.STATE, "m", 
 CRACK_AREA = define(Interface("softtissue.block.crack_area", ReadKind.STATE, "m^2", None, (), magnitude=1e-6,
                               description="the crack's area: the phase field's surface energy over the toughness"))
 DIMENSIONS = ("axisymmetric", "3d")
-#: In 3-D the uniform region reaches this share of ``fine`` from the axis (spike 3D-COST's G1 grid: 0.8 mm across, 1.0
-#: mm deep), and grades by 1.5 up to 16 h beyond.
-FINE_XY = 0.8
 #: Where the tip waits when no law has handed it yet: far above the block.
 AWAY = (0.0, 0.0, 1e3, 1.0, 0.0, 0.0, 0.0)
 
@@ -302,19 +299,20 @@ MAX_SUBSTEPS = 8
 
 
 class Block3DNode(MimeNode):
-    """The quarter block's displacement, damage and history fields; each base step the equilibrium at the tip's depth by
-    TIP3D's engine (``engine.puncture3d``: spike 3D-COST's all2 levers, Anderson acceleration, a step limit, the mean
-    dilatation), frictionless."""
+    """The 3-D block's displacement, damage and history fields on its ``symmetry`` (quarter, half or full); each base
+    step the equilibrium at the tip's depth by TIP3D's engine (``engine.puncture3d``: spike 3D-COST's all2 levers,
+    Anderson acceleration, a step limit, the mean dilatation), frictionless."""
 
     def __init__(self, name: str, timestep: float, *, radius: float, height: float, h: float, fine: float,
                  young: float, poisson: float, toughness: float, length_scale: float, stretch_limit: float,
                  residual: float, origin: Sequence[float], shape: str, yeoh_c2: float = 0.0,
-                 solver: str = "tip3d") -> None:
+                 solver: str = "tip3d", symmetry: str = "quarter", fine_across: float = 0.8e-3) -> None:
         super().__init__(name, timestep, radius=float(radius), height=float(height), h=float(h), fine=float(fine),
+                         fine_across=float(fine_across),
                          young=float(young), poisson=float(poisson), toughness=float(toughness),
                          length_scale=float(length_scale), stretch_limit=float(stretch_limit),
                          residual=float(residual), origin=tuple(float(c) for c in origin), shape=str(shape),
-                         yeoh_c2=float(yeoh_c2), solver=str(solver))
+                         yeoh_c2=float(yeoh_c2), solver=str(solver), symmetry=str(symmetry))
         self._engine: _LawTip | None = None
 
     def engine(self) -> _LawTip:
@@ -323,15 +321,15 @@ class Block3DNode(MimeNode):
             mu, kappa = shear_and_bulk(own["young"], own["poisson"])
             mat = Material(mu=mu, kappa=kappa, gc=own["toughness"], l=own["length_scale"], k_res=own["residual"],
                            stretch_limit=own["stretch_limit"], c2=own["yeoh_c2"])
-            block = p3.Block(half_width=own["radius"], height=own["height"], h=own["h"], symmetry="quarter",
-                             fine_xy=FINE_XY * own["fine"], fine_z=own["fine"])
+            block = p3.Block(half_width=own["radius"], height=own["height"], h=own["h"], symmetry=own["symmetry"],
+                             fine_xy=own["fine_across"], fine_z=own["fine"])
             self._engine = _LawTip(block, mat, SOLVERS[own["solver"]], own["shape"], own["origin"])
         return self._engine
 
     def surface(self, u: Array, d: Array) -> tuple[Array, Array]:
-        """The quarter's boundary shown as a surface (``_display.quarter_boundary``): each vertex's point and damage."""
+        """The solved part's boundary shown as a surface (``_display.box_boundary``): each vertex's point and damage."""
         eng = self.engine()
-        ijk, _ = quarter_boundary(*eng.grid.shape)
+        ijk, _ = box_boundary(*eng.grid.shape)
         i, j, k = ijk[:, 0], ijk[:, 1], ijk[:, 2]
         points = jnp.asarray(np.asarray(eng.X)[i, j, k], dtype=u.dtype) + u[i, j, k]
         return points, d[i, j, k]
@@ -404,14 +402,15 @@ class Block3DNode(MimeNode):
 class GelBlock(Dynamics):
     """A block of gel or clot, ``radius`` and ``height``, its bottom face fixed (its centre at the body's initial
     ``position``), its side and top free, pressed and pulled by a coaxial rigid tip through a law
-    (``softtissue.tip_contact``); grid spacing ``h`` within ``fine`` of the axis and of the top, graded beyond; the
+    (``softtissue.tip_contact``); grid spacing ``h`` within ``fine`` of the axis and of the top (in 3-D within
+    ``fine_across`` of the axis and ``fine`` of the top), graded beyond; the
     material from the record ``material`` (a Yeoh term where the record has ``yeoh_c2``); fracture by the AT2 phase
     field with a viscous term ``viscosity`` (in units of Gc/l), or, as a control, element deletion (``mode="local"``).
     ``tip_shape`` names the registered shape the tip's geometry kind evaluates (the law cannot hand a name to the
     block's build). ``dimension``: ``"axisymmetric"`` (a cylinder of ``radius``), or ``"3d"`` (a square block
-    ``2 radius`` across, a quarter solved by symmetry, frictionless, the phase field only, no viscous term, insertion
-    only). Its surface: the axisymmetric section revolved for display, or the 3-D quarter's boundary, both coloured
-    by damage."""
+    ``2 radius`` across, frictionless, the phase field only, no viscous term, insertion only), solved on its
+    ``symmetry``: ``"quarter"`` (both planes through the axis), ``"half"`` (the plane y = 0 only) or ``"full"``. Its
+    surface: the axisymmetric section revolved for display, or the 3-D part solved, both coloured by damage."""
 
     name = "softtissue.gel_block"
     version = VERSION
@@ -421,8 +420,11 @@ class GelBlock(Dynamics):
     references = ("Miehe2010",)
     validity = (
         "axisymmetric: the tip must be coaxial with the block, and a sharp tip's planar crack cannot form (a ring "
-        "crack is the only one the build has); 3-D: the tip must be coaxial too (a quarter is solved, symmetric about "
-        "both planes through the axis), frictionless and without adhesion whatever the law's settings, insertion only",
+        "crack is the only one the build has); 3-D: frictionless and without adhesion whatever the law's settings, "
+        "insertion only; a quarter needs the tip on the axis and pins the material there (a flat crack through the "
+        "axis cannot open on either plane: use a half or the whole block); a half needs the tip in the plane y = 0, "
+        "best a little off the axis in x (an imperfection, about 0.2 h: exactly on the axis the solve reaches a "
+        "bifurcation through many tangent shifts)",
         "quasi-static only: each base step is a static equilibrium at the tip's pose; no inertia, no rate dependence "
         "beyond the viscous damage term, no poroelasticity",
         "the contact's node weights are ring areas, right where the grid is uniform (within fine of the axis and top)",
@@ -436,13 +438,16 @@ class GelBlock(Dynamics):
     initial_state = {"position": LENGTH}
     setting_roles = {"radius": DESIGN, "height": DESIGN, "material": DESIGN,
                      "h": convention(NUMERICAL, "the grid near the tip, at most half the length scale"),
-                     "fine": convention(NUMERICAL, "the uniform region near the axis and the top"),
+                     "fine": convention(NUMERICAL, "the uniform region near the axis and the top (3-D: the top)"),
+                     "fine_across": convention(NUMERICAL, "3-D only: the uniform region's reach from the axis"),
                      "viscosity": convention(NUMERICAL, "a viscous damage term, units of Gc/l (0.1: round 3's)"),
                      "mode": convention(PHYSICAL, "phase_field is the model; local is the control"),
                      "lag_relaxation": convention(NUMERICAL, "friction's lagged pressure under-relaxed (round 4: a "
                                                               "two-cycle at 1.0 on withdrawal)"),
                      "tip_shape": convention(DESIGN, "the registered shape of the tip's kind"),
-                     "dimension": convention(NUMERICAL, "axisymmetric, or 3d (a quarter, TIP3D's engine)"),
+                     "dimension": convention(NUMERICAL, "axisymmetric, or 3d (TIP3D's engine)"),
+                     "symmetry": convention(NUMERICAL, "3-D only: quarter, half or full (a flat crack through the "
+                                                       "axis needs half or full)"),
                      "solver": convention(NUMERICAL, "3-D only: tip3d (TIP3D's settings) or all2 (spike 3D-COST's "
                                                      "arithmetic, its rows reproduced)")}
     radius: Annotated[Quantity, Length]
@@ -450,12 +455,14 @@ class GelBlock(Dynamics):
     material: str
     h: Annotated[Quantity, Length] = mm(0.05)
     fine: Annotated[Quantity, Length] = mm(1.5)
+    fine_across: Annotated[Quantity, Length] = mm(0.8)
     viscosity: float = 0.1
     mode: str = "phase_field"
     tip_shape: str = "softtissue.headed_tip"
     lag_relaxation: float = 0.5
     dimension: str = "axisymmetric"
     solver: str = "tip3d"
+    symmetry: str = "quarter"
 
     @override
     def assets_read(self) -> tuple[str, ...]:
@@ -470,20 +477,26 @@ class GelBlock(Dynamics):
             found.append(f"mode {self.mode!r} has no 3-D build (the 3-D block is the phase field's)")
         if self.solver not in SOLVERS:
             found.append(f"solver is {self.solver!r}, not one of {tuple(SOLVERS)}")
+        if self.symmetry not in p3.SYMMETRIES:
+            found.append(f"symmetry is {self.symmetry!r}, not one of {tuple(p3.SYMMETRIES)}")
         return found
 
     @override
     def surface_meshes(self, settings: Mapping[str, Magnitude]) -> tuple[SurfaceMesh, ...]:
-        """The axisymmetric section revolved for display (``_display.revolved``), or the 3-D quarter's boundary with
-        its two symmetry faces (``_display.quarter_boundary``), coloured by damage over its range, 0 to 1."""
-        radius, height, h, fine = (float(settings[n]) for n in ("radius", "height", "h", "fine"))  # pyright: ignore[reportArgumentType]
+        """The axisymmetric section revolved for display (``_display.revolved``), or the 3-D part's boundary with its
+        symmetry faces (``_display.box_boundary``), coloured by damage over its range, 0 to 1."""
+        names = ("radius", "height", "h", "fine", "fine_across")
+        radius, height, h, fine, across = (float(settings[n]) for n in names)  # pyright: ignore[reportArgumentType]
         damage = (MeshField("damage", "1", Port("surface_damage"), (0.0, 1.0), reduction="max"),)
         if self.dimension == "3d":
-            x = p3.axis_rows(radius, h, FINE_XY * fine, 1.5, 16.0)
+            half = p3.axis_rows(radius, h, across, 1.5, 16.0)
+            whole = np.concatenate([-half[::-1], half[1:]])
+            x = half if self.symmetry == "quarter" else whole
+            y = whole if self.symmetry == "full" else half
             z = p3.axis_rows(height, h, fine, 1.5, 16.0, from_top=True)
-            ijk, faces = quarter_boundary(len(x) - 1, len(x) - 1, len(z) - 1)
-            rest = np.stack([x[ijk[:, 0]], x[ijk[:, 1]], z[ijk[:, 2]]], axis=1)
-            return (SurfaceMesh("quarter", rest, faces, Port("surface_points"), damage),)
+            ijk, faces = box_boundary(len(x) - 1, len(y) - 1, len(z) - 1)
+            rest = np.stack([x[ijk[:, 0]], y[ijk[:, 1]], z[ijk[:, 2]]], axis=1)
+            return (SurfaceMesh(self.symmetry, rest, faces, Port("surface_points"), damage),)
         g = axisymmetric_block(radius=radius, height=height, h=h, fine_r=fine, fine_z=fine).grid
         i, j, theta, faces = revolved(g.nx, g.ny)
         rest = np.asarray(placed(g.x, g.y, None, i, j, theta))
@@ -496,10 +509,12 @@ class GelBlock(Dynamics):
         if self.dimension == "3d":
             b.add_node(Block3DNode(
                 ctx.node_name(), ctx.timestep, radius=ctx.scalar("radius"), height=ctx.scalar("height"),
-                h=ctx.scalar("h"), fine=ctx.scalar("fine"), young=values["young_modulus"],
+                h=ctx.scalar("h"), fine=ctx.scalar("fine"), fine_across=ctx.scalar("fine_across"),
+                young=values["young_modulus"],
                 poisson=values["poisson_ratio"], toughness=values["toughness"], length_scale=values["length_scale"],
                 stretch_limit=values["stretch_limit"], residual=values.get("residual_stiffness", 1e-6), origin=origin,
-                shape=self.tip_shape, yeoh_c2=values.get("yeoh_c2", 0.0), solver=self.solver))
+                shape=self.tip_shape, yeoh_c2=values.get("yeoh_c2", 0.0), solver=self.solver,
+                symmetry=self.symmetry))
             return
         b.add_node(BlockNode(
             ctx.node_name(), ctx.timestep, radius=ctx.scalar("radius"), height=ctx.scalar("height"),

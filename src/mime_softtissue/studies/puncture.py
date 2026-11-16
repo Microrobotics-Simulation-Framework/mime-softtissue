@@ -49,13 +49,17 @@ def puncture_experiment(*, material: str, tip: Any, speed: Quantity = mm_per_s(0
                         dimension: str = "axisymmetric", resolution: Quantity = mm(0.125),
                         step: Quantity = mm(0.02), block_radius: Quantity = mm(5.0), block_height: Quantity = mm(5.0),
                         fine: Quantity = mm(1.0), frames_every: int = 1, solver: str = "tip3d",
+                        symmetry: str = "quarter", offset: Quantity = mm(0.0), fine_across: Quantity = mm(0.8),
                         name: str = "puncture") -> Puncture:
     """A rigid ``tip`` pushed at ``speed`` into a block of the record ``material`` to ``depth``.
 
     - ``material``: a record's name (``"softtissue.whole_blood_clot"``, or your own fitted record);
     - ``tip``: a tip kind with its dimensions (``st.ConeTip(...)``, ``st.PunchTip(...)``, ``st.HeadedTip(...)``);
     - ``speed``: the insertion speed (the model is quasi-static: it sets the clock only);
-    - ``dimension``: ``"axisymmetric"`` (fast; ring cracks only) or ``"3d"`` (a quarter block; a flat crack can form);
+    - ``dimension``: ``"axisymmetric"`` (fast; ring cracks only) or ``"3d"``, solved on its ``symmetry`` (``"quarter"``,
+      ``"half"`` or ``"full"``; a flat crack through the axis needs a half or the whole block), the tip ``offset`` from
+      the axis in x (an imperfection; a half wants about 0.2 ``resolution``), its fine cells within ``fine_across`` of
+      the axis;
     - ``resolution``: the cell size near the tip (at most half the record's length scale), within ``fine`` of the axis
       and the top; ``step`` the depth a base step.
 
@@ -69,10 +73,11 @@ def puncture_experiment(*, material: str, tip: Any, speed: Quantity = mm_per_s(0
     exp = Experiment(name, scene=Scene.new(up=Z, units="m"), gravity=m_per_s2(0.0), dt=s(dt))
     exp.add_body(Body("clot", dynamics=st.GelBlock(radius=block_radius, height=block_height, material=material,
                                                    h=resolution, fine=fine, dimension=dimension,
-                                                   tip_shape=SHAPES[type(tip)], solver=solver),
+                                                   tip_shape=SHAPES[type(tip)], solver=solver, symmetry=symmetry,
+                                                   fine_across=fine_across),
                       initial=State(position=mm((0.0, 0.0, 0.0)))))
     exp.add_body(Body("tip", dynamics=RigidInertial(), parts={"tip": Part(tip)},
-                      initial=State(position=mm((0.0, 0.0, float(block_height.to(mm)))),
+                      initial=State(position=mm((float(offset.to(mm)), 0.0, float(block_height.to(mm)))),
                                     orientation=(1.0, 0.0, 0.0, 0.0), velocity=m_per_s((0.0, 0.0, -speed_m_s)),
                                     angular_velocity=rad_per_s((0.0, 0.0, 0.0)))))
     exp.declare("tip.mass", kg(1.2e-5), reason="a steel tip of a few millimetres (quasi-static: its mass does not matter)")

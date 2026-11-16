@@ -61,10 +61,11 @@ def placed(x: np.ndarray, y: np.ndarray, u: object, i: np.ndarray, j: np.ndarray
     return m.stack([r * m.cos(theta), r * m.sin(theta), z], axis=1)  # type: ignore[attr-defined]
 
 
-def quarter_boundary(nx: int, ny: int, nz: int) -> tuple[np.ndarray, np.ndarray]:
-    """The 3-D quarter block's boundary for display: its top, its two outer sides and its two symmetry faces (x = 0 and
-    y = 0, where a crack inside the block shows), each face its own grid of nodes. Each vertex's node ``(i, j, k)``
-    (``(V, 3)``) and the triangles, counter-clockwise seen from outside the quarter."""
+def box_boundary(nx: int, ny: int, nz: int) -> tuple[np.ndarray, np.ndarray]:
+    """A 3-D block's boundary for display, ``nx ny nz`` cells: its top and its four sides (the bottom is held and not
+    shown), each face its own grid of nodes. The faces at ``i = 0`` and ``j = 0`` are the planes of symmetry where the
+    block is a quarter or a half (where a crack inside the block shows), its outer sides otherwise. Each vertex's node
+    ``(i, j, k)`` (``(V, 3)``) and the triangles, counter-clockwise seen from outside the block."""
     nodes: list[np.ndarray] = []
     faces: list[np.ndarray] = []
     start = 0
@@ -91,6 +92,6 @@ def quarter_boundary(nx: int, ny: int, nz: int) -> tuple[np.ndarray, np.ndarray]
     face(2, nz, True)  # the top
     face(0, nx, True)  # the outer side x = half-width
     face(1, ny, True)  # the outer side y = half-width
-    face(0, 0, False)  # the symmetry face x = 0
-    face(1, 0, False)  # the symmetry face y = 0
+    face(0, 0, False)  # the side at i = 0 (x = 0: a symmetry plane in a quarter)
+    face(1, 0, False)  # the side at j = 0 (y = 0: a symmetry plane in a quarter or a half)
     return np.concatenate(nodes), np.concatenate(faces).astype(np.int64)
