@@ -178,6 +178,22 @@
   "clot_cone_live": {
    "rows": "softtissue.puncture3d.clot_cone_live.rows",
    "meta": "softtissue.puncture3d.clot_cone_live.meta"
+  },
+  "clot_sphere_R0.25": {
+   "rows": "softtissue.puncture3d.clot_sphere_R0.25.rows",
+   "meta": "softtissue.puncture3d.clot_sphere_R0.25.meta"
+  },
+  "symmetry_cone_full_h0.177": {
+   "rows": "softtissue.puncture3d.symmetry_cone_full_h0.177.rows",
+   "meta": "softtissue.puncture3d.symmetry_cone_full_h0.177.meta"
+  },
+  "symmetry_cone_half_h0.177": {
+   "rows": "softtissue.puncture3d.symmetry_cone_half_h0.177.rows",
+   "meta": "softtissue.puncture3d.symmetry_cone_half_h0.177.meta"
+  },
+  "symmetry_cone_quarter_h0.177": {
+   "rows": "softtissue.puncture3d.symmetry_cone_quarter_h0.177.rows",
+   "meta": "softtissue.puncture3d.symmetry_cone_quarter_h0.177.meta"
   }
  },
  "sweeps": {

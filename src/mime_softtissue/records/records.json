@@ -243,18 +243,6 @@
    "kind": "authored"
   },
   {
-   "name": "softtissue.puncture_runs",
-   "sha256": "bfe7e43e68606904308a4888174fdded88987bb96fc8a3a459512ce00c481370",
-   "size": 76722,
-   "licence": "CC-BY-4.0",
-   "locations": [
-    "package:softtissue/data/puncture_runs/index.json"
-   ],
-   "credit": "the plugin's authors (the puncture tutorial's run index; the sweep's and spike 3D-COST's rows computed by them)",
-   "role": "results",
-   "kind": "authored"
-  },
-  {
    "name": "softtissue.puncture3d.clot_cone_deletion_h0.125.rows",
    "sha256": "a9a2419e35a4c3099c7607754a4c44891d752a62779d13808def96bf7a40f760",
    "size": 328079,
@@ -431,6 +419,114 @@
     "package:softtissue/data/puncture_gel_gent.json"
    ],
    "credit": "values from Fakhouri, Hutchens and Crosby 2015 (Soft Matter 11, 4723) as stated by Fregonese and Bacca 2021 (J. Mech. Phys. Solids, doi:10.1016/j.jmps.2021.104497); Gent's Jm refitted to their Ogden alpha = 9 by the plugin's authors; record by the plugin's authors",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.clot_sphere_R0.25.rows",
+   "sha256": "07717074672064f3993c130f811d42ce24ec35f0a6b84ec5a9959d7649d79976",
+   "size": 434158,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/clot_sphere_R0.25.npz"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.clot_sphere_R0.25.meta",
+   "sha256": "891fff8f5d914b384cdf16885011b3c7f387aad932134beef1ea84bfd26517dc",
+   "size": 2931,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/clot_sphere_R0.25.json"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.symmetry_cone_full_h0.177.rows",
+   "sha256": "f2e0507aede9f7aabb93d1a31ba97a90d3b714b89da7e1e709aa26409e16f8d0",
+   "size": 430971,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/symmetry_cone_full_h0.177.npz"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.symmetry_cone_full_h0.177.meta",
+   "sha256": "31ebeecda023e42ef227408a6da97db42b92bcf2715ee24f239099744b7639d4",
+   "size": 2950,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/symmetry_cone_full_h0.177.json"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.symmetry_cone_half_h0.177.rows",
+   "sha256": "c215cadcde3b58c6fb3c62255d1d80f11022e8651970b692f108976ba38a7343",
+   "size": 374907,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/symmetry_cone_half_h0.177.npz"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.symmetry_cone_half_h0.177.meta",
+   "sha256": "38b8f04190fbebfe314afb569c2b823a5293eaede4027386201bd9af3a241273",
+   "size": 2730,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/symmetry_cone_half_h0.177.json"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.symmetry_cone_quarter_h0.177.rows",
+   "sha256": "e4410cad6aa13be4e72efd4bc2bc2d40e72b3681ce795009b38b1c9282106764",
+   "size": 204028,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/symmetry_cone_quarter_h0.177.npz"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.symmetry_cone_quarter_h0.177.meta",
+   "sha256": "3bcd949be87d2fbe0d4a39f0743156e6d238f232712b2806c43a7665c219e6a0",
+   "size": 2490,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/symmetry_cone_quarter_h0.177.json"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture_runs",
+   "sha256": "934e1c7a59ee82bbe2430976ece316da76fcfe1b65ab820ad72aed5d3cfd70d7",
+   "size": 77391,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture_runs/index.json"
+   ],
+   "credit": "the plugin's authors (the puncture tutorial's run index; the sweep's and spike 3D-COST's rows computed by them)",
    "role": "results",
    "kind": "authored"
   }
