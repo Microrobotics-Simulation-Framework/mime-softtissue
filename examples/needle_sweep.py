@@ -34,12 +34,13 @@ def main() -> None:
     ap.add_argument("--depth", type=float, default=8.0, help="mm")
     ap.add_argument("--radii", default=",".join(str(r) for r in RADII_MM), help="mm")
     ap.add_argument("--material", default="softtissue.puncture_gel", help="the gel's record")
+    ap.add_argument("--volumetric", default="gauss", help="axisymmetric: gauss (full integration) or mean")
     a = ap.parse_args()
     radii = [float(r) for r in a.radii.split(",")]
     needle = st.PunchTip(radius=mm(radii[0]), fillet=mm(radii[0]), length=mm(a.block))
     p = puncture_experiment(material=a.material, tip=needle, dimension=a.dimension, resolution=mm(a.h),
                             step=mm(a.step), depth=mm(a.depth), block_radius=mm(a.block), block_height=mm(a.block),
-                            fine=mm(a.fine), name="needle_sweep")
+                            fine=mm(a.fine), name="needle_sweep", volumetric=a.volumetric)
     study = Study(p.experiment).sweep(along({"tip.parts.tip.radius": [mm(r) for r in radii],
                                              "tip.parts.tip.fillet": [mm(r) for r in radii]}),
                                       duration=p.duration,
@@ -60,6 +61,7 @@ def main() -> None:
         print(f"R {r} mm: peak {force[peak] * 1e3:.3f} mN at {depth[peak] * 1e3:.3f} mm", flush=True)
     Path(a.out).mkdir(parents=True, exist_ok=True)
     Path(a.out, "needle_sweep.json").write_text(json.dumps(dict(material=a.material, dimension=a.dimension, h_mm=a.h,
+                                                                volumetric=a.volumetric,
                                                                 fine_mm=a.fine,
                                                                 block_mm=a.block, step_mm=a.step, wall_s=wall,
                                                                 members=rows), indent=1))

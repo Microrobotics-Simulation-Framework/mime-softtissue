@@ -35,7 +35,7 @@ from mime.units import LENGTH, Length, Magnitude, Quantity, mm
 from mime.vocabulary import Interface, ReadKind, TargetKind, define
 
 from ..engine import contact as ct
-from ..engine.kinematics.axisymmetric import nodal_ring_area
+from ..engine.kinematics.axisymmetric import VOLUMETRIC, nodal_ring_area
 from ..engine import puncture3d as p3
 from ..engine.material import Material, shear_and_bulk
 from ..engine.solver import Solver, State
@@ -166,13 +166,16 @@ class BlockNode(MimeNode):
     def __init__(self, name: str, timestep: float, *, radius: float, height: float, h: float, fine: float,
                  young: float, poisson: float, toughness: float, length_scale: float, stretch_limit: float,
                  residual: float, viscosity: float, origin: Sequence[float], shape: str, mode: str,
-                 lag_relaxation: float = 0.5, yeoh_c2: float = 0.0, gent_jm: float = 0.0) -> None:
+                 lag_relaxation: float = 0.5, yeoh_c2: float = 0.0, gent_jm: float = 0.0,
+                 volumetric: str = "gauss") -> None:
+        # the volumetric treatment is a constant only when it is not the default (the default node is unchanged)
+        vol = {} if volumetric == "gauss" else {"volumetric": str(volumetric)}
         super().__init__(name, timestep, radius=float(radius), height=float(height), h=float(h), fine=float(fine),
                          young=float(young), poisson=float(poisson), toughness=float(toughness),
                          length_scale=float(length_scale), stretch_limit=float(stretch_limit),
                          residual=float(residual), viscosity=float(viscosity),
                          origin=tuple(float(c) for c in origin), shape=str(shape), mode=str(mode),
-                         lag_relaxation=float(lag_relaxation), yeoh_c2=float(yeoh_c2), **gent_leaf(gent_jm))
+                         lag_relaxation=float(lag_relaxation), yeoh_c2=float(yeoh_c2), **gent_leaf(gent_jm), **vol)
         self._solvers: tuple[Solver, Solver] | None = None
 
     def solvers(self) -> tuple[Solver, Solver]:
@@ -191,7 +194,8 @@ class BlockNode(MimeNode):
                 from dataclasses import replace
                 made.append(Solver(replace(block, contact=c), own["mode"], tol_d=1e-5,
                                    viscosity=own["viscosity"] * own["toughness"] / own["length_scale"],
-                                   newton_regularise=True, lag_relaxation=own["lag_relaxation"]))
+                                   newton_regularise=True, lag_relaxation=own["lag_relaxation"],
+                                   volumetric=own.get("volumetric", "gauss")))
             self._solvers = (made[0], made[1])
         return self._solvers
 
@@ -423,7 +427,9 @@ class GelBlock(Dynamics):
     block's build). ``dimension``: ``"axisymmetric"`` (a cylinder of ``radius``), or ``"3d"`` (a square block
     ``2 radius`` across, frictionless, the phase field only, no viscous term, insertion only), solved on its
     ``symmetry``: ``"quarter"`` (both planes through the axis), ``"half"`` (the plane y = 0 only) or ``"full"``. Its
-    surface: the axisymmetric section revolved for display, or the 3-D part solved, both coloured by damage."""
+    surface: the axisymmetric section revolved for display, or the 3-D part solved, both coloured by damage.
+    ``volumetric`` (axisymmetric only; 3-D's is its ``solver``'s): ``"gauss"`` (full integration, the default) or
+    ``"mean"`` (the mean dilatation, which does not lock where the damage softens shear but not bulk)."""
 
     name = "softtissue.gel_block"
     version = VERSION
@@ -462,7 +468,9 @@ class GelBlock(Dynamics):
                      "symmetry": convention(NUMERICAL, "3-D only: quarter, half or full (a flat crack through the "
                                                        "axis needs half or full)"),
                      "solver": convention(NUMERICAL, "3-D only: tip3d (TIP3D's settings) or all2 (spike 3D-COST's "
-                                                     "arithmetic, its rows reproduced)")}
+                                                     "arithmetic, its rows reproduced)"),
+                     "volumetric": convention(NUMERICAL, "axisymmetric only: gauss (full integration) or mean (the "
+                                                         "mean dilatation)")}
     radius: Annotated[Quantity, Length]
     height: Annotated[Quantity, Length]
     material: str
@@ -476,6 +484,7 @@ class GelBlock(Dynamics):
     dimension: str = "axisymmetric"
     solver: str = "tip3d"
     symmetry: str = "quarter"
+    volumetric: str = "gauss"
 
     @override
     def assets_read(self) -> tuple[str, ...]:
@@ -492,6 +501,10 @@ class GelBlock(Dynamics):
             found.append(f"solver is {self.solver!r}, not one of {tuple(SOLVERS)}")
         if self.symmetry not in p3.SYMMETRIES:
             found.append(f"symmetry is {self.symmetry!r}, not one of {tuple(p3.SYMMETRIES)}")
+        if self.volumetric not in VOLUMETRIC:
+            found.append(f"volumetric is {self.volumetric!r}, not one of {VOLUMETRIC}")
+        elif self.dimension == "3d" and self.volumetric != "gauss":
+            found.append("volumetric is the axisymmetric build's; in 3-D the solver sets it (tip3d: mean, all2: gauss)")
         return found
 
     @override
@@ -536,7 +549,7 @@ class GelBlock(Dynamics):
             stretch_limit=values["stretch_limit"], residual=values.get("residual_stiffness", 1e-6),
             viscosity=self.viscosity, origin=origin, shape=self.tip_shape, mode=self.mode,
             lag_relaxation=self.lag_relaxation, yeoh_c2=values.get("yeoh_c2", 0.0),
-            gent_jm=values.get("gent_jm", 0.0)))
+            gent_jm=values.get("gent_jm", 0.0), volumetric=self.volumetric))
 
 
 def _components(value: Any) -> tuple[Any, ...]:
