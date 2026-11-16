@@ -1,6 +1,6 @@
 """Writes the tutorial's base experiment as a saved MIME experiment, the folder a user's own starts from with
-``Experiment.based_on``: a 15-degree cone pushed 3 mm into the calibrated whole-blood clot, axisymmetric, cells of
-0.125 mm, built step by step as the notebook ``notebooks/tutorial_puncture_3d.ipynb`` builds it.
+``Experiment.based_on``: a 20-degree cone (its apex rounded by 0.05 mm, on a 2 mm needle) pushed 3 mm into the
+calibrated whole-blood clot, axisymmetric, cells of 0.125 mm, built step by step as the notebook ``notebooks/tutorial_puncture_3d.ipynb`` builds it.
 
     python examples/saved/build_clot_puncture.py   # a minute or two: the saved form runs the experiment's first steps
 
@@ -22,7 +22,7 @@ from mime.units import deg, kg, kg_m2, m_per_s, m_per_s2, mm, rad_per_s, s
 
 FOLDER = Path(__file__).resolve().parents[2] / "src/mime_softtissue/studies/saved/clot_puncture"
 
-cone_half_angle, needle_radius, push_to, grid = 15.0, 0.5, 3.0, 0.125
+cone_half_angle, needle_radius, apex_radius, push_to, grid = 20.0, 1.0, 0.05, 3.0, 0.125
 experiment = Experiment("clot_puncture", scene=Scene.new(up=Z, units="m"), gravity=m_per_s2(0.0), dt=s(0.2))
 speed = 0.1e-3
 clot_record = "softtissue.whole_blood_clot"
@@ -32,7 +32,8 @@ experiment.add_body(Body(
                          dimension="axisymmetric", tip_shape="softtissue.cone_tip"),
     initial=State(position=mm((0.0, 0.0, 0.0))),
 ))
-needle = st.ConeTip(radius=mm(needle_radius), tip_radius=mm(0.02), half_angle=deg(cone_half_angle), length=mm(6.0))
+needle = st.ConeTip(radius=mm(needle_radius), tip_radius=mm(apex_radius), half_angle=deg(cone_half_angle),
+                    length=mm(6.0))
 experiment.add_body(Body(
     "tip",
     dynamics=RigidInertial(),

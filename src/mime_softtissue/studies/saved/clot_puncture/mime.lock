@@ -152,9 +152,9 @@
        0.0,
        1.0
       ],
-      "region_half_angle": 0.2617993877991494,
-      "region_radius": 0.0005,
-      "region_tip_radius": 2e-05,
+      "region_half_angle": 0.3490658503988659,
+      "region_radius": 0.001,
+      "region_tip_radius": 5e-05,
       "shape": "softtissue.cone_tip",
       "stiffness": 1684320000.0
      },
@@ -284,7 +284,7 @@
   }
  ],
  "environment": {
-  "blas_threads": 1,
+  "blas_threads": 24,
   "cpu": {
    "flags_sha256": "5124b048901de4914eb2d5d6d584fa4cc9f80ed3bef810d7beea092108841d56",
    "model": "12th Gen Intel(R) Core(TM) i7-12850HX"
@@ -303,15 +303,15 @@
   "python": "3.12.15",
   "runner": {},
   "runner_info": {},
-  "usable_cpus": 1,
+  "usable_cpus": 24,
   "usd_core": "26.11",
   "x64": true,
   "xla_flags": ""
  },
  "hashes": {
-  "derived": "sha256:f841c4f22345259509314fff485a32165cf799ad142727cc6e1db1fa5acb667f",
-  "document": "sha256:f614a954995927f83e9f680142add10397cb117140d677f68f401779777b411e",
-  "input": "sha256:21758216845b1c7474a4031d4e6bae219e81a50c68c9d0a89f05953a6993c0b3",
+  "derived": "sha256:6b5b530a0afd2bf5cd4b35b364ae2536f35f6d0aa5887dee24a335be1ee8a8c8",
+  "document": "sha256:76d85378c7121be2379ec170d6a8156d7e48d3a4ee34e76522d243d117fe305a",
+  "input": "sha256:b84f90ce3f41aab273bff9155f2aa29328bf18342cd0b1e4164bf4c8db48ae2f",
   "observations": "sha256:becc5b23bd40633d6f28aa98dfde3d89da54473f807763aae4092e4d7b5518cc",
   "recipe": "mime.hash/1"
  },
@@ -324,56 +324,56 @@
     "1": 0.0
    },
    "clot.contact_energy": {
-    "J": 4.4292936862800404e-23
+    "J": 3.5866034372416434e-23
    },
    "clot.crack_area": {
-    "m^2": 4.879073144355749e-25
+    "m^2": 8.594923552308803e-25
    },
    "clot.crack_energy": {
-    "J": 4.006656092053728e-25
+    "J": 7.108583389127582e-25
    },
    "clot.d": {
-    "1": 2.5673907444456745e-16
+    "1": 4.683753385137379e-16
    },
    "clot.depth": {
     "m": 8.673617379884035e-19
    },
    "clot.energy": {
-    "J": 3.2899040912765293e-21
+    "J": 2.1750714207081863e-21
    },
    "clot.force": {
-    "N": 1.7923217163900995e-17
+    "N": 1.7943545954635098e-17
    },
    "clot.force_normal": {
-    "N": 1.7923217163900995e-17
+    "N": 1.7943545954635098e-17
    },
    "clot.friction_work": {
     "J": 0.0
    },
    "clot.history": {
-    "J/m^3": 5.4001247917767614e-12
+    "J/m^3": 9.606537787476555e-12
    },
    "clot.surface_damage": {
-    "1": 2.5673907444456745e-16
+    "1": 4.683753385137379e-16
    },
    "clot.surface_points": {
-    "m": 8.673617379884035e-19
+    "m": 1.734723475976807e-18
    },
    "clot.tip_pose": {
     "1": 2.220446049250313e-16,
     "m": 8.673617379884035e-19
    },
    "clot.u": {
-    "m": 9.215718466126788e-19
+    "m": 1.5043305143236374e-18
    },
    "clot.viscous_work": {
-    "J": 2.675816190509672e-27
+    "J": 4.9729791465132584e-27
    },
    "softtissue.crack_size:clot.area": {
-    "m^2": 4.879073144355749e-25
+    "m^2": 8.594923552308803e-25
    },
    "softtissue.crack_size:clot.largest_area": {
-    "m^2": 4.879073144355749e-25
+    "m^2": 8.594923552308803e-25
    },
    "softtissue.servo:tip.background": {
     "N": 2.842170943040401e-14,
@@ -391,17 +391,17 @@
     "1": 2.384185791015625e-07
    },
    "softtissue.tip_contact:tip-clot.wrench": {
-    "N": 1.7923217163900995e-17,
+    "N": 1.7943545954635098e-17,
     "N m": 0.0
    },
    "softtissue.tip_force:clot.depth": {
     "m": 8.673617379884035e-19
    },
    "softtissue.tip_force:clot.force": {
-    "N": 1.7923217163900995e-17
+    "N": 1.7943545954635098e-17
    },
    "softtissue.tip_force:clot.puncture_force": {
-    "N": 1.7923217163900995e-17
+    "N": 1.7943545954635098e-17
    },
    "softtissue.tip_force:clot.retrieval_force": {
     "N": 0.0
@@ -420,7 +420,7 @@
   },
   "resolution_factor": 30.0,
   "rtol": 2e-14,
-  "sha256": "sha256:ea3919fa4a078c81986e1efa297dd6219fb8478760e5e8bd99f1373c621e4b11",
+  "sha256": "sha256:dc9ad55d36004878d3aea782e5bb5933db8e9ce71625b5af7c3897c4264452ec",
   "steps": 8
  },
  "resolved": {
@@ -450,6 +450,10 @@
       "unit": "m",
       "value": 0.001
      },
+     "fine_across": {
+      "unit": "m",
+      "value": 0.0008
+     },
      "h": {
       "unit": "m",
       "value": 0.000125
@@ -466,6 +470,8 @@
       "value": 0.005
      },
      "rate": null,
+     "solver": "tip3d",
+     "symmetry": "quarter",
      "tip_shape": "softtissue.cone_tip",
      "viscosity": 0.1
     },
@@ -604,19 +610,19 @@
       ],
       "inertia_per_mass": [
        [
-        1.20625e-05,
+        1.225e-05,
         0.0,
         0.0
        ],
        [
         0.0,
-        1.20625e-05,
+        1.225e-05,
         0.0
        ],
        [
         0.0,
         0.0,
-        1.25e-07
+        5e-07
        ]
       ],
       "inside": null,
@@ -644,7 +650,7 @@
        "settings": {
         "half_angle": {
          "unit": "1",
-         "value": 0.2617993877991494
+         "value": 0.3490658503988659
         },
         "length": {
          "unit": "m",
@@ -652,16 +658,16 @@
         },
         "radius": {
          "unit": "m",
-         "value": 0.0005
+         "value": 0.001
         },
         "tip_radius": {
          "unit": "m",
-         "value": 2e-05
+         "value": 5e-05
         }
        },
        "version": "0.1.0"
       },
-      "volume": 4.71238898038469e-09
+      "volume": 1.884955592153876e-08
      }
     }
    },
@@ -684,6 +690,14 @@
      "kind": "convention",
      "value": "axisymmetric"
     },
+    "clot.motion.fine_across": {
+     "entry": "softtissue.gel_block 0.1.0",
+     "kind": "convention",
+     "value": {
+      "unit": "m",
+      "value": 0.0008
+     }
+    },
     "clot.motion.lag_relaxation": {
      "entry": "softtissue.gel_block 0.1.0",
      "kind": "convention",
@@ -693,6 +707,16 @@
      "entry": "softtissue.gel_block 0.1.0",
      "kind": "convention",
      "value": "phase_field"
+    },
+    "clot.motion.solver": {
+     "entry": "softtissue.gel_block 0.1.0",
+     "kind": "convention",
+     "value": "tip3d"
+    },
+    "clot.motion.symmetry": {
+     "entry": "softtissue.gel_block 0.1.0",
+     "kind": "convention",
+     "value": "quarter"
     },
     "clot.motion.viscosity": {
      "entry": "softtissue.gel_block 0.1.0",
@@ -792,7 +816,7 @@
  "stage": {
   "file": "scene/scene.usda",
   "layers": {},
-  "sha256": "0caf0cb522d56d6b4cb24749226e9bafe3675ce92cc842a18d40187ebcef9667",
+  "sha256": "6fa088e94772c7cf199eb0ab2ba06ca0d7f5ee92d790ea08a93e22cfd47ad5c4",
   "writer": 2
  }
 }

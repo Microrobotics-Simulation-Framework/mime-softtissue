@@ -277,22 +277,26 @@ class _LawTip(p3.Puncture3D):
         assert self.given is not None, "the node hands the tip before the step"
         return registered_distance_3d(self.shape, self.origin, self.given, X + u, depth)
 
+    def stiffness(self, dtype: Any) -> Array:
+        """The law's penalty (Pa/m, on nodes weighted by plan area); over h for the engine's volume penalty."""
+        assert self.given is not None, "the node hands the tip before the step"
+        k = jnp.asarray(self.given["stiffness"], dtype)
+        return k / self.block.h if self.settings.contact_at == "gauss" else k
+
     def contact(self, u: Array, depth: Array) -> Array:
-        assert self.given is not None
-        gap = jnp.minimum(self.phi(self.X, u, depth), 0.0)
-        return 0.5 * jnp.asarray(self.given["stiffness"], u.dtype) * jnp.sum(self.w * gap * gap)
+        gap = self._gap(self.X, u, depth)  # pyright: ignore[reportPrivateUsage]
+        return 0.5 * self.stiffness(u.dtype) * jnp.sum(self.w * gap * gap)
 
     def contact32(self, u: Array, depth: Array) -> Array:
-        assert self.given is not None
-        gap = jnp.minimum(self.phi(self.X32, u, depth), 0.0)
-        return 0.5 * jnp.asarray(self.given["stiffness"], jnp.float32) * jnp.sum(self.w32 * gap * gap)
+        gap = self._gap(self.X32, u, depth)  # pyright: ignore[reportPrivateUsage]
+        return 0.5 * self.stiffness(jnp.float32) * jnp.sum(self.w32 * gap * gap)
 
 
 #: The 3-D solver's settings by name: TIP3D's (spike 3D-COST's all2 levers, Anderson acceleration at depth 3, a step
-#: limit, the mean dilatation), or all2's arithmetic alone (the 3-D spikes' Gauss-point volumetric term, no Anderson, no
-#: limit), which reproduces spike 3D-COST's rows.
+#: limit, the mean dilatation, the damage held in [0, 1] by an active set), or all2's arithmetic alone (the 3-D spikes'
+#: Gauss-point volumetric term, no Anderson, no limit, the damage clipped), which reproduces spike 3D-COST's rows.
 SOLVERS = {"tip3d": p3.Settings(),
-           "all2": p3.Settings(anderson=0, stagger_cap=0, newton_cap=0, volumetric="gauss")}
+           "all2": p3.Settings(anderson=0, stagger_cap=0, newton_cap=0, volumetric="gauss", damage_bound="clip")}
 #: A base step whose solve does not converge is redone from its start in 2, then 4, then 8 sub-steps (TIP3D's rejection
 #: at half the increment, inside one MIME step); past 8 the last try is kept and flagged in ``capped``.
 MAX_SUBSTEPS = 8

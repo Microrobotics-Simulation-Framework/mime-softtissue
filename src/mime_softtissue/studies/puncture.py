@@ -38,10 +38,11 @@ class Puncture(NamedTuple):
 
 
 def tips() -> dict[str, Any]:
-    """The tutorial's tips: S2's blunt punch, a sharp 15-degree cone on a 1 mm needle, and a sphere-tipped needle
-    (Fakhouri's, R = 1 mm)."""
+    """The tutorial's tips: S2's blunt punch (1 mm across), a sharp 20-degree cone whose apex is rounded by 0.05 mm on a
+    2 mm needle (TIP3D's cone: its conical part reaches the shaft 2.6 mm deep), and a sphere-tipped needle (Fakhouri's,
+    R = 1 mm)."""
     return {"punch": st.PunchTip(radius=mm(0.5), fillet=mm(0.05), length=mm(4.0)),
-            "cone": st.ConeTip(radius=mm(0.5), tip_radius=mm(0.02), half_angle=deg(15.0), length=mm(6.0)),
+            "cone": st.ConeTip(radius=mm(1.0), tip_radius=mm(0.05), half_angle=deg(20.0), length=mm(6.0)),
             "needle": st.PunchTip(radius=mm(1.0), fillet=mm(1.0), length=mm(6.0))}
 
 

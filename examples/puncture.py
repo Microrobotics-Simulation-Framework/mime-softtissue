@@ -58,7 +58,8 @@ def main() -> None:
     area = [float(v) * 1e6 for v in run[CRACK].area.values.to(m2)]
     peak = max(range(len(force)), key=lambda k: force[k])
     summary = dict(tip=a.tip, material=a.material, dimension=a.dimension, solver=a.solver, symmetry=a.symmetry,
-                   offset_mm=a.offset, h_mm=a.h, fine_mm=a.fine, fine_across_mm=a.fine_across, step_mm=a.step, speed_mm_s=a.speed, steps=p.steps,
+                   offset_mm=a.offset, h_mm=a.h, fine_mm=a.fine, fine_across_mm=a.fine_across, step_mm=a.step,
+                   speed_mm_s=a.speed, steps=p.steps,
                    wall_s=wall, depth_mm=depth, force_N=force, crack_area_mm2=area,
                    peak_N=force[peak], peak_depth_mm=depth[peak], stopped=written.stopped is not None)
     Path(a.out).joinpath("puncture.json").write_text(json.dumps(summary, indent=1))

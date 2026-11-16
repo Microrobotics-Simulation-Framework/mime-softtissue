@@ -10,7 +10,7 @@ import numpy as np
 import mime_softtissue.entries as st
 from mime.core import shape_named
 from mime.testing import installed_entries
-from mime.units import s
+from mime.units import mm, s
 from tip_retrieval import DT, tip_experiment
 
 OBS = "softtissue.tip_force:clot"
@@ -71,3 +71,27 @@ def test_a_short_mime_run_equals_the_engine_at_its_depths():
         state = state._replace(delta=dk)
         replay.append(float(out.force))
     np.testing.assert_allclose(replay, force, rtol=1e-9, atol=1e-12 * float(np.max(np.abs(force))))
+
+
+def test_the_3d_block_refuses_a_symmetry_it_has_not_and_shows_the_part_it_solves():
+    """The 3-D block's surface is the part solved: a quarter starts at both symmetry planes, a half reaches across x, the
+    whole block across x and y; each a closed grid of boundary faces whose vertices all lie on the block's faces."""
+    radius, height, h = 2e-3, 2e-3, 0.5e-3
+    settings = {"radius": radius, "height": height, "h": h, "fine": 1e-3, "fine_across": 0.8e-3}
+    reach = {}
+    for symmetry in ("quarter", "half", "full"):
+        block = st.GelBlock(radius=mm(2.0), height=mm(2.0), material="softtissue.whole_blood_clot", h=mm(0.5),
+                            dimension="3d", symmetry=symmetry, tip_shape="softtissue.cone_tip")
+        assert block.setting_problems({}) == []
+        (mesh,) = block.surface_meshes(settings)
+        rest = np.asarray(mesh.rest)
+        assert mesh.faces.max() == len(rest) - 1
+        x, y, z = rest.T
+        on_face = (np.isclose(abs(x), radius) | np.isclose(abs(y), radius) | np.isclose(z, height)
+                   | np.isclose(x, 0.0) | np.isclose(y, 0.0))
+        assert on_face.all(), symmetry
+        reach[symmetry] = (x.min(), y.min())
+    assert reach == {"quarter": (0.0, 0.0), "half": (-radius, 0.0), "full": (-radius, -radius)}
+    wrong = st.GelBlock(radius=mm(2.0), height=mm(2.0), material="softtissue.whole_blood_clot", dimension="3d",
+                        symmetry="eighth")
+    assert any("symmetry" in line for line in wrong.setting_problems({}))
