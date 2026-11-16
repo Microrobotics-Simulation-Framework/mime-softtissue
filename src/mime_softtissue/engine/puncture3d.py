@@ -27,6 +27,7 @@ import numpy as np
 
 from . import contact as ct
 from .fracture import deletion
+from .fracture import phase_field
 from .fracture.phase_field import discretisation_toughness
 from .grid import graded_rows
 from .kinematics import solid3d as S
@@ -119,6 +120,9 @@ class Settings:
     #: Where the tip's penalty acts: "nodes" (the contact law's nodal penalty, weighted by plan area) or "gauss" (a
     #: volume penalty at the Gauss points, 100 E0 / h^2: catches a sharp tip between nodes).
     contact_at: str = "nodes"
+    #: After the staggered loop, one more plain pass from the accepted damage: its change (the accepted state's true
+    #: staggered residual, recomputed, never Anderson's estimate) must meet ``tol_damage`` too, or the step is rejected.
+    verify: bool = True
 
 
 class State(NamedTuple):
@@ -143,6 +147,8 @@ class StepOut(NamedTuple):
     residual: jax.Array
     converged: jax.Array
     aa_restarts: jax.Array
+    residual_true: jax.Array  # the verify pass's max |G(d) - d| at the accepted damage (nan without verify)
+    history_drops: jax.Array  # Gauss points where the accepted history is below the step's starting one (a flag)
     d_max: jax.Array
     penetration: jax.Array  # the deepest node inside the tip, over h
 
@@ -194,6 +200,12 @@ def aa_update(s: AAState, x: jax.Array, g: jax.Array, f: jax.Array, m: int, reg:
     bad = ~(jnp.all(jnp.isfinite(xn)) & jnp.all(jnp.isfinite(gam)))
     xn = jnp.where((nh > 0) & ~bad, xn, g)
     return jnp.clip(xn, 0.0, 1.0), AAState(DF, DG, nh, pos, f, g, fn, jnp.ones((), bool)), restart
+
+
+def staggered_converged(err: jax.Array, passes: jax.Array, tol: float) -> jax.Array:
+    """The staggered loop's test on the evaluated iterate's damage change. A module function looked up at trace time, so
+    that a control's plant can replace it (e.g. accepting after a fixed number of passes)."""
+    return err <= tol
 
 
 def _pass_line(depth, k, err, n, ok, kry, shifts) -> None:
@@ -484,7 +496,7 @@ class Puncture3D:
         g = S.degradation(x, m.k_res)
         u, n, ok, (kry, shifts) = self.newton(u, g, depth, tol)
         p = S.tension_energy(u, self.grid, m, self.settings.volumetric)
-        hist = jnp.maximum(hist0, p)
+        hist = phase_field.updated_history(hist0, p)
         d_new, kd = self.solve_damage(hist)
         return u, n, ok, kry, shifts, hist, d_new, kd
 
@@ -515,7 +527,7 @@ class Puncture3D:
                 xn, aa, rs = d_new, c["aa"], jnp.zeros((), bool)
             return dict(u=u, x=xn, d=d_new, d_used=c["x"], hist=hist, k=c["k"] + 1, nk=c["nk"] + n, err=err,
                         capped=c["capped"] + (~ok).astype(jnp.int32), kry=c["kry"] + kry, shifts=c["shifts"] + shifts,
-                        dk=c["dk"] + kd.astype(jnp.int32), conv=err <= s.tol_damage,
+                        dk=c["dk"] + kd.astype(jnp.int32), conv=staggered_converged(err, c["k"] + 1, s.tol_damage),
                         failed=jnp.asarray(limit) & ~ok, aa=aa, rs=c["rs"] + rs.astype(jnp.int32))
 
         def cond(c):
@@ -534,14 +546,23 @@ class Puncture3D:
             u, n, ok, (k1, k4) = self.newton(u, g, depth, tol_f)
             nk, capped, kry, shifts = nk + n, capped + (~ok).astype(jnp.int32), kry + k1, shifts + k4
             converged = converged & ok
+        dk = c["dk"]
+        err_true = jnp.asarray(jnp.nan, u.dtype)
+        if s.verify:  # the accepted state's true residual: one more plain pass from the accepted damage (skipped if rejected)
+            tol_v = jnp.where(converged, self._tol(c["err"]), jnp.inf)
+            _, n2, _, k2, sh2, _, d2, kd2 = self._pass(u, jnp.where(converged, d, state.d), state.history, depth, tol_v)
+            err_true = jnp.where(converged, jnp.max(jnp.abs(d2 - d)), jnp.nan)
+            nk, kry, shifts, dk = nk + n2, kry + k2, shifts + sh2, dk + kd2.astype(jnp.int32)
+            converged = converged & (err_true <= s.tol_damage)
         g = S.degradation(d_used, m.k_res)
         mult = self.multiplier
         force = mult * jax.grad(lambda z: self.contact(u, z))(depth)
         out = StepOut(force=force, energy=mult * self.solid(u, g),
                       crack_energy=mult * S.crack_energy(d, self.grid, m.gc, m.l),
                       contact_energy=mult * self.contact(u, depth), staggered=c["k"], newton=nk, newton_capped=capped,
-                      krylov=kry, shifts=shifts, damage_krylov=c["dk"], residual=c["err"], converged=converged,
-                      aa_restarts=c["rs"], d_max=jnp.max(d),
+                      krylov=kry, shifts=shifts, damage_krylov=dk, residual=c["err"], converged=converged,
+                      aa_restarts=c["rs"], residual_true=err_true,
+                      history_drops=jnp.sum(c["hist"] < state.history).astype(jnp.int32), d_max=jnp.max(d),
                       penetration=jnp.min(self._gap(self.X, u, depth)) / self.block.h)
         return State(u, d, c["hist"], depth, state.deleted), out
 
@@ -588,7 +609,8 @@ class Puncture3D:
                       crack_energy=mult * vol / self.block.h * self.gc_physical,
                       contact_energy=mult * self.contact(u, depth), staggered=c["k"], newton=c["nk"],
                       newton_capped=c["capped"], krylov=c["kry"], shifts=c["shifts"], damage_krylov=zi,
-                      residual=jnp.zeros((), u.dtype), converged=converged, aa_restarts=zi, d_max=jnp.max(de),
+                      residual=jnp.zeros((), u.dtype), converged=converged, aa_restarts=zi,
+                      residual_true=jnp.asarray(jnp.nan, u.dtype), history_drops=zi, d_max=jnp.max(de),
                       penetration=jnp.min(self._gap(self.X, u, depth)) / self.block.h)
         return State(u, d, state.history, depth, de), out
 
@@ -769,7 +791,7 @@ def load_run(path: str) -> PunctureRun:
 
 ROW_KEYS = ("depth_m", "force_N", "crack_area_m2", "crack_energy_J", "energy_J", "contact_energy_J", "d_max",
             "extent_x_m", "extent_y_m", "extent_z_m", "staggered", "newton", "krylov", "shifts", "damage_krylov",
-            "aa_restarts", "penetration_over_h", "step_s")
+            "aa_restarts", "residual_true", "history_drops", "penetration_over_h", "step_s")
 
 
 def run_puncture(block: Block, material: Material, tip: ct.Indenter, depth: float, settings: Settings = Settings(),
@@ -812,6 +834,7 @@ def run_puncture(block: Block, material: Material, tip: ct.Indenter, depth: floa
         ok = bool(o.converged) and bool(np.isfinite(o.force))
         if not ok:
             rejected.append({"depth_m": target, "staggered": int(o.staggered), "newton": int(o.newton),
+                             "residual": float(o.residual), "residual_true": float(o.residual_true),
                              "step_s": time.time() - ts})
             half = (target - z) / 2
             if half < s.min_step - 1e-15:
@@ -836,10 +859,13 @@ def run_puncture(block: Block, material: Material, tip: ct.Indenter, depth: floa
                "contact_energy_J": float(o.contact_energy), "d_max": float(o.d_max), "extent_x_m": ex,
                "extent_y_m": ey, "extent_z_m": ez, "staggered": int(o.staggered), "newton": int(o.newton),
                "krylov": int(o.krylov), "shifts": int(o.shifts), "damage_krylov": int(o.damage_krylov),
-               "aa_restarts": int(o.aa_restarts), "penetration_over_h": float(o.penetration),
+               "aa_restarts": int(o.aa_restarts), "residual_true": float(o.residual_true),
+               "history_drops": int(o.history_drops), "penetration_over_h": float(o.penetration),
                "step_s": time.time() - ts}
         for k in ROW_KEYS:
             rows[k].append(row[k])
+        if row["history_drops"] > 0:  # irreversibility violated: flagged, never silent
+            print(f"FLAG history decreased at {row['history_drops']} Gauss points, depth {z * 1e3:.4f} mm", flush=True)
         if on_step is not None:
             on_step(row)
         if z >= next_frame + frame_every - 1e-12 or z >= depth - 1e-12:
@@ -854,6 +880,8 @@ def run_puncture(block: Block, material: Material, tip: ct.Indenter, depth: floa
     counts = {"steps": len(R["depth_m"]), "rejected": len(rejected), "staggered": int(R["staggered"].sum()),
               "newton": int(R["newton"].sum()), "krylov": int(R["krylov"].sum()), "shifts": int(R["shifts"].sum()),
               "damage_krylov": int(R["damage_krylov"].sum()), "wall_s": time.time() - t0, "status": status,
+              "history_drop_steps": int(np.sum(R["history_drops"] > 0)),
+              "residual_true_max": float(np.nanmax(R["residual_true"])) if np.isfinite(R["residual_true"]).any() else None,
               "rejected_rows": rejected, "unknowns": p.unknowns, "cells": list(p.grid.shape),
               "jax": jax.__version__, "devices": [str(dv) for dv in jax.devices()]}
     meta = {"block": asdict(block), "settings": asdict(settings), "tip": {"kind": p.tip.kind, **{k: float(v) for k, v in
