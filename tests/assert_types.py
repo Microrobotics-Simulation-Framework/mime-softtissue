@@ -11,7 +11,8 @@ from typing import assert_type
 
 from mime.registry import Dynamics, Observation
 
-from mime_softtissue.entries import GripForce, NotchedStrip
+from mime_softtissue.dynamics import NotchedStrip
+from mime_softtissue.observations import GripForce
 
 assert_type(NotchedStrip.name, str)
 assert_type(NotchedStrip.validity, tuple[str, ...])

@@ -124,7 +124,7 @@ def shear_modulus_scaled(factor: float) -> Iterator[None]:
     @contextmanager
     def both() -> Iterator[None]:
         with ExitStack() as stack:
-            from mime_softtissue.entries import _material_record as record
+            from mime_softtissue import _material_record as record
             wrong = lambda young, poisson: (real(young, poisson)[0] * factor, real(young, poisson)[1])
             stack.enter_context(patched(rc, "shear_and_bulk", wrong))
             stack.enter_context(patched(record, "shear_and_bulk", wrong))
@@ -135,7 +135,7 @@ def shear_modulus_scaled(factor: float) -> Iterator[None]:
 def gc_correction_left_out() -> Iterator[None]:
     """The input toughness without the phase field's grid-bias correction (in the case builders and in the entries)."""
     import reproduction_cases as rc
-    from mime_softtissue.entries import _material_record as record
+    from mime_softtissue import _material_record as record
     from contextlib import ExitStack
 
     @contextmanager

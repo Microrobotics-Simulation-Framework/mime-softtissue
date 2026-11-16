@@ -14,15 +14,13 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Annotated, Any, override
 
-import jax
-import jax.numpy as jnp
-
 from mime.core import register_shape, switch
 from mime.gradients import GradientStatus
 from mime.registry import PHYSICAL, GradientRecord, Solid, Tensor, register_geometry
 from mime.units import Length, Magnitude, Quantity
 
 from ..engine import contact as ct
+from ._tip import ProfileShape
 
 PARAMETERS = ("neck_radius", "head_radius", "head_length", "fillet")
 
@@ -38,41 +36,15 @@ EDGES = switch.Declaration(
           "set), and the contact reads it only inside the tip")
 
 
-def _profile(parameters: Mapping[str, Any], R: Any, Z: Any) -> Any:
-    tip = ct.Indenter("headed", radius=parameters["neck_radius"], fillet=parameters["fillet"], top=0.0,
-                      head_radius=parameters["head_radius"], head_length=parameters["head_length"])
-    return ct.signed_distance(tip, R, Z, jnp.zeros((), dtype=jnp.asarray(R).dtype))
-
-
-def _radius(point: Any) -> Any:
-    s = point[..., 0] * point[..., 0] + point[..., 1] * point[..., 1]
-    return jnp.where(s > 0, jnp.sqrt(jnp.where(s > 0, s, 1.0)), 0.0)
-
-
-class HeadedTipShape:
+class HeadedTipShape(ProfileShape):
     """The headed tip's region in its own frame: the engine's axisymmetric profile (``engine.contact``, kind
     ``headed``) at the point's distance from the z axis and its z."""
 
     parameter_names: tuple[str, ...] = PARAMETERS
-    takes_many = True
 
-    def signed_distance(self, parameters: Mapping[str, Any], point: Any) -> Any:
-        point = jnp.asarray(point)
-        return _profile(parameters, _radius(point), point[..., 2])
-
-    def outward_normal(self, parameters: Mapping[str, Any], point: Any) -> Any:
-        def one(p: Any) -> Any:
-            g = jax.grad(lambda q: self.signed_distance(parameters, q))(p)
-            n = jnp.sqrt(jnp.sum(g * g))
-            return g / jnp.where(n > 0, n, 1.0)
-        point = jnp.asarray(point)
-        return one(point) if point.ndim == 1 else jax.vmap(one)(point.reshape(-1, 3)).reshape(point.shape)
-
-    def axis(self, parameters: Mapping[str, Any]) -> Any:
-        return jnp.asarray((0.0, 0.0, 1.0))
-
-    def axis_point(self, parameters: Mapping[str, Any]) -> Any:
-        return jnp.zeros(3)
+    def indenter(self, parameters: Mapping[str, Any]) -> ct.Indenter:
+        return ct.Indenter("headed", radius=parameters["neck_radius"], fillet=parameters["fillet"], top=0.0,
+                           head_radius=parameters["head_radius"], head_length=parameters["head_length"])
 
 
 SHAPE = register_shape("softtissue.headed_tip", HeadedTipShape(), switches=(AXIS, EDGES))

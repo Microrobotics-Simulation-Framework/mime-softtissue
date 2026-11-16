@@ -1,7 +1,10 @@
-"""The block's section shown as a surface, for display alone: its outer boundary (the top face from the axis to the rim,
+"""The block's surface, for display alone. Axisymmetric: the section's outer boundary (the top face from the axis to the rim,
 then the side down to the bottom) revolved through ``SWEEP`` about the axis in ``SEGMENTS`` steps, and the section's
 grid on the two cut faces of the sweep, so that the damage inside the block shows. Each vertex is a node of the grid at
-an angle; the points are the nodes' deformed positions turned to that angle, and the damage the node's."""
+an angle; the points are the nodes' deformed positions turned to that angle, and the damage the node's. In 3-D
+(``mirrored_boundary``): the part solved and its reflections across its planes of symmetry, with one quadrant left open,
+as the sweep leaves a quarter open, so that the damage inside shows on the cut faces (MIME's ``display="mirrored"``: the
+entry draws the reflections, and the solve never sees them)."""
 
 from __future__ import annotations
 
@@ -95,3 +98,67 @@ def box_boundary(nx: int, ny: int, nz: int) -> tuple[np.ndarray, np.ndarray]:
     face(0, 0, False)  # the side at i = 0 (x = 0: a symmetry plane in a quarter)
     face(1, 0, False)  # the side at j = 0 (y = 0: a symmetry plane in a quarter or a half)
     return np.concatenate(nodes), np.concatenate(faces).astype(np.int64)
+
+
+def mirrored_boundary(nx: int, ny: int, nz: int, symmetry: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """A 3-D block solved on ``symmetry`` (``nx ny nz`` cells) drawn with its reflections, the quadrant x < 0, y < 0 left
+    open: each vertex's node ``(i, j, k)``, the sign each coordinate of the node's point takes (``(V, 3)``, a reflection
+    across x = 0 or y = 0), and the triangles, counter-clockwise seen from outside. A quarter (x, y >= 0) is drawn three
+    times (itself, across x = 0 and across y = 0), a half (y >= 0) once whole and once across y = 0 for x >= 0 (its
+    plane x = 0 is the node column ``nx // 2``); the faces two copies share are left out, and the open quadrant shows
+    the planes of symmetry (a quarter's) or the plane x = 0 and the half's plane of symmetry. ``full`` is
+    ``box_boundary``, unreflected."""
+    if symmetry == "full":
+        ijk, faces = box_boundary(nx, ny, nz)
+        return ijk, np.ones((len(ijk), 3)), faces
+    sizes = (nx, ny, nz)
+    nodes: list[np.ndarray] = []
+    signs: list[np.ndarray] = []
+    faces: list[np.ndarray] = []
+    start = 0
+
+    def face(fixed_axis: int, index: int, plus_normal: bool, sign: tuple[int, int, int],
+             ranges: dict[int, tuple[int, int]] | None = None) -> None:
+        nonlocal start
+        a_axis, b_axis = [axis for axis in range(3) if axis != fixed_axis]
+        (a0, a1), (b0, b1) = ((ranges or {}).get(axis, (0, sizes[axis])) for axis in (a_axis, b_axis))
+        A, B = np.meshgrid(np.arange(a0, a1 + 1), np.arange(b0, b1 + 1), indexing="ij")
+        ijk = np.zeros((A.size, 3), dtype=np.int64)
+        ijk[:, fixed_axis] = index
+        ijk[:, a_axis] = A.ravel()
+        ijk[:, b_axis] = B.ravel()
+        grid = np.arange(A.size).reshape(A.shape) + start
+        p, q, r, s_ = grid[:-1, :-1], grid[1:, :-1], grid[1:, 1:], grid[:-1, 1:]
+        tri = np.concatenate([np.stack([p, q, r], -1).reshape(-1, 3), np.stack([p, r, s_], -1).reshape(-1, 3)])
+        positive = (fixed_axis != 1)  # as box_boundary's: counter-clockwise in (a, b) faces +x and +z, but -y
+        tri = tri if positive == plus_normal else tri[:, ::-1]
+        if sign[0] * sign[1] < 0:  # a reflection turns the winding over
+            tri = tri[:, ::-1]
+        faces.append(tri)
+        nodes.append(ijk)
+        signs.append(np.broadcast_to(np.asarray(sign, dtype=float), (len(ijk), 3)))
+        start += A.size
+
+    itself, across_x, across_y = (1, 1, 1), (-1, 1, 1), (1, -1, 1)
+    if symmetry == "quarter":
+        for copy in (itself, across_x, across_y):
+            face(2, nz, True, copy)  # the top
+            face(0, nx, True, copy)  # the outer side in x
+            face(1, ny, True, copy)  # the outer side in y
+        face(1, 0, False, across_x)  # the open quadrant's cut faces: the plane y = 0 at x < 0,
+        face(0, 0, False, across_y)  # and the plane x = 0 at y < 0
+    elif symmetry == "half":
+        middle = nx // 2
+        face(2, nz, True, itself)
+        face(0, nx, True, itself)
+        face(0, 0, False, itself)
+        face(1, ny, True, itself)
+        face(1, 0, False, itself, {0: (0, middle)})  # the plane of symmetry where the quadrant is open
+        right = {0: (middle, nx)}
+        face(2, nz, True, across_y, right)
+        face(0, nx, True, across_y)
+        face(1, ny, True, across_y, right)
+        face(0, middle, False, across_y)  # the cut plane x = 0 at y < 0
+    else:
+        raise ValueError(f"symmetry is {symmetry!r}, not quarter, half or full")
+    return np.concatenate(nodes), np.concatenate(signs), np.concatenate(faces).astype(np.int64)

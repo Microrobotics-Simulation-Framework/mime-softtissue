@@ -4,8 +4,8 @@ import json
 from collections.abc import Mapping
 from typing import Any
 
-from ..engine.fracture.phase_field import discretisation_toughness
-from ..engine.material import Material, shear_and_bulk
+from .engine.fracture.phase_field import discretisation_toughness
+from .engine.material import Material, shear_and_bulk
 
 
 def read_material(name: str) -> dict[str, float]:

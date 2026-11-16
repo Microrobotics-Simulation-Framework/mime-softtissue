@@ -21,8 +21,7 @@ from mime.gradients import GradientStatus
 from mime.registry import BuildContext, GradientRecord, Observation, Output, OutputKind, Read, RoleKind, register_observation
 from mime.units import FORCE, LENGTH
 
-from ._vocabulary import VERSION
-from .gel_block import TIP_DEPTH, TIP_FORCE
+from .._vocabulary import TIP_DEPTH, TIP_FORCE, VERSION
 
 ENERGY = FORCE * LENGTH
 

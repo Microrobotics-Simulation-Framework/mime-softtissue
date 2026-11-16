@@ -7,7 +7,8 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-import mime_softtissue.entries as st
+from mime_softtissue.dynamics import GelBlock
+from mime_softtissue.scene import HeadedTip
 from mime.core import shape_named
 from mime.testing import installed_entries
 from mime.units import mm, s
@@ -24,7 +25,7 @@ def test_the_registry_walk_lists_the_tip_entries():
 
 
 def test_the_kind_refuses_a_neck_wider_than_its_head():
-    kind = st.HeadedTip.__new__(st.HeadedTip)
+    kind = HeadedTip.__new__(HeadedTip)
     found = kind.setting_problems({"neck_radius": 0.7e-3, "head_radius": 0.6e-3, "head_length": 0.2e-3,
                                    "fillet": 0.05e-3, "length": 3e-3})
     assert any("wider" in line for line in found), found
@@ -49,8 +50,8 @@ def test_a_short_mime_run_equals_the_engine_at_its_depths():
     poses = np.asarray(run.history[block]["tip_pose"])
     depth = np.asarray(run.history[OBS]["depth"])
     assert np.all(np.diff(depth[:3]) > 0) and force[2] > 0, (depth, force)
-    from mime_softtissue.entries.gel_block import BlockNode
-    from mime_softtissue.entries._material_record import engine_material
+    from mime_softtissue.dynamics.gel_block import BlockNode
+    from mime_softtissue._material_record import engine_material
     node = BlockNode("replay", DT, radius=5e-3, height=5e-3, h=1e-4, fine=1.5e-3, young=50e3, poisson=0.4,
                      toughness=1.0, length_scale=1e-4, stretch_limit=2.0, residual=1e-6, viscosity=0.1,
                      origin=(0.0, 0.0, 0.0), shape="softtissue.headed_tip", mode="phase_field")
@@ -80,7 +81,7 @@ def test_the_3d_block_refuses_a_symmetry_it_has_not_and_shows_the_part_it_solves
     settings = {"radius": radius, "height": height, "h": h, "fine": 1e-3, "fine_across": 0.8e-3}
     reach = {}
     for symmetry in ("quarter", "half", "full"):
-        block = st.GelBlock(radius=mm(2.0), height=mm(2.0), material="softtissue.whole_blood_clot", h=mm(0.5),
+        block = GelBlock(radius=mm(2.0), height=mm(2.0), material="softtissue.whole_blood_clot", h=mm(0.5),
                             dimension="3d", symmetry=symmetry, tip_shape="softtissue.cone_tip")
         assert block.setting_problems({}) == []
         (mesh,) = block.surface_meshes(settings)
@@ -92,6 +93,6 @@ def test_the_3d_block_refuses_a_symmetry_it_has_not_and_shows_the_part_it_solves
         assert on_face.all(), symmetry
         reach[symmetry] = (x.min(), y.min())
     assert reach == {"quarter": (0.0, 0.0), "half": (-radius, 0.0), "full": (-radius, -radius)}
-    wrong = st.GelBlock(radius=mm(2.0), height=mm(2.0), material="softtissue.whole_blood_clot", dimension="3d",
+    wrong = GelBlock(radius=mm(2.0), height=mm(2.0), material="softtissue.whole_blood_clot", dimension="3d",
                         symmetry="eighth")
     assert any("symmetry" in line for line in wrong.setting_problems({}))

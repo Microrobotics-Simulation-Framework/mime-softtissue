@@ -9,7 +9,8 @@ The block's axis is the world z through its body's initial ``position`` (the cen
 be coaxial (the build cannot see it, so it is a validity line). In 3-D the block is square, ``2 radius`` across, solved
 by TIP3D's engine (``engine.puncture3d``: spike 3D-COST's ``all2`` levers, Anderson acceleration, a step limit, the mean
 dilatation) on its ``symmetry``: a quarter (x >= 0, y >= 0 in the block's frame, symmetric about both planes through the
-axis), a half (y >= 0) or the whole block; its surface shows the part solved."""
+axis), a half (y >= 0) or the whole block; its surface shows the part solved with its reflections (MIME's
+``display="mirrored"``), one quadrant left open to show the planes inside."""
 
 from __future__ import annotations
 
@@ -32,7 +33,6 @@ from mime.registry import (DESIGN, NUMERICAL, PHYSICAL, BuildContext, Dynamics, 
                            SurfaceMesh, convention, register_dynamics)
 from mime.things import ThingKind
 from mime.units import LENGTH, Length, Magnitude, Quantity, mm
-from mime.vocabulary import Interface, ReadKind, TargetKind, define
 
 from ..engine import contact as ct
 from ..engine.kinematics.axisymmetric import nodal_ring_area
@@ -40,25 +40,10 @@ from ..engine import puncture3d as p3
 from ..engine.material import Material, shear_and_bulk
 from ..engine.solver import Solver, State
 from ..engine.specimen import axisymmetric_block
-from ._display import box_boundary, placed, revolved
-from ._material_record import engine_material, read_material
-from ._vocabulary import VERSION
+from .._display import mirrored_boundary, placed, revolved
+from .._material_record import engine_material, read_material
+from .._vocabulary import CRACK_AREA, INDENTER, N_INDENTER, N_REGION, TIP_DEPTH, TIP_FORCE, VERSION
 
-#: The tip's numbers the law hands the block: pose (7), the part's centre (3) and rotation (9, rows) in the body's
-#: frame, its region's parameters (``N_REGION``, in the shape's ``parameter_names`` order), friction, adhesive shear
-#: (Pa) and the penalty's stiffness (Pa/m). An interface's shape is fixed at definition, so ``N_REGION`` is the one
-#: registered tip shape's count (LF-1's seam 1c, met again).
-N_REGION = 4
-N_INDENTER = 7 + 3 + 9 + N_REGION + 3
-INDENTER = define(Interface("softtissue.block.indenter", TargetKind.EQUALITY_CONSTRAINT, "1", "world", (N_INDENTER,),
-                            magnitude=1e-3, description="the tip pressing the block: its pose, part frame, shape "
-                                                        "parameters and interface numbers, as one vector"))
-TIP_FORCE = define(Interface("softtissue.block.tip_force", ReadKind.STATE, "N", None, (), magnitude=1e-2,
-                             description="the force the block puts on the tip along +z (positive: pushing it out)"))
-TIP_DEPTH = define(Interface("softtissue.block.tip_depth", ReadKind.STATE, "m", None, (), magnitude=1e-3,
-                             description="the tip's lowest point below the block's undeformed top face"))
-CRACK_AREA = define(Interface("softtissue.block.crack_area", ReadKind.STATE, "m^2", None, (), magnitude=1e-6,
-                              description="the crack's area: the phase field's surface energy over the toughness"))
 DIMENSIONS = ("axisymmetric", "3d")
 #: Where the tip waits when no law has handed it yet: far above the block.
 AWAY = (0.0, 0.0, 1e3, 1.0, 0.0, 0.0, 0.0)
@@ -333,11 +318,12 @@ class Block3DNode(MimeNode):
         return self._engine
 
     def surface(self, u: Array, d: Array) -> tuple[Array, Array]:
-        """The solved part's boundary shown as a surface (``_display.box_boundary``): each vertex's point and damage."""
+        """The solved part and its reflections shown as a surface (``_display.mirrored_boundary``): each vertex's point
+        and damage."""
         eng = self.engine()
-        ijk, _ = box_boundary(*eng.grid.shape)
+        ijk, sign, _ = mirrored_boundary(*eng.grid.shape, self.constants()["symmetry"])
         i, j, k = ijk[:, 0], ijk[:, 1], ijk[:, 2]
-        points = jnp.asarray(np.asarray(eng.X)[i, j, k], dtype=u.dtype) + u[i, j, k]
+        points = (jnp.asarray(np.asarray(eng.X)[i, j, k], dtype=u.dtype) + u[i, j, k]) * jnp.asarray(sign, u.dtype)
         return points, d[i, j, k]
 
     @override
@@ -416,7 +402,8 @@ class GelBlock(Dynamics):
     block's build). ``dimension``: ``"axisymmetric"`` (a cylinder of ``radius``), or ``"3d"`` (a square block
     ``2 radius`` across, frictionless, the phase field only, no viscous term, insertion only), solved on its
     ``symmetry``: ``"quarter"`` (both planes through the axis), ``"half"`` (the plane y = 0 only) or ``"full"``. Its
-    surface: the axisymmetric section revolved for display, or the 3-D part solved, both coloured by damage."""
+    surface: the axisymmetric section revolved for display, or the 3-D part solved drawn with its reflections, both
+    coloured by damage."""
 
     name = "softtissue.gel_block"
     version = VERSION
@@ -489,8 +476,8 @@ class GelBlock(Dynamics):
 
     @override
     def surface_meshes(self, settings: Mapping[str, Magnitude]) -> tuple[SurfaceMesh, ...]:
-        """The axisymmetric section revolved for display (``_display.revolved``), or the 3-D part's boundary with its
-        symmetry faces (``_display.box_boundary``), coloured by damage over its range, 0 to 1."""
+        """The axisymmetric section revolved for display (``_display.revolved``), or the 3-D part's boundary drawn with
+        its reflections, one quadrant open (``_display.mirrored_boundary``), coloured by damage over its range, 0 to 1."""
         names = ("radius", "height", "h", "fine", "fine_across")
         radius, height, h, fine, across = (float(settings[n]) for n in names)  # pyright: ignore[reportArgumentType]
         damage = (MeshField("damage", "1", Port("surface_damage"), (0.0, 1.0), reduction="max"),)
@@ -500,9 +487,10 @@ class GelBlock(Dynamics):
             x = half if self.symmetry == "quarter" else whole
             y = whole if self.symmetry == "full" else half
             z = p3.axis_rows(height, h, fine, 1.5, 16.0, from_top=True)
-            ijk, faces = box_boundary(len(x) - 1, len(y) - 1, len(z) - 1)
-            rest = np.stack([x[ijk[:, 0]], y[ijk[:, 1]], z[ijk[:, 2]]], axis=1)
-            return (SurfaceMesh(self.symmetry, rest, faces, Port("surface_points"), damage),)
+            ijk, sign, faces = mirrored_boundary(len(x) - 1, len(y) - 1, len(z) - 1, self.symmetry)
+            rest = np.stack([x[ijk[:, 0]], y[ijk[:, 1]], z[ijk[:, 2]]], axis=1) * sign
+            shown = None if self.symmetry == "full" else "mirrored"
+            return (SurfaceMesh(self.symmetry, rest, faces, Port("surface_points"), damage, display=shown),)
         g = axisymmetric_block(radius=radius, height=height, h=h, fine_r=fine, fine_z=fine).grid
         i, j, theta, faces = revolved(g.nx, g.ny)
         rest = np.asarray(placed(g.x, g.y, None, i, j, theta))

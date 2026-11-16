@@ -64,8 +64,8 @@ if a.what == "run":
                puncture_force=float(np.asarray(run.final[OBS]["puncture_force"])),
                retrieval_force=float(np.asarray(run.final[OBS]["retrieval_force"])))
     # the engine's own run at the MIME run's depths: the block node's solvers, stepped outside MIME
-    from mime_softtissue.entries.gel_block import BlockNode, unpack
-    from mime_softtissue.entries import gel_block as gb
+    from mime_softtissue.dynamics.gel_block import BlockNode, unpack
+    from mime_softtissue.dynamics import gel_block as gb
     bname = block_node(run)
     bhist = run.history[bname]
     rec["capped"] = np.asarray(bhist["capped"]).tolist()
@@ -76,7 +76,7 @@ if a.what == "run":
     # same tip numbers (pose at the node's depth), outside MIME's graph
     import mime_softtissue.engine.solver as es
     from mime_softtissue.engine.material import Material
-    from mime_softtissue.entries._material_record import engine_material, read_material
+    from mime_softtissue._material_record import engine_material, read_material
     node = BlockNode("replay", DT, radius=5e-3, height=5e-3, h=a.h * 1e-3, fine=1.5e-3,
                      **{k: v for k, v in zip(("young", "poisson", "toughness", "length_scale", "stretch_limit",
                                                "residual"),
@@ -119,7 +119,7 @@ elif a.what == "save":
 else:
     from mime.study import Study, along
     if a.plant:
-        from mime_softtissue.entries import tip_contact as tc
+        from mime_softtissue.interactions import tip_contact as tc
         real = tc.TipContactNode.region
 
         def cut(self, p, dtype):

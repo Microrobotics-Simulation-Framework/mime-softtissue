@@ -7,7 +7,8 @@ Run it:  python examples/tutwiler_strip.py        (about 1 to 2 minutes on a lap
 Everything here is the model, not a measurement: plane strain, an assumed 20 mm grip spacing (the paper's text read
 does not give it). See README.md."""
 
-import mime_softtissue.entries as st
+from mime_softtissue.dynamics import NotchedStrip
+from mime_softtissue.observations import GripForce
 from mime.experiment import Experiment
 from mime.scene import Scene, Z
 from mime.things import Body, State
@@ -20,10 +21,10 @@ OBS = "softtissue.grip_force:strip"
 def strip_experiment(*, notch_mm=10.5, h_mm=0.3, material="softtissue_fibrin_plasma", mode="phase_field",
                      name="tutwiler_sen", dt=1.0, thickness_mm=6.5):
     exp = Experiment(name, scene=Scene.new(up=Z, units="m"), gravity=m_per_s2(0.0), dt=s(dt))
-    exp.add_body(Body("strip", dynamics=st.NotchedStrip(
+    exp.add_body(Body("strip", dynamics=NotchedStrip(
         width=mm(30.0), height=mm(20.0), thickness=mm(thickness_mm), grip_rate=m_per_s(RATE),
         material=material, h=mm(h_mm), mode=mode), initial=State(position=mm((0.0, 0.0, 0.0)), notch=mm(notch_mm))))
-    exp.observe(st.GripForce(specimen="strip"))
+    exp.observe(GripForce(specimen="strip"))
     return exp
 
 

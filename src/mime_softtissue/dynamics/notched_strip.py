@@ -24,8 +24,8 @@ from mime.units import LENGTH, Length, Quantity, Velocity, mm
 
 from ..engine.solver import Solver, State
 from ..engine.specimen import edge_notched_strip
-from ._material_record import engine_material, read_material
-from ._vocabulary import CRACK_LENGTH, GRIP_DISPLACEMENT, GRIP_FORCE, VERSION
+from .._material_record import engine_material, read_material
+from .._vocabulary import CRACK_LENGTH, GRIP_DISPLACEMENT, GRIP_FORCE, VERSION
 
 DAMAGE_GROWTH = switch.Declaration(
     owner="softtissue.damage_growth", indicator="psi_plus against its history at a Gauss point (J/m^3)",

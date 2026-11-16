@@ -15,7 +15,7 @@ from pathlib import Path
 
 import numpy as np
 
-import mime_softtissue.entries as st
+from mime_softtissue.scene import PunchTip
 from mime.study import Study, along
 from mime.units import N, m, mm
 from mime_softtissue.studies.puncture import FORCE, puncture_experiment
@@ -35,7 +35,7 @@ def main() -> None:
     ap.add_argument("--radii", default=",".join(str(r) for r in RADII_MM), help="mm")
     a = ap.parse_args()
     radii = [float(r) for r in a.radii.split(",")]
-    needle = st.PunchTip(radius=mm(radii[0]), fillet=mm(radii[0]), length=mm(a.block))
+    needle = PunchTip(radius=mm(radii[0]), fillet=mm(radii[0]), length=mm(a.block))
     p = puncture_experiment(material="softtissue.puncture_gel", tip=needle, dimension=a.dimension, resolution=mm(a.h),
                             step=mm(a.step), depth=mm(a.depth), block_radius=mm(a.block), block_height=mm(a.block),
                             fine=mm(a.fine), name="needle_sweep")

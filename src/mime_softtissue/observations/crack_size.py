@@ -19,8 +19,7 @@ from mime.gradients import GradientStatus
 from mime.registry import BuildContext, GradientRecord, Observation, Output, OutputKind, Read, RoleKind, register_observation
 from mime.units import LENGTH
 
-from ._vocabulary import VERSION
-from .gel_block import CRACK_AREA
+from .._vocabulary import CRACK_AREA, VERSION
 
 AREA = LENGTH * LENGTH
 

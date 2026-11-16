@@ -18,13 +18,16 @@ from mime.dynamics import RigidInertial
 from mime.experiment import Experiment
 from mime.scene import Scene, Z
 from mime.things import Body, Part, State
-from mime.units import Quantity, deg, kg, kg_m2, m_per_s, m_per_s2, mm, mm_per_s, rad_per_s, s
+from mime.units import Quantity, deg, kg, kg_m2, m, m_per_s, m_per_s2, mm, mm_per_s, rad_per_s, s
 
-from .. import entries as st
-from ..entries._material_record import read_material
+from .._material_record import read_material
+from ..dynamics import GelBlock
+from ..interactions import Servo, TipContact
+from ..observations import CrackSize, TipForce
+from ..scene import ConeTip, HeadedTip, PunchTip
 
 FORCE, CRACK = "softtissue.tip_force:clot", "softtissue.crack_size:clot"
-SHAPES = {st.PunchTip: "softtissue.punch_tip", st.ConeTip: "softtissue.cone_tip", st.HeadedTip: "softtissue.headed_tip"}
+SHAPES = {PunchTip: "softtissue.punch_tip", ConeTip: "softtissue.cone_tip", HeadedTip: "softtissue.headed_tip"}
 
 
 class Puncture(NamedTuple):
@@ -41,9 +44,9 @@ def tips() -> dict[str, Any]:
     """The tutorial's tips: S2's blunt punch (1 mm across), a sharp 20-degree cone whose apex is rounded by 0.05 mm on a
     2 mm needle (TIP3D's cone: its conical part reaches the shaft 2.6 mm deep), and a sphere-tipped needle (Fakhouri's,
     R = 1 mm)."""
-    return {"punch": st.PunchTip(radius=mm(0.5), fillet=mm(0.05), length=mm(4.0)),
-            "cone": st.ConeTip(radius=mm(1.0), tip_radius=mm(0.05), half_angle=deg(20.0), length=mm(6.0)),
-            "needle": st.PunchTip(radius=mm(1.0), fillet=mm(1.0), length=mm(6.0))}
+    return {"punch": PunchTip(radius=mm(0.5), fillet=mm(0.05), length=mm(4.0)),
+            "cone": ConeTip(radius=mm(1.0), tip_radius=mm(0.05), half_angle=deg(20.0), length=mm(6.0)),
+            "needle": PunchTip(radius=mm(1.0), fillet=mm(1.0), length=mm(6.0))}
 
 
 def puncture_experiment(*, material: str, tip: Any, speed: Quantity = mm_per_s(0.1), depth: Quantity = mm(3.0),
@@ -55,7 +58,7 @@ def puncture_experiment(*, material: str, tip: Any, speed: Quantity = mm_per_s(0
     """A rigid ``tip`` pushed at ``speed`` into a block of the record ``material`` to ``depth``.
 
     - ``material``: a record's name (``"softtissue.whole_blood_clot"``, or your own fitted record);
-    - ``tip``: a tip kind with its dimensions (``st.ConeTip(...)``, ``st.PunchTip(...)``, ``st.HeadedTip(...)``);
+    - ``tip``: a tip kind with its dimensions (``ConeTip(...)``, ``PunchTip(...)``, ``HeadedTip(...)``);
     - ``speed``: the insertion speed (the model is quasi-static: it sets the clock only);
     - ``dimension``: ``"axisymmetric"`` (fast; ring cracks only) or ``"3d"``, solved on its ``symmetry`` (``"quarter"``,
       ``"half"`` or ``"full"``; a flat crack through the axis needs a half or the whole block), the tip ``offset`` from
@@ -68,11 +71,11 @@ def puncture_experiment(*, material: str, tip: Any, speed: Quantity = mm_per_s(0
     its bottom held; the tip starts with its lowest point on the top face."""
     if type(tip) not in SHAPES:
         raise TypeError(f"the tip is one of {[k.__name__ for k in SHAPES]}, not {type(tip).__name__}")
-    step_m, speed_m_s = float(step.to(mm)) * 1e-3, float(speed.to(mm_per_s)) * 1e-3
+    step_m, speed_m_s = float(step.to(m)), float(speed.to(m_per_s))
     dt = step_m / speed_m_s
-    h_m = float(resolution.to(mm)) * 1e-3
+    h_m = float(resolution.to(m))
     exp = Experiment(name, scene=Scene.new(up=Z, units="m"), gravity=m_per_s2(0.0), dt=s(dt))
-    exp.add_body(Body("clot", dynamics=st.GelBlock(radius=block_radius, height=block_height, material=material,
+    exp.add_body(Body("clot", dynamics=GelBlock(radius=block_radius, height=block_height, material=material,
                                                    h=resolution, fine=fine, dimension=dimension,
                                                    tip_shape=SHAPES[type(tip)], solver=solver, symmetry=symmetry,
                                                    fine_across=fine_across),
@@ -85,9 +88,9 @@ def puncture_experiment(*, material: str, tip: Any, speed: Quantity = mm_per_s(0
     exp.declare("tip.inertia", kg_m2((1e-11, 1e-11, 1e-12)), reason="the same tip's order")
     # one step more than the depth needs (the block solves at the tip's pose of the step before), in whole frames
     steps = frames_every * math.ceil((round(float(depth.to(mm)) / float(step.to(mm))) + 1) / frames_every)
-    exp.attach(st.Servo(speed=m_per_s(speed_m_s), insert_steps=steps), body="tip")
+    exp.attach(Servo(speed=m_per_s(speed_m_s), insert_steps=steps), body="tip")
     young = read_material(material)["young_modulus"]
-    exp.attach(st.TipContact(friction=0.0, adhesion=0.0, stiffness=100.0 * young / h_m), tip="tip", solid="clot")
-    exp.observe(st.TipForce(solid="clot"))
-    exp.observe(st.CrackSize(solid="clot"))
+    exp.attach(TipContact(friction=0.0, adhesion=0.0, stiffness=100.0 * young / h_m), tip="tip", solid="clot")
+    exp.observe(TipForce(solid="clot"))
+    exp.observe(CrackSize(solid="clot"))
     return Puncture(exp, s(steps * dt), s(frames_every * dt), steps)

@@ -12,14 +12,14 @@ from mime.testing import round_trip_failures
 from mime.things import Body, State
 from mime.units import m, m_per_s2, s
 
-import mime_softtissue.entries as st
-from mime_softtissue.entries.replayed_tear import replay
+from mime_softtissue.dynamics import ReplayedTear
+from mime_softtissue.dynamics.replayed_tear import replay
 
 COARSE = dict(every_column=16, every_frame=6)  # 3 kept frames of a few hundred vertices: the contract, not the picture
 
 
 def replayed() -> Experiment:
-    entry = st.ReplayedTear(**COARSE)
+    entry = ReplayedTear(**COARSE)
     experiment = Experiment("replayed_tear", scene=Scene.new(up=Z, units="mm"), gravity=m_per_s2(0.0),
                             dt=s(entry.step_seconds))
     experiment.add_body(Body("sheet", dynamics=entry, initial=State(position=m((0.0, 0.0, 0.0)))))
@@ -39,7 +39,7 @@ def test_step_k_holds_frame_k(tmp_path: Path):
 
 
 def test_the_declared_surface_is_the_replays():
-    entry = st.ReplayedTear(**COARSE)
+    entry = ReplayedTear(**COARSE)
     mesh, = entry.surface_meshes({"to_mm": 3.6e-3})
     rest, faces, points, *_ = replay(16, 6, 3.6)
     assert mesh.display == "extruded" and [f.name for f in mesh.fields] == ["damage"]

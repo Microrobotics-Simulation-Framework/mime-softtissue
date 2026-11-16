@@ -12,7 +12,10 @@ from pathlib import Path
 
 import numpy as np
 
-import mime_softtissue.entries as st
+from mime_softtissue.dynamics import GelBlock
+from mime_softtissue.interactions import Servo, TipContact
+from mime_softtissue.observations import CrackSize, TipForce
+from mime_softtissue.scene import ConeTip
 from mime import Body, Experiment, State
 from mime.assets import reference, resolve
 from mime.dynamics import RigidInertial
@@ -28,11 +31,11 @@ speed = 0.1e-3
 clot_record = "softtissue.whole_blood_clot"
 experiment.add_body(Body(
     "clot",
-    dynamics=st.GelBlock(radius=mm(5.0), height=mm(5.0), material=clot_record, h=mm(grid), fine=mm(1.0),
+    dynamics=GelBlock(radius=mm(5.0), height=mm(5.0), material=clot_record, h=mm(grid), fine=mm(1.0),
                          dimension="axisymmetric", tip_shape="softtissue.cone_tip"),
     initial=State(position=mm((0.0, 0.0, 0.0))),
 ))
-needle = st.ConeTip(radius=mm(needle_radius), tip_radius=mm(apex_radius), half_angle=deg(cone_half_angle),
+needle = ConeTip(radius=mm(needle_radius), tip_radius=mm(apex_radius), half_angle=deg(cone_half_angle),
                     length=mm(6.0))
 experiment.add_body(Body(
     "tip",
@@ -44,13 +47,13 @@ experiment.add_body(Body(
 experiment.declare("tip.mass", kg(1.2e-5), reason="a steel needle of a few millimetres (its mass does not matter here)")
 experiment.declare("tip.inertia", kg_m2((1e-11, 1e-11, 1e-12)), reason="the same needle's order")
 steps = 6 * int(np.ceil((push_to / 0.02 + 1) / 6))
-experiment.attach(st.Servo(speed=m_per_s(speed), insert_steps=steps), body="tip")
+experiment.attach(Servo(speed=m_per_s(speed), insert_steps=steps), body="tip")
 with open(resolve(reference(clot_record))) as f:
     young = json.load(f)["values"]["young_modulus"]  # the record's (Pa): the contact's penalty is 100 E / h
-experiment.attach(st.TipContact(friction=0.0, adhesion=0.0, stiffness=100.0 * young / (grid * 1e-3)),
+experiment.attach(TipContact(friction=0.0, adhesion=0.0, stiffness=100.0 * young / (grid * 1e-3)),
                   tip="tip", solid="clot")
-experiment.observe(st.TipForce(solid="clot"))
-experiment.observe(st.CrackSize(solid="clot"))
+experiment.observe(TipForce(solid="clot"))
+experiment.observe(CrackSize(solid="clot"))
 
 if __name__ == "__main__":
     if FOLDER.exists():

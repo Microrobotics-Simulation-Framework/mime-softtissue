@@ -24,7 +24,7 @@ from mime.things import ThingKind
 from mime.units import LENGTH, Length, Quantity, mm
 
 from ..studies import results
-from ._vocabulary import VERSION
+from .._vocabulary import VERSION
 
 #: The sheet's thickness (mm) and the test's grip rate (mm/s): the thinning drawn on the front face, and the clock one
 #: frame spacing takes at the rate the specimens were pulled.

@@ -6,17 +6,20 @@ everywhere, which no law is; an empty line claims it and says nothing. Add each 
 
 import pytest
 
-import mime_softtissue.entries as st
+from mime_softtissue.dynamics import GelBlock, NotchedStrip, ReplayedTear
+from mime_softtissue.interactions import Servo, TipContact
+from mime_softtissue.observations import CrackSize, GripForce, TipForce
+from mime_softtissue.scene import ConeTip, HeadedTip, PunchTip
 
-ENTRIES = [st.NotchedStrip, st.GripForce, st.GelBlock, st.TipContact, st.Servo, st.TipForce, st.HeadedTip,
-           st.ReplayedTear, st.PunchTip, st.ConeTip, st.CrackSize]
+ENTRIES = [NotchedStrip, GripForce, GelBlock, TipContact, Servo, TipForce, HeadedTip,
+           ReplayedTear, PunchTip, ConeTip, CrackSize]
 #: Found by this test at the port [measured]: round 4's tip entries (the contact law, the servo, the tip-force observation and
 #: the headed-tip kind) declare NO validity line. Their limits are in the report (one-step lag, axisymmetric only, a coaxial
 #: tip), not on the entries. Held here as the exact set, so that writing the lines (the set shrinks: delete the name) or a new
 #: entry that forgets them (a name missing from this set fails) is each seen. Not a claim that they are valid everywhere.
 WITHOUT_VALIDITY = {"softtissue.tip_contact", "softtissue.servo", "softtissue.tip_force", "softtissue.headed_tip"}
 #: Words an entry's lines must say, where it has a claim a reader must not miss.
-MUST_SAY = {st.NotchedStrip: ("plane strain", "quasi-static"), st.GripForce: ("peak",)}
+MUST_SAY = {NotchedStrip: ("plane strain", "quasi-static"), GripForce: ("peak",)}
 
 
 def test_the_entries_without_validity_lines_are_exactly_the_known_set():

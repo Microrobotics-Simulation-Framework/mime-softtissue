@@ -19,7 +19,7 @@ from mime.gradients import GradientStatus
 from mime.registry import BuildContext, GradientRecord, Observation, Output, OutputKind, Read, RoleKind, register_observation
 from mime.units import FORCE, LENGTH
 
-from ._vocabulary import CRACK_LENGTH, GRIP_DISPLACEMENT, GRIP_FORCE, VERSION
+from .._vocabulary import CRACK_LENGTH, GRIP_DISPLACEMENT, GRIP_FORCE, VERSION
 
 
 class GripForceState(TypedDict, closed=True):
