@@ -107,3 +107,26 @@ def test_the_damage_bounds_give_a_minimiser_where_the_clip_does_not() -> None:
     assert stationarity(d_b) < 1e-6 < 1e-3 < stationarity(d_c)
     mild = jnp.full(shape, 0.1 * gc / l)
     assert jnp.allclose(jax.jit(bound.solve_damage)(mild)[0], jax.jit(clip.solve_damage)(mild)[0], rtol=0, atol=0)
+
+
+def test_the_residual_option_takes_yeohs_stiffening_off_a_fully_damaged_point() -> None:
+    """The post-separation artefact's switch: at full damage and a large stretch (the pure-shear study's fully damaged
+    row, stretched about 30 times), ``residual="residual"`` keeps k_res times the whole Yeoh law, ``"neo"`` k_res times its
+    neo-Hookean part only; undamaged, they differ by that k_res term alone."""
+    grid = S.uniform_grid((1, 1, 1), (1e-3, 1e-3, 1e-3))
+    mat = P.yeoh_material(363.0, 434.0, 0.83, 0.25e-3)
+    tip = P.sharp_cone(0.35, 0.05e-3)
+    blk = P.Block(half_width=1e-3, height=1e-3, h=0.5e-3, fine_xy=0.5e-3, fine_z=0.5e-3)
+    keep, neo = (P.Puncture3D(blk, mat, tip, P.Settings(residual=r)) for r in ("residual", "neo"))
+    stretch = 30.0
+    F = np.diag([stretch, stretch ** -0.5, stretch ** -0.5])
+    u = _homogeneous(F, keep.grid)
+    x = stretch ** 2 + 2 / stretch - 3
+    full = jnp.ones(keep.grid.nodes)
+    g = S.degradation(full, keep.mat.k_res)
+    e_keep, e_neo = float(keep.solid(u, g)), float(neo.solid(u, g))
+    volume = float(np.prod([keep.grid.x[-1], keep.grid.y[-1], keep.grid.z[-1]]))
+    assert e_keep == pytest.approx(1e-6 * (363.0 * x + 434.0 * x ** 2) * volume, rel=1e-6)
+    assert e_neo == pytest.approx(1e-6 * 363.0 * x * volume, rel=1e-6)
+    g0 = S.degradation(jnp.zeros(keep.grid.nodes), keep.mat.k_res)
+    assert float(neo.solid(u, g0)) == pytest.approx(float(keep.solid(u, g0)) - 1e-6 * 434.0 * x ** 2 * volume, rel=1e-9)
