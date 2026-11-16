@@ -1,14 +1,16 @@
-"""The material law: a free-energy density of a compressible neo-Hookean solid with optional fibre families, written
-in the deformation's invariants so that it does not know the dimension of the build that feeds it (plane strain
-today; an axisymmetric or a 3-D kinematics supplies the same invariants).
+"""The material law: a free-energy density of a compressible neo-Hookean solid, strain-stiffened by Yeoh's terms, with
+optional fibre families, written in the deformation's invariants so that it does not know the dimension of the build that
+feeds it (plane strain, incompressible plane stress, axisymmetric; a 3-D kinematics supplies the same invariants).
 
     psi(J, I1, I4) = g(d) psi_plus + psi_minus,                        g(d) = (1 - d)^2 + k_res
-    psi_iso   = (mu / 2) (J^(-2/3) I1 - 3)
+    psi_iso   = (mu / 2) x + c2 x^2 + c3 x^3,                          x = J^(-2/3) I1 - 3 >= 0
     psi_vol   = (kappa / 4) (J^2 - 1 - 2 ln J)
     psi_fibre = sum over families of (k1 / 2 k2) (exp(k2 <I4 - 1>^2) - 1)
     psi_plus  = psi_iso + psi_fibre + [J >= 1] psi_vol,                psi_minus = [J < 1] psi_vol
 
-Damage degrades the isochoric, fibre and dilatational parts, never volumetric compression. No MIME import."""
+Damage degrades the isochoric, fibre and dilatational parts, never volumetric compression. With c2 = c3 = 0 the law is
+neo-Hookean; the Yeoh terms are polynomials in x, so every derivative is smooth at the undeformed state (an Ogden law's
+are not). No MIME import."""
 
 from __future__ import annotations
 
@@ -28,7 +30,8 @@ class Fibre(NamedTuple):
 
 class Material(NamedTuple):
     """The numbers a step reads (a pytree: derivatives reach every field). ``gc`` and ``l`` are the fracture
-    model's toughness and length scale; ``stretch_limit`` is read only by the element-deletion control."""
+    model's toughness and length scale; ``stretch_limit`` is read only by the element-deletion control. ``c2``, ``c3``:
+    Yeoh's stiffening (Pa; C1 = mu / 2)."""
 
     mu: Any
     kappa: Any
@@ -37,6 +40,8 @@ class Material(NamedTuple):
     k_res: Any
     stretch_limit: Any
     fibre: Fibre | None = None
+    c2: Any = 0.0
+    c3: Any = 0.0
 
 
 def shear_and_bulk(young: Any, poisson: Any) -> tuple[Any, Any]:
@@ -49,7 +54,8 @@ def energy_parts(J: jax.Array, I1: jax.Array, fibre_invariants: tuple[jax.Array,
     """(psi_plus, psi_minus) at the invariants ``J``, ``I1`` and one ``I4`` a fibre family; infinite where J <= 0."""
     ok = J > 0
     Js = jnp.where(ok, J, 1.0)
-    iso = 0.5 * mat.mu * (Js ** (-2.0 / 3.0) * I1 - 3.0)
+    x = Js ** (-2.0 / 3.0) * I1 - 3.0
+    iso = 0.5 * mat.mu * x + mat.c2 * x ** 2 + mat.c3 * x ** 3
     vol = 0.25 * mat.kappa * (Js ** 2 - 1.0 - 2.0 * jnp.log(Js))
     fibre = jnp.zeros((), dtype=J.dtype)
     if mat.fibre is not None:

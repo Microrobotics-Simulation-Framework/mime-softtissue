@@ -9,7 +9,8 @@ from .gel_block import GelBlock
 from .grip_force import GripForce
 from .headed_tip import HeadedTip
 from .notched_strip import NotchedStrip
+from .replayed_tear import ReplayedTear
 from .tip_contact import Servo, TipContact
 from .tip_force import TipForce
 
-__all__ = ["GelBlock", "GripForce", "HeadedTip", "NotchedStrip", "Servo", "TipContact", "TipForce"]
+__all__ = ["GelBlock", "GripForce", "HeadedTip", "NotchedStrip", "ReplayedTear", "Servo", "TipContact", "TipForce"]

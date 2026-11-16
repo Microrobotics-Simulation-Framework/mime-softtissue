@@ -34,7 +34,7 @@ def patched(module, name: str, new) -> Iterator[None]:
 
 def I1_from_diagonal_only() -> Iterator[None]:
     """The first invariant read from the diagonal of F alone: not objective (a rotation changes it)."""
-    def invariants(F, mat):
+    def invariants(F, mat, stress=False):
         J = F[0, 0] * F[1, 1] - F[0, 1] * F[1, 0]
         return J, F[0, 0] ** 2 + F[1, 1] ** 2 + 1.0, ()
     return patched(ps, "invariants", invariants)
@@ -68,8 +68,8 @@ def hessian_row_scaled() -> Iterator[None]:
     Hessian stays symmetric; the first plant tried, caught 0 of 10.)"""
     real = ps.element_hessian
 
-    def element_hessian(ue, dq, dx, dy, mat):
-        return real(ue, dq, dx, dy, mat).at[0, :].mul(0.5)
+    def element_hessian(ue, dq, dx, dy, mat, stress=False):
+        return real(ue, dq, dx, dy, mat, stress).at[0, :].mul(0.5)
     return patched(ps, "element_hessian", element_hessian)
 
 
@@ -106,9 +106,9 @@ def gauss_weight(error: float) -> Iterator[None]:
     weights = jnp.asarray([1.0 + error, 1.0, 1.0, 1.0])
     real = ps.element_strain_energy
 
-    def element_strain_energy(ue, dq, dx, dy, mat):
+    def element_strain_energy(ue, dq, dx, dy, mat, stress=False):
         F = ps.deformation_gradients(ue, dx, dy)
-        plus, minus = jax.vmap(lambda f: ps.energy_parts(f, mat))(F)
+        plus, minus = jax.vmap(lambda f: ps.energy_parts(f, mat, stress))(F)
         g = law.degradation(dq, mat.k_res)
         return jnp.sum(weights * (g * plus + minus)) * dx * dy / 4.0
     from mime_softtissue.engine import solver as solver_module

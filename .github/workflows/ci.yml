@@ -6,6 +6,8 @@
 #             documentation unless a lane runs it)
 #   release   every week, against the tip of MIME's release branch: the early warning when MIME moves under this plugin
 #   typing    pyright, strict, over the package and tests/assert_types.py
+# Every job installs MIME from its public release branch first: the plugin needs what MIME's 0.3.0.dev1 on PyPI lacks
+# (mime.core.Units, among others); return to the PyPI pin once a release carries them.
 # Pin to one core, CPU only, for any run you time (README, "Tests").
 name: ci
 on:
@@ -36,6 +38,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: uv venv --python ${{ matrix.python }}
+      - run: uv pip install "mime-engine[verify] @ git+https://github.com/Microrobotics-Simulation-Framework/MIME@release/v0.3.0"
       - run: uv pip install -e ".[test]"
       - name: tests (the default lane)
         run: uv run --no-sync pytest
@@ -59,6 +62,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: uv venv --python 3.12
+      - run: uv pip install "mime-engine[verify] @ git+https://github.com/Microrobotics-Simulation-Framework/MIME@release/v0.3.0"
       - run: uv pip install -e ".[test]"
       - name: tests (the slow lane)
         run: uv run --no-sync pytest -m slow
@@ -89,6 +93,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: uv venv --python 3.12
+      - run: uv pip install "mime-engine[verify] @ git+https://github.com/Microrobotics-Simulation-Framework/MIME@release/v0.3.0"
       - run: uv pip install -e ".[test,typing]"
       # pyright reads the environment it is told to, whether or not pyrightconfig.json names a `.venv`.
       - name: pyright, strict over the package, with the assert_type file
