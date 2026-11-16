@@ -1,5 +1,5 @@
 {
-  "duration": 4.8,
+  "duration": 16.0,
   "environment": {
     "blas_threads": 2,
     "cpu": {
@@ -25,7 +25,7 @@
     "x64": true,
     "xla_flags": ""
   },
-  "every": 0.39999999999999997,
+  "every": 0.4,
   "folder": null,
   "load_report": null,
   "non_finite": null,
@@ -37,9 +37,9 @@
   "recording": "recording.usdc",
   "seconds": {
     "load_and_build": null,
-    "run": 322.579,
-    "save": 239.267
+    "run": 1571.354,
+    "save": 297.581
   },
-  "stage_every": 0.39999999999999997,
-  "steps": 12
+  "stage_every": 0.8,
+  "steps": 40
 }

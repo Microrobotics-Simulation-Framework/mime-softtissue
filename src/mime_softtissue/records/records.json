@@ -71,6 +71,30 @@
    "credit": "values from Fakhouri, Hutchens and Crosby 2015 (Soft Matter 11, 4723) as stated by Fregonese and Bacca 2021 (J. Mech. Phys. Solids, doi:10.1016/j.jmps.2021.104497); record by the plugin's authors",
    "role": "results",
    "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture_run.c3d-clot-h0.25.stage",
+   "sha256": "0f97e0a090d295df70c12674ae396fb456791bf3753e65bd6581c337a02e78a3",
+   "size": 64644,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture_runs/c3d-clot-h0.25/experiment/scene/scene.usda"
+   ],
+   "credit": "computed by the plugin's authors with MIME (the puncture tutorial's run, for display)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture_run.c3d-clot-h0.25.recording",
+   "sha256": "dc6aeb2e5666bc1c010f252641698f13e0e4ab62bc742d2be788f2b2fde0379a",
+   "size": 276353,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture_runs/c3d-clot-h0.25/recording.usdc"
+   ],
+   "credit": "computed by the plugin's authors with MIME (the puncture tutorial's run, for display)",
+   "role": "results",
+   "kind": "authored"
   }
  ]
 }

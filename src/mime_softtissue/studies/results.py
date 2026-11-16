@@ -36,8 +36,9 @@ def puncture() -> dict[str, Any]:
 
 
 def puncture_run(name: str) -> Path:
-    """A converged run's folder (its stage and recording, for ``mime.viz.display``)."""
-    return Path(str(resources.files(__package__).joinpath("results/puncture_runs", name)))
+    """A converged run's folder (its stage and recording, for ``mime.viz.display``), in the records' folder: each of its
+    USD files is named by a record (``softtissue.puncture_run.<name>.stage`` and ``.recording``)."""
+    return Path(str(resources.files("mime_softtissue.records").joinpath("data/puncture_runs", name)))
 
 
 def fregonese_fig5() -> dict[str, Any]:
