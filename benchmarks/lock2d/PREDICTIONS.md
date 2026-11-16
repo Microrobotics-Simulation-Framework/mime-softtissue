@@ -105,3 +105,13 @@ R 4 9.67 / 9.23 (-4.6 %); gauss's block-24 floor at h 0.1: R 0.5 +0.2 %, R 1 +5.
 - block 24 instead of 25: engine-direct gauss at R 2 and R 4 moves y by 1-6 %; MIME mean at R 0.5 and R 1 moves y by 0-8 %.
 - Judgement it would support: at h 0.1 the treatment's effect is inside the noise floor at R 1, 2 and 4, and above it only
   at R 0.5 (-10.7 %), unless mean's own floor at R 0.5 reaches 10 %.
+
+## Round 8 (runners): the punch's peak with 0.01 mm steps at the finest grids (the commit time rules)
+
+Seen: at HERTZ's settings (0.02 mm steps) gauss / mean peaks 11.51 / 11.62, 11.67 / 11.18, 11.68 / 11.08 at h 0.0354 /
+0.025 / 0.0177 (gap -0.9, +4.3, +5.4 %); at h 0.0177 F(0.20) agrees within 0.7 % and mean drops between 0.20 and 0.22
+while gauss reaches 11.68 at 0.22: the gap is about one step of onset. Round 3's prediction "within 3 % at h 0.0177" was
+wrong (5.4 %).
+
+- With 0.01 mm steps to 0.30 mm (both treatments; h 0.0354, 0.025, 0.0177, 0.0125): gauss's peak 11.5-11.9, mean's
+  11.0-11.5, the gap 2-6 % at h 0.025 and finer, not closing below 2 % by h 0.0125. Mean's peak depth stays <= gauss's.
