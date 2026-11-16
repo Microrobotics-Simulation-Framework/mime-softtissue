@@ -1,5 +1,5 @@
 {
- "about": "The soft-tissue plugin's records: published fibrin values (open, in the package), a placeholder gel, and a placeholder for a lab's private data (its own licence, referenced, never shipped).",
+ "about": "The soft-tissue plugin's records: published fibrin values (open, in the package), Lohr et al. 2025's raw pure-shear clot data (CC0, in the package), a placeholder gel, and a placeholder for a lab's private data (its own licence, referenced, never shipped).",
  "assets": [
   {
    "name": "softtissue_fibrin_plasma",
@@ -47,6 +47,32 @@
    "credit": "placeholder values by the plugin's authors",
    "role": "results",
    "kind": "authored"
+  },
+  {
+   "name": "softtissue.lohr2025_pure_shear",
+   "sha256": "b8d74fb37ca1ede7115de063f1d405e0bdeb5aeeff6e72814c77ecdea3e8e411",
+   "size": 191796,
+   "licence": "CC0-1.0",
+   "locations": [
+    "package:softtissue/data/lohr2025_pure_shear.json"
+   ],
+   "credit": "data by Lohr, Bechtel, Dortdivanlioglu and Rausch (Texas Data Repository, doi:10.18738/T8/97ZAZN, CC0 1.0); record by the plugin's authors",
+   "role": "results",
+   "kind": "measured",
+   "citation": "Lohr MJ, Bechtel GN, Dortdivanlioglu B, Rausch MK. Texas Data Repository, doi:10.18738/T8/97ZAZN; data for How to measure fracture toughness of soft materials: a comparison of six different approaches using blood clot as a model material, Int J Fract (2025), doi:10.1007/s10704-024-00820-4"
+  },
+  {
+   "name": "softtissue.lohr2025_critical_displacements",
+   "sha256": "b0e9493485a215f24b13823bf7a05b0db996eb08923b39e7acfa1b6da9fb2d3c",
+   "size": 4950,
+   "licence": "CC0-1.0",
+   "locations": [
+    "package:softtissue/data/lohr2025_critical_displacements.json"
+   ],
+   "credit": "data by Lohr, Bechtel, Dortdivanlioglu and Rausch (Texas Data Repository, doi:10.18738/T8/DUJWSR, CC0 1.0); record by the plugin's authors",
+   "role": "results",
+   "kind": "measured",
+   "citation": "Lohr MJ, Bechtel GN, Dortdivanlioglu B, Rausch MK. Texas Data Repository, doi:10.18738/T8/DUJWSR; data for How to measure fracture toughness of soft materials: a comparison of six different approaches using blood clot as a model material, Int J Fract (2025), doi:10.1007/s10704-024-00820-4"
   }
  ]
 }

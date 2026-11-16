@@ -1,0 +1,113 @@
+{
+ "about": "The critical displacements of Lohr et al. 2025 (the displacement at which crack growth was first seen in the DIC images), transcribed value for value from CriticalDisplacements.xlsx (its sha256 below; values only, no formulas). The sheet's row i is the file Notched_i.csv: the rows follow the files' order, and the nominal sizes in the names (5, 10, 15, 20 mm) sort the files' peak forces in blocks of three.",
+ "dataset_doi": "10.18738/T8/DUJWSR",
+ "licence": "CC0-1.0",
+ "citation": "Lohr MJ, Bechtel GN, Dortdivanlioglu B, Rausch MK (2025) How to measure fracture toughness of soft materials: a comparison of six different approaches using blood clot as a model material. Int J Fract. doi:10.1007/s10704-024-00820-4",
+ "description": [
+  "How to Measure Fracture Toughness of Soft Materials: A Comparison of Six Different Approaches using Blood Clot as a Model Material: Experimental Data",
+  "Mechanical Test Data (Force and Displacement)",
+  "The data for 15 mechanical tests are provided. Three of those tests are unnotched pure shear tests (“Unnotched_1/2/3.csv”), and 12 of those tests are notched pure shear tests (“Notched_1-12.csv”). Each file contains the time (Column 1), prescribed displacement (Column 2), and recorded force (Column ). All data were sampled at 10 Hz until sample failure. Additional experimental parameters are available in the main manuscript.",
+  "DIC Images",
+  "All 15 samples referenced above were imaged during testing. To this end, samples were speckled according to our previously published protocol1 and imaged at 5 Hz until sample failure. All images are saved as *.tiff files. Their name convention follows that of the mechanical test data with the exception that each test data set contains hundreds of images that are delineated by a time stamp which is appended to their file name (in milliseconds). For example, the images belonging to the data set “Notched_1.csv” have corresponding DIC images named “Notched_1_X.tiff”, where X represents the time at which the image was recorded after the onset of this specific test.",
+  "Critical Displacements",
+  "The critical displacements, as required for the fracture toughness calculations, were determined from the DIC images described above. All values are provided in the file named “CriticalDisplacements.xls.” Column 1 of this file contains the sample names following the same convention as above; Column 2 contains the image number at which crack propagation was first observed; Column 3 contains the corresponding time; and Column 4 contains the corresponding displacement."
+ ],
+ "source_file": {
+  "name": "CriticalDisplacements.xlsx",
+  "sha256": "1b6f3cca86bd5c28b01a90eae472c1ae0c72871f05848a6c42d759145a779cd9",
+  "sheet": "VaryingNotchLengths"
+ },
+ "columns": [
+  "Sample name",
+  "Critical image number (-)",
+  "Corresponding time (s)",
+  "Critical displacement (mm)"
+ ],
+ "rows": [
+  {
+   "csv": "Notched_1.csv",
+   "sample_name": "1",
+   "critical_image": 14014,
+   "time_s": 14,
+   "critical_displacement_mm": 2.7848
+  },
+  {
+   "csv": "Notched_2.csv",
+   "sample_name": "2",
+   "critical_image": 16424,
+   "time_s": 16.4,
+   "critical_displacement_mm": 3.2647
+  },
+  {
+   "csv": "Notched_3.csv",
+   "sample_name": "5mm_17",
+   "critical_image": 15619,
+   "time_s": 15.6,
+   "critical_displacement_mm": 3.1045
+  },
+  {
+   "csv": "Notched_4.csv",
+   "sample_name": "10mm_7",
+   "critical_image": 13011,
+   "time_s": 13,
+   "critical_displacement_mm": 2.5852
+  },
+  {
+   "csv": "Notched_5.csv",
+   "sample_name": "10mm_8",
+   "critical_image": 8005,
+   "time_s": 8,
+   "critical_displacement_mm": 1.5848
+  },
+  {
+   "csv": "Notched_6.csv",
+   "sample_name": "10mm_9",
+   "critical_image": 16221,
+   "time_s": 16.2,
+   "critical_displacement_mm": 3.2249
+  },
+  {
+   "csv": "Notched_7.csv",
+   "sample_name": "15mm_10",
+   "critical_image": 11410,
+   "time_s": 11.4,
+   "critical_displacement_mm": 2.2646
+  },
+  {
+   "csv": "Notched_8.csv",
+   "sample_name": "15mm_11",
+   "critical_image": 11809,
+   "time_s": 11.8,
+   "critical_displacement_mm": 2.3444
+  },
+  {
+   "csv": "Notched_9.csv",
+   "sample_name": "15mm_12",
+   "critical_image": 9416,
+   "time_s": 9.4,
+   "critical_displacement_mm": 1.8648
+  },
+  {
+   "csv": "Notched_10.csv",
+   "sample_name": "20mm_13",
+   "critical_image": 10414,
+   "time_s": 10.4,
+   "critical_displacement_mm": 2.0644
+  },
+  {
+   "csv": "Notched_11.csv",
+   "sample_name": "20mm_14",
+   "critical_image": 10617,
+   "time_s": 10.6,
+   "critical_displacement_mm": 2.1049
+  },
+  {
+   "csv": "Notched_12.csv",
+   "sample_name": "20mm_15",
+   "critical_image": 15854,
+   "time_s": 15.8,
+   "critical_displacement_mm": 3.1455
+  }
+ ],
+ "manifest": "CriticalDisplacements.xlsx (application/vnd.openxmlformats-officedocument.spreadsheetml.sheet) 9666 bytes.\r\nDescription of the Dataset.docx (application/vnd.openxmlformats-officedocument.wordprocessingml.document) 18404 bytes.\r\n"
+}

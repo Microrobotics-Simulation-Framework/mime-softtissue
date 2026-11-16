@@ -34,7 +34,8 @@ def test_every_record_is_listed_and_names_its_bytes():
     file it names (the lab's placeholder names only a URL, and never ships)."""
     listed = json.loads((RECORDS / "records.json").read_text())["assets"]
     assert {a["name"] for a in listed} == {"softtissue_fibrin_plasma", "softtissue_gel_placeholder",
-                                           "softtissue_clot_lab_placeholder"}
+                                           "softtissue_clot_lab_placeholder", "softtissue.lohr2025_pure_shear",
+                                           "softtissue.lohr2025_critical_displacements"}
     for entry in listed:
         record = reference(entry["name"])
         assert record.name == entry["name"]

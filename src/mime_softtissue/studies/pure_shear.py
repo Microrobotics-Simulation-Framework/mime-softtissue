@@ -13,13 +13,14 @@ The calibration, in the order the study runs it:
 3. the other groups' force against displacement and critical displacements are predictions.
 
 ``critical_displacement`` reads the crack's start as the displacement at which the damage (>= ``D_CRACK``) has run
-``ADVANCE`` beyond the notch tip along the crack plane."""
+``ADVANCE`` beyond the notch tip along the crack plane.
+
+The data are the authors' raw files (CC0 1.0), read from the plugin's records by ``lohr2025``; the curves digitised from
+the paper's figures that this study first ran on are in the history (``studies/data/lohr2025_digitised.json``)."""
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
-from importlib import resources
 from typing import Any
 
 import jax
@@ -31,6 +32,7 @@ from ..engine.loadpath import forces, run
 from ..engine.material import Material
 from ..engine.solver import Solver
 from ..engine.specimen import Specimen, edge_notched_strip, morph_columns
+from . import lohr2025
 
 WIDTH, HALF_HEIGHT, THICKNESS = 40e-3, 5e-3, 3e-3
 K_RES = 1e-6
@@ -47,8 +49,8 @@ class Stiffness:
 
 
 def data() -> dict[str, Any]:
-    """The digitised data set (see its ``labels`` and ``source``)."""
-    return json.loads(resources.files(__package__).joinpath("data/lohr2025_digitised.json").read_text())
+    """The target, built from the raw data's records (``lohr2025.target``; see its ``labels`` and ``source``)."""
+    return lohr2025.target()
 
 
 def specimen(notch: float, h: float, l: float) -> Specimen:
