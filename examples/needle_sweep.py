@@ -17,7 +17,7 @@ import numpy as np
 
 import mime_softtissue.entries as st
 from mime.study import Study, along
-from mime.units import mm
+from mime.units import N, m, mm
 from mime_softtissue.studies.puncture import FORCE, puncture_experiment
 
 RADII_MM = (0.5, 1.0, 2.0, 4.0)
@@ -49,8 +49,8 @@ def main() -> None:
     rows = []
     for k, r in enumerate(radii):
         member = result.member(k)
-        force = np.asarray(member[FORCE].force.values.to("N")).reshape(-1)
-        depth = np.asarray(member[FORCE].depth.values.to("m")).reshape(-1)
+        force = np.asarray(member[FORCE].force.values.to(N)).reshape(-1)
+        depth = np.asarray(member[FORCE].depth.values.to(m)).reshape(-1)
         peak = int(np.argmax(force))
         rows.append(dict(R_mm=r, depth_mm=(depth * 1e3).tolist(), force_N=force.tolist(), peak_N=float(force[peak]),
                          peak_depth_mm=float(depth[peak] * 1e3)))
