@@ -67,7 +67,7 @@ iteration count); the bar's peak nominal stress is 0.9989 of the declared 10 kPa
   depth: Fregonese's own alpha = 2 law through the data's (Pc, dc) needs mu 4.9 to 8.8 kPa) (lean 0.7).
 - **P2.6** The first damage (d > 0.5) sits in the surface skin around the tip, not on the axis below it (lean 0.5).
 
-### Round 2a status at 22:15 CET (`date`), read before round 2b was written
+### Round 2a status at 22:13 CET (`date`), read before round 2b was written
 8 of 30 arms in. s_ts 5 kPa punctures early (R 0.5: 9.8 mN at 1.25 mm; R 1: 27.6 mN at 1.65 mm), damage first on the axis
 0.3 mm under the apex. s_ts 10, 20, 43 at R 0.5 and 20 at R 1: no damage at all to 20 and 22 mm (the force 541 and 909
 mN, identical across s_ts: elastic). s_ts 10 and 20 at R 2: a damaged spot at about 11.5 mm that stops growing; the force
@@ -76,7 +76,7 @@ Drucker-Prager surface to 1 % on tensile paths at s_ts 5 kPa (l 0.5 and 0.1 mm, 
 W_ts); at s_ts 20 its equibiaxial onset is 0.74 to 0.77 of the surface's and it never nucleates in uniaxial compression
 (l 2 to 10 material lengths). So the sweep above about 10 kPa tests a distorted surface.
 
-## Round 2b (written 2026-11-16 22:16 CET, `date`, before any arm ran)
+## Round 2b (written 2026-11-16 22:13 CET, `date`, before any arm ran)
 Elastic maps (no damage; s_eq = the uniaxial strength at which a point's Biot stress sits on the surface, s_hs / s_ts
 1.5): R 0.5, 1, 2, 4 at h 0.2 and 0.1. Strength sweep's finer steps: s_ts 6, 7, 8, 9 kPa at the four radii, h 0.2. At
 s_ts 5: h 0.1 at the four radii, and l 0.25 at h 0.1 (h/l 0.4) at R 0.5, 1, 2.
