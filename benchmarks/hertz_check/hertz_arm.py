@@ -6,6 +6,7 @@ gc (J/m^2; 1e9 = elastic), l; h, L (block half-width = height), fxy, fz, gcap (t
 cfg = tip3d | all2 (the GelBlock presets), then overrides vol, bound, aa, cap, verify, contact, pen;
 steps: fixed = the depths in `at` (fractions of R for a sphere, mm for a punch) as fixed steps, or adaptive = 1
 (first 0.02 mm, at most `amax` mm, landing on `at`); depth (punch, mm) and step (punch, mm) for fixed steps;
+vsplit = jbar | point (vol=gauss with the split on the element's mean J, or pointwise);
 hist = mean | gauss (the history field's source only, the elastic energy keeps `vol`);
 plant = emu (Young's modulus where the shear modulus belongs: mu := E, kappa := kr E) | sym1 (the symmetry
 multiplier dropped: every domain's multiplier set to 1)."""
@@ -36,6 +37,22 @@ presets = {"tip3d": P.Settings(),
            "all2": P.Settings(anderson=0, stagger_cap=0, newton_cap=0, volumetric="gauss", damage_bound="clip",
                               verify=False)}
 st = presets[a.get("cfg", "tip3d")]
+if "vsplit" in a:  # full integration (vol=gauss) with the tension/compression split decided by the element's mean J (jbar)
+    import jax.numpy as jnp  # or pointwise (point: must equal vol=gauss); the constraint count stays eight an element
+    _edp, _S, _m = P.S.energy_density_parts, P.S, a["vsplit"]
+
+    def _edp_split(u, grid, mat, volumetric="mean"):
+        if volumetric != "gauss":
+            return _edp(u, grid, mat, volumetric)
+        J, I1 = _S.invariants(_S.deformation(u, grid))
+        iso, _ = _S.law.energy_parts(J, I1, (), _S._isochoric(mat))
+        vp, vm = _S.law.energy_parts(J, jnp.full_like(J, 3.0), (), _S._volumetric(mat))
+        v = vp + vm
+        tens = (_S.element_mean(J) >= 1.0)[None, None, None] if _m == "jbar" else (J >= 1.0)
+        z = jnp.zeros(grid.shape, u.dtype)
+        return iso + jnp.where(tens, v, 0.0), jnp.where(tens, 0.0, v), z, z
+    P.S.energy_density_parts = _edp_split
+    print(f"{name}: volumetric split patched to {_m!r}", flush=True)
 if "hist" in a:  # the history field's source alone: tension_energy evaluated as `hist` (mean | gauss), whatever `vol` is
     _tension = P.S.tension_energy
     P.S.tension_energy = lambda u, grid, m, volumetric="mean", _h=a["hist"]: _tension(u, grid, m, _h)

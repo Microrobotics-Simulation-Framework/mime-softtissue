@@ -90,3 +90,15 @@ Round 3's tip3d arms run to 0.34 and 0.32 mm; at h 0.2 tip3d's post-peak collaps
 most of its wall, and a job's log arrives only when it ends. Round 5 runs the same configuration to 0.24 mm (past tip3d's
 0.20 mm peak at h 0.2 and 0.1, before the collapse) at h 0.1, 0.0707 and 0.05, so the peak lands by about 21:30. P9 to P12 stand.
 Mon 16 Nov 19:09:57 CET 2026
+
+## Addendum, round 6: locking or the split's location? (written before round 6's arms; rounds 1-5's punch arms had been read)
+Rounds 3-5 [measured]: tip3d's peak 8.87 (h 0.1), 9.29 (h 0.0707); normalised by F(0.04) both treatments are grid-stable and
+14 % apart. Round 4 showed the elastic volumetric term carries the gap, but that term differs in two ways between the
+treatments: the constraint count (one an element against eight: locking) and where the tension/compression split is decided
+(on the element's mean J against at each Gauss point). Round 6 separates them: full integration (eight constraints) with the
+split decided on the element's mean J (`vsplit=jbar`), and the pointwise split through the same patch (`vsplit=point`, must
+equal vol=gauss: the patch's identity control; it did at h 0.4, 2 steps, locally).
+- P17 the jbar-split full integration peaks within 3 % of all2 (11.28 at h 0.2), i.e. the constraint count (locking) carries
+  the gap, not the split's location (lean 0.6).
+- P18 vsplit=point equals all2 to 1e-10 at every depth (lean 0.9).
+Mon 16 Nov 20:14:10 CET 2026
