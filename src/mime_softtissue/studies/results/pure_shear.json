@@ -2177,5 +2177,58 @@
   }
  },
  "source": "mime-softtissue pure-shear study, run on CI (probe round 2); see the study's report",
- "after_separation": "separated_at_mm is the first load step at which the damage (>= 0.9) has run through the whole ligament. Past it the model still carries a force that rises with the grips (to 13-21 mN at 7 mm): the fully damaged row of elements on the crack plane is stretched 25 to 48 times (group 4, measured), and its residual stiffness (1e-6 of the law) under the Yeoh law's stiffening at that stretch carries about 180 Pa (derived). An artefact of the residual stiffness, not a measurement of anything; drawn only up to the separation."
+ "after_separation": "separated_at_mm is the first load step at which the damage (>= 0.9) has run through the whole ligament. Past it the model still carries a force that rises with the grips (to 13-21 mN at 7 mm): the fully damaged row of elements on the crack plane is stretched 25 to 48 times (group 4, measured), and its residual stiffness (1e-6 of the law) under the Yeoh law's stiffening at that stretch carries about 180 Pa (derived). An artefact of the residual stiffness, not a measurement of anything; drawn only up to the separation.",
+ "calibrated_raw": {
+  "c1": 362.8,
+  "c2": 434.4,
+  "gc": 0.8256,
+  "l_mm": 0.25,
+  "h_mm": 0.0625,
+  "group": 4,
+  "uncertainty": {
+   "c1": {
+    "jackknife_se": 18.4273,
+    "leave_one_out_range": [
+     352.52,
+     377.9236
+    ]
+   },
+   "c2": {
+    "jackknife_se": 95.262,
+    "leave_one_out_range": [
+     366.6958,
+     486.5386
+    ]
+   },
+   "gc": {
+    "jackknife_se": 0.174,
+    "leave_one_out_range": [
+     0.7707,
+     1.0163
+    ]
+   }
+  },
+  "fit_card": {
+   "data": "Lohr et al. 2025 raw files, CC0 1.0: records softtissue.lohr2025_pure_shear (doi:10.18738/T8/97ZAZN) and softtissue.lohr2025_critical_displacements (doi:10.18738/T8/DUJWSR); in-vitro human whole-blood clot sheets 40 x 10 x 3 mm in pure shear",
+   "stiffness": "C1, C2 from the mean of Unnotched_1..3 at 20 points, 0.25-5.0 mm (stretch 1.025-1.50), Gauss-Newton through the unnotched phase-field run (h_fit 0.5 mm) at Gc",
+   "stiffness_residual": {
+    "rms_N": 0.0022,
+    "nrmse_of_max": 0.0136,
+    "shape": "-12 to -16 % below 1 mm (under 25 mN), +2 % at 2.5-4 mm, -2.7 % at 5 mm"
+   },
+   "toughness": "Gc from group 4 alone (Notched_7..9): the peak of its raw mean curve, 69.76 mN, by power law between the runs at 0.819 and 0.9 J/m^2 (h 0.0625 mm)",
+   "uncertainty": "jackknife over leaving one sample out: one unnotched curve (each refitted) or one group-4 sample; the two combined in quadrature",
+   "held_out": "groups 1, 2, 3 and 5 (group 3 has one sample)",
+   "held_out_peak_rel_err": {
+    "1": -0.238,
+    "2": -0.239,
+    "3": -0.186,
+    "5": 0.02
+   },
+   "length_scale": "l is chosen, not fitted. Checked by the unnotched failure, which no fit uses: at l 0.25 mm the sheet peaks 165.8 mN at 5.65 mm (the samples 164.9-182.8 mN at 5.35-5.61 mm); at l 0.125 mm (Gc 0.967) 235 mN at 8.5 mm; at l 0.5 mm the stiffness fit fails (NRMSE 31-49 %)",
+   "validity": "pure shear to stretch 1.50 (fitted) and about 1.55 (failure); grip rate 0.2 mm/s as the files show (the paper's text says 0.1 mm/s); not validated in compression, at other rates or in other clots",
+   "a_set": "C1, C2, Gc and l are fitted together inside this model (AT2, k_res 1e-6, no tension-compression split, incompressible plane stress); they do not carry to another l or a model without the phase field"
+  },
+  "runs": "the curves in 'groups' were run at 'calibrated' (Gc 0.819, the digitised curves); at these constants they move by under 0.5 % (peak ~ Gc^0.36 along the refitted scan)"
+ }
 }

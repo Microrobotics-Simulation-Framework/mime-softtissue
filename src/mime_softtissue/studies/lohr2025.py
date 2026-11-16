@@ -48,7 +48,7 @@ def _record(path: str) -> dict[str, Any]:
 
 def curves() -> dict[str, tuple[np.ndarray, np.ndarray]]:
     """Each file's (displacement mm, force N), its text checked against the record's sha256."""
-    out = {}
+    out: dict[str, tuple[np.ndarray, np.ndarray]] = {}
     for name, f in _record(CURVES)["files"].items():
         text = f["text"]
         if hashlib.sha256(text.encode("ascii")).hexdigest() != f["sha256"]:
@@ -91,12 +91,13 @@ def target() -> dict[str, Any]:
     samples = [{"csv": n, "notch_mm": a, "group": g, "delta_c_mm": dc[n],
                 "gc_griffith_A_raw": round(griffith_a(dc[n], data), 4), "gc_griffith_A_fig5": gA}
                for n, (a, gA, g) in FIG5A.items()]
-    groups, group_curves = {}, {}
+    groups: dict[str, dict[str, Any]] = {}
+    group_curves: dict[str, dict[str, Any]] = {}
     for g in range(1, 6):
+        names = [n for n, (_, _, group) in FIG5A.items() if group == g]
         s = [x for x in samples if x["group"] == g]
-        names = [x["csv"] for x in s]
-        a = np.array([x["notch_mm"] for x in s])
-        d = np.array([x["delta_c_mm"] for x in s])
+        a = np.array([FIG5A[n][0] for n in names])
+        d = np.array([dc[n] for n in names])
         xs, m, sd = mean_curve(data, names)
         k = int(np.argmax(m))
         peaks = np.array([data[n][1].max() for n in names])

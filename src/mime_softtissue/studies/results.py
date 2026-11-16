@@ -12,8 +12,9 @@ import numpy as np
 
 
 def load() -> dict[str, Any]:
-    """``calibrated`` (c1, c2 Pa; gc J/m^2; l_mm; h_mm; the calibration group) and ``groups`` (each group's model
-    curve, peak force, its displacement and the crack-start displacement)."""
+    """``calibrated`` (c1, c2 Pa; gc J/m^2; l_mm; h_mm; the calibration group: the constants the curves were run at),
+    ``calibrated_raw`` (the constants re-derived on the raw data, with their uncertainty and fit card) and ``groups``
+    (each group's model curve, peak force, its displacement and the crack-start displacement)."""
     return json.loads(resources.files(__package__).joinpath("results/pure_shear.json").read_text())
 
 
