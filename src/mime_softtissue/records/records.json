@@ -519,9 +519,81 @@
    "kind": "authored"
   },
   {
+   "name": "softtissue.puncture3d.gel_sphere_s0.334_h0.177.rows",
+   "sha256": "eae3481ce4aa763ecac0772e72f9d9850960be0c560e48414078052a86854221",
+   "size": 505271,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/gel_sphere_s0.334_h0.177.npz"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.gel_sphere_s0.334_h0.177.meta",
+   "sha256": "84c3380a010d88d7481518745e01adbde7ec6a9f751a7c0f83c3cf01889b038c",
+   "size": 3022,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/gel_sphere_s0.334_h0.177.json"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.gel_sphere_s0.618_h0.25.rows",
+   "sha256": "d956d1d48f5e2f7149af4ae7bb8f2a6420ca950ad2d72d269fd767c78ea5009e",
+   "size": 374001,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/gel_sphere_s0.618_h0.25.npz"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.gel_sphere_s0.618_h0.25.meta",
+   "sha256": "e5cd52edb2f7e46daac140e36791c3ccfdc7f1d2c1ebc9feebbabf9d2fb34f0e",
+   "size": 2625,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/gel_sphere_s0.618_h0.25.json"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.gel_sphere_s1.105_h0.177.rows",
+   "sha256": "a96031846bc31b4db062470abf775465da926b736e235d464bdf6096e46ceca3",
+   "size": 296866,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/gel_sphere_s1.105_h0.177.npz"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
+   "name": "softtissue.puncture3d.gel_sphere_s1.105_h0.177.meta",
+   "sha256": "2558e899025c38bde9d9f044d8b024da68d3cdef10aad7d6fdae1d223e47dfa2",
+   "size": 3897,
+   "licence": "CC-BY-4.0",
+   "locations": [
+    "package:softtissue/data/puncture3d/gel_sphere_s1.105_h0.177.json"
+   ],
+   "credit": "computed by the plugin's authors with the plugin's 3-D engine (engine.puncture3d, outside MIME, GitHub-hosted runners, float64)",
+   "role": "results",
+   "kind": "authored"
+  },
+  {
    "name": "softtissue.puncture_runs",
-   "sha256": "934e1c7a59ee82bbe2430976ece316da76fcfe1b65ab820ad72aed5d3cfd70d7",
-   "size": 77391,
+   "sha256": "9e98ee550baec5f2f9a34504f6a374480683bcebf13c89539442c16a73f7b950",
+   "size": 77892,
    "licence": "CC-BY-4.0",
    "locations": [
     "package:softtissue/data/puncture_runs/index.json"
