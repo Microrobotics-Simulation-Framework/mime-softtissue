@@ -86,3 +86,20 @@ s_ts 5: h 0.1 at the four radii, and l 0.25 at h 0.1 (h/l 0.4) at R 0.5, 1, 2.
   (lean 0.7).
 - **P3.3** At s_ts 5, l 0.5 to 0.25 (h/l 0.4) moves Fc by under 10 % at R 0.5, 1 and 2 (lean 0.6).
 - **P3.4** At s_ts 5, h 0.2 to 0.1 moves Fc by under 15 % at every R (lean 0.6).
+
+### Round 2b first status at 23:14 CET (`date`), read before round 2c was written
+Round 2b relaunched at 22:17 on the frozen driving force (round 2b's first run cancelled; `strength.py` docstring). In:
+s_ts 6 punctures (a drop >= 30 %) at 11 / 33 / 115 / 424 mN (R 0.5/1/2/4), Fc/(mu R^2) 12 / 9 / 8 / 7; s_ts 7 at 63 / 47 /
+179 / 730 mN; s_ts 10 to 1100 kPa (round 2a): no puncture at any R to 20-26 mm. Bar controls: 12 of 12 plants caught.
+
+## Round 2c (written 2026-11-16 23:14 CET, `date`, before any arm ran)
+(a) mu 7.2 kPa (a neo-Hookean secant that Fregonese's alpha = 2 law puts through the data's (Pc, dc) better than G' does):
+s_ts 10, 12, 14, 16, 20 kPa at R 0.5, 1, 2, 4, h 0.2. (b) s_ts 7 at h 0.1, the four radii. (c) s_ts 7 with s_hs/s_ts 3 at
+R 0.5 and 4, h 0.2.
+- **P4.1** At mu 7.2 the same structure: below a threshold s_ts the model punctures with Fc/(mu R^2) between 5 and 15 at
+  every R (stress-limited, Fc about R^1.6-1.9); above it, no puncture at R <= 1 by 20 mm. No s_ts puts all four within 30 %
+  of the data (lean 0.75).
+- **P4.2** s_ts 7 at h 0.1 moves Fc by more than 20 % from h 0.2 at two or more radii (the knife-edge is grid-sensitive)
+  (lean 0.55).
+- **P4.3** s_hs/s_ts 3 changes Fc at s_ts 7 by under 15 % at R 0.5 and 4 (nucleation in this model is not hydrostatic-
+  limited) (lean 0.5).
