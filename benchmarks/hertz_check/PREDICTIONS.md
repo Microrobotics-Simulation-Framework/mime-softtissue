@@ -66,3 +66,21 @@ Arms: tip3d (mean dilatation) on the punch at h 0.0707 (0.04 mm steps to 0.34 mm
 - P11 0.02 mm steps move tip3d's sampled peak by less than 2 % at h 0.2 and 0.1 (lean 0.7).
 - P12 tip3d at h 0.05 (if it lands): within 5 % of its h 0.0707 peak (lean 0.5).
 Mon 16 Nov 18:55:11 CET 2026
+
+## Addendum, round 4: what in the volumetric treatment carries the peak gap (written before round 4's arms)
+Read before writing [measured, round 1, h 0.2]: mean dilatation on the punch peaks at 8.83 mN at 0.20 mm (d_max 0.39) and falls
+to 1.6 mN at 0.28 (d_max 1.0); full integration peaks at 11.28 at 0.28 (d_max 0.66) and declines gradually (10.58 at 0.44,
+d_max 0.99); 5.7 % apart at 0.04 mm. Hertz at kappa 50 mu, h 0.2: full integration 9 to 16 % above mean dilatation. Operating
+point: the damage degrades shear but never volumetric compression, so a damaged zone's kappa / (g mu) is 4.67 / g (39 at
+d 0.66, 467 at d 0.9): the intact gel's nu 0.4 does not bound the locking there. Also read: the engine scales the input Gc by
+1 / (1 + h / 2l) (Gc x 0.5 at h 0.2, x 0.74 at h 0.0707), in every series (the spikes too).
+Arms (h 0.2): the history field's source switched alone (mean dilatation with a pointwise source; full integration with the
+element-mean source; mean with mean, the identity control); Hertz at kappa 500 mu and 5000 mu for both treatments (the locking
+at a damaged zone's ratio); the punch at kappa 2/3 mu (nu 0) for both.
+- P13 the elastic part (one volumetric constraint an element against eight) carries more than half of the h 0.2 peak gap; the
+  history source alone moves tip3d's peak by less than 5 % (lean 0.55).
+- P14 Hertz, h 0.2: full integration above mean dilatation by more than 30 % at kappa 500 mu (lean 0.7) and more than 60 % at
+  5000 mu (lean 0.6); mean dilatation within 5 % of Hertz at both (lean 0.6).
+- P15 the punch at nu 0: the treatments' peaks within 5 % (lean 0.65).
+- P16 the identity control (hist=mean on tip3d) equals tip3d to 1e-10 at every depth (lean 0.95).
+Mon 16 Nov 18:59:11 CET 2026

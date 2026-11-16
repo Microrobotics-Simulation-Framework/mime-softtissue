@@ -6,6 +6,7 @@ gc (J/m^2; 1e9 = elastic), l; h, L (block half-width = height), fxy, fz, gcap (t
 cfg = tip3d | all2 (the GelBlock presets), then overrides vol, bound, aa, cap, verify, contact, pen;
 steps: fixed = the depths in `at` (fractions of R for a sphere, mm for a punch) as fixed steps, or adaptive = 1
 (first 0.02 mm, at most `amax` mm, landing on `at`); depth (punch, mm) and step (punch, mm) for fixed steps;
+hist = mean | gauss (the history field's source only, the elastic energy keeps `vol`);
 plant = emu (Young's modulus where the shear modulus belongs: mu := E, kappa := kr E) | sym1 (the symmetry
 multiplier dropped: every domain's multiplier set to 1)."""
 import json, os, sys, time
@@ -35,6 +36,10 @@ presets = {"tip3d": P.Settings(),
            "all2": P.Settings(anderson=0, stagger_cap=0, newton_cap=0, volumetric="gauss", damage_bound="clip",
                               verify=False)}
 st = presets[a.get("cfg", "tip3d")]
+if "hist" in a:  # the history field's source alone: tension_energy evaluated as `hist` (mean | gauss), whatever `vol` is
+    _tension = P.S.tension_energy
+    P.S.tension_energy = lambda u, grid, m, volumetric="mean", _h=a["hist"]: _tension(u, grid, m, _h)
+    print(f"{name}: history source patched to {a['hist']!r}", flush=True)
 over = {}
 if "vol" in a: over["volumetric"] = a["vol"]
 if "bound" in a: over["damage_bound"] = a["bound"]
@@ -68,7 +73,7 @@ blk = P.Block(half_width=f("L", 20) * 1e-3, height=f("L", 20) * 1e-3, h=f("h", 0
               fine_xy=f("fxy", 1.5) * 1e-3, fine_z=f("fz", 1.0) * 1e-3, cap=f("gcap", 16.0), axis_x=f("ax", 0.0) * 1e-3)
 t0 = time.time()
 print(f"{name}: nu {nu:.4f} mu {mu:.1f} (used {mu_used:.1f}) settings {st}", flush=True)
-run = P.run_puncture(blk, mat, tip, depth, settings=st, frames=1, output_depths=at,
+run = P.run_puncture(blk, mat, tip, depth, settings=st, frames=1, output_depths=at, wall=f("wall", 18000.0),
                      on_step=lambda r: print(f"  depth {r['depth_m'] * 1e3:.4f} mm F {r['force_N']:.6e} N stag "
                                              f"{r['staggered']} newton {r['newton']} krylov {r['krylov']} shifts "
                                              f"{r['shifts']} pen/h {r['penetration_over_h']:.3e} d_max {r['d_max']:.2e} "
