@@ -54,6 +54,7 @@ ap.add_argument("--hold", type=float, default=0.0, help="s")
 ap.add_argument("--hold-depth", type=float, default=0.0, help="mm")
 ap.add_argument("--hold-steps", type=int, default=60)
 ap.add_argument("--wall", type=float, default=5400.0)
+ap.add_argument("--scale", type=float, default=None, help="the long-term scale outright (a diagnostic), for any material")
 a = ap.parse_args()
 
 prony = None
@@ -64,6 +65,8 @@ if a.material != "elastic":
     prony = Prony(jnp.asarray(a.beta), jnp.asarray(a.tau))
     if a.material == "visco":
         scale, scale_rms = vc.rate_consistent_scale(prony)
+if a.scale is not None:
+    scale, scale_rms = a.scale, float("nan")
 rec = {"args": vars(a), "long_term_scale": scale, "scale_rms": scale_rms, "c1": C1, "c2": C2, "gc": GC, "l": L}
 t0 = time.time()
 

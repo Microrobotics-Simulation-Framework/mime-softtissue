@@ -261,3 +261,23 @@ def rate_consistent_scale(prony: Prony, grip_rate: float = BASE_GRIP_RATE, stret
     v, e = np.interp(at, stretch, pv), np.interp(at, stretch, pe)
     s = float(v @ e / (v @ v))
     return s, float(np.sqrt(np.mean((s * v - e) ** 2)) / e.max())
+
+
+#: The demo's betas: fitted on samples 4..7 with tau held at ``PUBLISHED_TAU`` (RMS 3.4 % of each sample's peak; per
+#: sample beta_1 runs 0.51..2.29 from 10 to 40 % strain, beta_2 0.12..0.15). Valid for clamp stretch 1.0..1.4, a grip
+#: rate of 0.01 /s and times 0.1..300 s, on this data set's clot (species not stated, 3 to 4 times stiffer than
+#: Lohr's human clots); anything else (puncture's stretches, other rates, the human clot) is an extrapolation.
+DEMO_BETA = (0.9206, 0.1832)
+
+
+def demo_prony() -> Prony:
+    return Prony(jnp.asarray(DEMO_BETA), jnp.asarray(PUBLISHED_TAU))
+
+
+def viscous_clot(c1: float = BASE_C1, c2: float = BASE_C2, prony: Prony | None = None) -> dict[str, Any]:
+    """The rate-consistent long-term constants for the replication's Yeoh (C1, C2), taken as the response at 0.2 mm/s:
+    {"c1", "c2" (Pa, long-term), "scale", "prony"}. The toughness and the length scale are the replication's, unchanged
+    (only the stored elastic energy drives the fracture)."""
+    pr = demo_prony() if prony is None else prony
+    s, _ = rate_consistent_scale(pr, c2_over_c1=c2 / c1)
+    return {"c1": s * c1, "c2": s * c2, "scale": s, "prony": pr}

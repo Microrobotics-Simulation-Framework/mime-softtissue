@@ -165,11 +165,11 @@ def test_the_axisymmetric_and_plane_strain_builds_relax_alike():
     stretch = 1.2
     cyl = stretched_cylinder(radius=1e-3, height=2e-3, nr=2, nz=2, confined=True)
     ra = run(Solver(cyl, "elastic"), mat, np.full(len(dts), (stretch - 1) * 2e-3), dts=dts)
-    sheet = edge_notched_strip(width=4e-3, half_height=1e-3, thickness=1.0, notch=0.0, h=1e-3, fine=1e-3)
+    sheet = edge_notched_strip(width=4e-3, half_height=2e-3, thickness=1.0, notch=0.0, h=0.5e-3, fine=1e-3)
     free = sheet.free.copy()
     free[:, :, 0] = 0.0
     sheet = replace(sheet, free=free)
-    rp = run(Solver(sheet, "elastic"), mat, np.full(len(dts), (stretch - 1) * 2e-3), dts=dts)
+    rp = run(Solver(sheet, "elastic"), mat, np.full(len(dts), (stretch - 1) * 4e-3), dts=dts)
     axi = ra["force"] / (np.pi * 1e-3 ** 2)
     plane = rp["force"] / 4e-3
     assert np.max(np.abs(axi / plane - 1)) <= 1e-9
@@ -237,24 +237,48 @@ def test_energy_balance_without_the_dissipation_fails(notched_visco_run):
     assert np.max(np.abs(resid[:peak + 1]) / work[:peak + 1]) > 0.02
 
 
-def slow_and_elastic(long_term_scale=1.0):
-    sp = edge_notched_strip(width=WIDTH, half_height=HALF, thickness=T, notch=12e-3, h=1e-3, fine=3e-3,
-                            kinematics="plane_stress")
-    deltas = np.linspace(0, 6e-3, 31)[1:]
-    elastic = material()._replace(prony=None)
-    re = run(Solver(sp, "phase_field", tol_d=1e-5, max_staggered=300, newton_regularise=True), elastic, deltas)
+def coarse_notched_sheet():
+    return edge_notched_strip(width=WIDTH, half_height=HALF, thickness=T, notch=12e-3, h=1e-3, fine=3e-3,
+                              kinematics="plane_stress")
+
+
+SLOW_DELTAS = np.linspace(0, 6e-3, 31)[1:]
+
+
+@pytest.fixture(scope="module")
+def elastic_run():
+    s = Solver(coarse_notched_sheet(), "phase_field", tol_d=1e-5, max_staggered=300, newton_regularise=True)
+    return run(s, material()._replace(prony=None), SLOW_DELTAS)
+
+
+def slow_run(long_term_scale=1.0):
     mat = material()
     mat = mat._replace(mu=mat.mu * long_term_scale, c2=mat.c2 * long_term_scale)
-    slow = 1e-6 * (deltas[1] - deltas[0]) / max(TAU)  # each step takes 1e6 times the longest relaxation time
-    rv = run(Solver(sp, "phase_field", tol_d=1e-5, max_staggered=300, newton_regularise=True, rate=slow), mat, deltas)
-    return re, rv
+    slow = 1e-6 * (SLOW_DELTAS[1] - SLOW_DELTAS[0]) / max(TAU)  # each step takes 1e6 times the longest relaxation time
+    s = Solver(coarse_notched_sheet(), "phase_field", tol_d=1e-5, max_staggered=300, newton_regularise=True, rate=slow)
+    return run(s, mat, SLOW_DELTAS)
 
 
-def test_at_a_vanishing_rate_the_viscous_run_is_the_elastic_run():
-    re, rv = slow_and_elastic()
-    assert np.max(np.abs(rv["force"] - re["force"])) <= 1e-4 * np.max(re["force"])
+def test_at_a_vanishing_rate_the_viscous_run_is_the_elastic_run(elastic_run):
+    rv = slow_run()
+    assert np.max(np.abs(rv["force"] - elastic_run["force"])) <= 1e-4 * np.max(elastic_run["force"])
 
 
-def test_the_instantaneous_modulus_as_long_term_fails_the_slow_rate_control():
-    re, rv = slow_and_elastic(long_term_scale=1 + sum(BETA))
-    assert np.max(np.abs(rv["force"] - re["force"])) > 1e-4 * np.max(re["force"])
+def test_the_instantaneous_modulus_as_long_term_fails_the_slow_rate_control(elastic_run):
+    rv = slow_run(long_term_scale=1 + sum(BETA))
+    assert np.max(np.abs(rv["force"] - elastic_run["force"])) > 1e-4 * np.max(elastic_run["force"])
+
+
+def test_the_shipped_relaxation_data_is_the_packaged_file():
+    """The calibration's data (doi 10.18738/T8/NA0WXY, decimated) ship with the package, byte for byte; each sample
+    records the sha256 of the raw CSV it was decimated from."""
+    import hashlib
+    from importlib import resources
+
+    raw = resources.files("mime_softtissue.studies").joinpath("data/rausch_visco_na0wxy.json").read_bytes()
+    assert hashlib.sha256(raw).hexdigest() == "b5749d6d154df43fd323db4af30a675169f79c9a422841b81329f0412b8d50ef"
+    import json
+
+    samples = json.loads(raw)["samples"]
+    assert sorted(samples) == ["1", "2", "4", "5", "6", "7"]
+    assert all(len(s["raw_sha256"]) == 64 for s in samples.values())
