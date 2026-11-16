@@ -19,10 +19,10 @@ import jax.numpy as jnp
 import numpy as np
 
 from .. import material as law
-from .plane_strain import DN_CENTRE, N_GAUSS, _GAUSS, gauss_gradients
+from .plane_strain import DN_CENTRE, N_GAUSS, GAUSS_POINTS, gauss_gradients
 from ..material import Material
 
-XI_GAUSS = np.asarray(_GAUSS)[:, 0]  # the Gauss points' reference radial coordinate
+XI_GAUSS = np.asarray(GAUSS_POINTS)[:, 0]  # the Gauss points' reference radial coordinate
 N_CENTRE = np.full(4, 0.25)
 
 

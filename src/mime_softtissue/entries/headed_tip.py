@@ -78,6 +78,10 @@ class HeadedTipShape:
 SHAPE = register_shape("softtissue.headed_tip", HeadedTipShape(), switches=(AXIS, EDGES))
 
 
+def _is_positive_length(value: Magnitude) -> bool:
+    return isinstance(value, (int, float)) and math.isfinite(value) and value > 0
+
+
 def _length(settings: Mapping[str, Magnitude], name: str) -> float:
     value = settings[name]
     if isinstance(value, tuple):
@@ -109,7 +113,7 @@ class HeadedTip(Solid):
     @override
     def setting_problems(self, settings: Mapping[str, Magnitude]) -> list[str]:
         found = [f"{n} is {settings[n]!r} m, not a length above zero" for n in (*PARAMETERS, "length")
-                 if not (isinstance(settings[n], (int, float)) and math.isfinite(settings[n]) and settings[n] > 0)]
+                 if not _is_positive_length(settings[n])]
         if found:
             return found
         neck, head, head_length, fillet, length = (_length(settings, n) for n in (*PARAMETERS, "length"))
