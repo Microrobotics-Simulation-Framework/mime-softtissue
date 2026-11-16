@@ -41,7 +41,9 @@ class Fibre(NamedTuple):
 class Material(NamedTuple):
     """The numbers a step reads (a pytree: derivatives reach every field). ``gc`` and ``l`` are the fracture
     model's toughness and length scale; ``stretch_limit`` is read only by the element-deletion control. ``c2``, ``c3``:
-    Yeoh's stiffening (Pa; C1 = mu / 2). ``gent_jm``: Gent's limit on x (None: no Gent term)."""
+    Yeoh's stiffening (Pa; C1 = mu / 2). ``gent_jm``: Gent's limit on x (None: no Gent term). ``strength``: a
+    ``fracture.strength.Strength`` (None: the AT2 phase field; set, the phase field nucleates by that strength surface
+    and grows by ``gc``, ``fracture.strength``)."""
 
     mu: Any
     kappa: Any
@@ -53,6 +55,7 @@ class Material(NamedTuple):
     c2: Any = 0.0
     c3: Any = 0.0
     gent_jm: Any = None
+    strength: Any = None
 
 
 #: Where Gent's logarithm hands over to its linear continuation: 1 - x* / Jm (the stress there is 1 / GENT_CUT times

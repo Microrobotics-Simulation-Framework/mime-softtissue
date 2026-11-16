@@ -25,9 +25,9 @@ import numpy as np
 
 from . import contact as ct
 from .assembly import Assembly, constrain
-from .fracture import deletion, phase_field
+from .fracture import deletion, phase_field, strength
 from .kinematics import axisymmetric as axi
-from .kinematics.plane_strain import (centre_stretch, element_hessian, element_plus,
+from .kinematics.plane_strain import (centre_stretch, deformation_gradients, element_hessian, element_plus,
                                                               element_strain_energy)
 from .material import Material
 from .solvers import bfgs, newton
@@ -171,10 +171,39 @@ class Solver:
         return jax.vmap(lambda ue, dx, dy: element_plus(ue, dx, dy, mat, self.stress))(u[self.I, self.J],
                                                                                          *self.sizes(notch))
 
-    def solve_damage(self, history: jax.Array, mat: Material, notch: Any = None, d_prev: Any = None) -> jax.Array:
+    def solve_damage(self, history: jax.Array, mat: Material, notch: Any = None, d_prev: Any = None,
+                     u: Any = None, d: Any = None) -> jax.Array:
         dx, dy = self.sizes(notch)
+        if mat.strength is not None:
+            ce, tension = self.strength_driving(u, d, mat, notch)
+            return strength.solve_damage(history, ce, tension, mat.gc, mat.l, mat.strength.delta, dx, dy, self.grid,
+                                         self.sca, self.I, self.J, self.gauss_weights(), self.viscosity, d_prev)
         return phase_field.solve_damage(history, mat.gc, mat.l, dx, dy, self.grid, self.sca, self.I, self.J,
                                         weights=self.gauss_weights(), viscosity=self.viscosity, d_prev=d_prev)
+
+    def strength_driving(self, u: jax.Array, d: jax.Array, mat: Material, notch: Any = None) -> tuple[jax.Array, jax.Array]:
+        """The strength surface's driving force c_e and its tension indicator at each Gauss point (n_el, 4), from the
+        displacement ``u`` and the damage ``d`` (the degraded Biot stress; ``fracture.strength``)."""
+        if self.stress:
+            raise ValueError("the strength surface is built for plane strain and axisymmetric kinematics")
+        dx, dy = self.sizes(notch)
+        dq = phase_field.damage_at_gauss(d, self.I, self.J)
+        st = mat.strength
+
+        def point(F2, ftt, dg):
+            s = strength.biot_principal(strength.principal_stretches(F2, ftt), dg, mat)
+            return strength.driving(s, st)
+
+        if self.axi:
+            def element(ue, dqe, x0, dx, dy):
+                F2, Ftt = axi.deformation(ue, x0, dx, dy)
+                return jax.vmap(point)(F2, Ftt, dqe)
+            return jax.vmap(element)(u[self.I, self.J], dq, self.x0, dx, dy)
+
+        def element_ps(ue, dqe, dx, dy):
+            F2 = deformation_gradients(ue, dx, dy)
+            return jax.vmap(point)(F2, jnp.ones((4,), F2.dtype), dqe)
+        return jax.vmap(element_ps)(u[self.I, self.J], dq, dx, dy)
 
     def damage_at_gauss(self, d: jax.Array) -> jax.Array:
         if self.mode == "phase_field":
@@ -187,6 +216,8 @@ class Solver:
         if self.mode != "phase_field":
             return jnp.zeros((), dtype=d.dtype)
         dx, dy = self.sizes(notch)
+        if mat.strength is not None:
+            return strength.crack_energy(d, mat.gc, mat.l, dx, dy, self.I, self.J, weights=self.gauss_weights())
         return phase_field.crack_energy(d, mat.gc, mat.l, dx, dy, self.I, self.J, weights=self.gauss_weights())
 
     def centre_stretch(self, u: jax.Array, notch: Any = None) -> jax.Array:
@@ -311,6 +342,8 @@ class Solver:
         friction = lag is not None
 
         if self.mode == "phase_field" and self.scheme == "bfgs":
+            if mat.strength is not None:
+                raise ValueError("the strength surface runs with the staggered scheme")
             u, d, hist, k, nk, err, capped = self._monolithic(state, u, mat, notch, depth, lag, con)
             d_used = d
             dq = self.damage_at_gauss(d)
@@ -320,7 +353,7 @@ class Solver:
                 dq = self.damage_at_gauss(d)
                 u, n, ok = self.newton(u, dq, mat, notch, depth, lag, con)
                 hist = phase_field.updated_history(state.history, self.plus(u, mat, notch))
-                d_new = self.solve_damage(hist, mat, notch, state.d)
+                d_new = self.solve_damage(hist, mat, notch, state.d, u, d)
                 dp = jnp.zeros((), u.dtype)
                 if friction:
                     new_lag = self._lag(u, depth, lag, con)
