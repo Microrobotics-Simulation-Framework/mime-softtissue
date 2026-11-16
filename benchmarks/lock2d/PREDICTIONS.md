@@ -34,3 +34,16 @@ Fc = the first local maximum the force later falls 2 % below (GENT's rule); y = 
   gap is smaller (F at 0.08 mm within 2-7 %). The mean peak rises 1-6 % from h 0.1 to 0.0707 (3-D tip3d +4.7 %) and keeps
   rising to 0.05 and 0.0354 (not converged by h/l 0.35); its peak / F(0.04 mm) stays within 2 % across those grids.
 - Runtime: mean costs within x0.7-1.5 of gauss per arm.
+
+## Round 2 (runners), written 21:20 CET, after round 1's punch arms and the local Hertz controls at h 0.2 and 0.1
+
+Seen before writing: Hertz gauss at kappa 5000 mu x1.56-1.95 (h 0.2) and x1.24-1.45 (h 0.1), at 500 mu x1.10-1.26 and
+x1.03-1.10; mean 0.977-1.008 at every kappa on both grids. The axisymmetric punch: gauss over mean at the peak +16 / +12 /
++8 / +2.5 % at h 0.1 / 0.0707 / 0.05 / 0.0354; the mean peak 9.01 / 10.01 / 11.27 / 11.75 / 11.29 mN (h 0.1 to 0.025).
+
+- **Hertz at h 0.05** (both treatments, the four kappas): mean within 2 % of Hertz at delta/R 0.04-0.19 and within 1 % of
+  its h 0.1 value at every kappa; gauss at 5000 mu still x1.08-1.30 (the excess falling by a third to a half a halving):
+  outside max(its three-grid discretisation error, 2 %), the control failing as it must; gauss at 500 mu x1.01-1.05.
+- **The punch, finer and with half the step** (step 0.02 mm at h 0.0354 and 0.025, both treatments; h 0.0177 at 0.04 mm,
+  both): the gap at the peak <= 4 % at h 0.025 and 0.0177 (it closes); the mean peak at h 0.0177 in 11.0-12.2 mN; halving
+  the step moves the sampled peak by <= 2 %; peak / F(0.04) within 3 % across h 0.05 to 0.0177 for mean.
