@@ -50,3 +50,19 @@ nu 0.4 1.02-1.07; the plants read x 2.87-2.98 (E for mu) and / 4.0 (symmetry). R
 kappa 50 mu for both presets (the locking case) and the punch's one-at-a-time arms at the plotted grid h 0.1. Leans unchanged
 (P2: all2 at kappa 50 mu high and converging from above; P7: the damage bound carries most of the peak gap).
 Mon 16 Nov 18:49:36 CET 2026
+
+## Addendum, round 3: the punch's peak under refinement, for each volumetric treatment (written before round 3's arms)
+Asked by F0 (resumed 18:51): does the peak converge to the same value for mean dilatation (tip3d) and full integration (all2)?
+Read before writing [read: SPIKE_3DCOST, SPIKE_3DSTAGGER, SPIKE_3DPUNCTURE rows; TUTORIAL3D]. Full integration's peak (mN, depth):
+h 0.2 11.28 (0.28, the plugin, 0.04 mm steps), h 0.1 10.62 (0.30), h 0.0707 11.03 (0.28; uniform 0.02 mm), h 0.05 11.28 (0.27,
+adaptive), and the axisymmetric build h 0.1 / 0.0707 / 0.05 / 0.0354 / 0.025: 10.26 / 10.99 / 11.99 / 11.51 / 11.67 (depth 0.28
+to 0.22): not monotone, spread 4 % over the three finest. tip3d through MIME: 8.87 (0.20) at h 0.2 and 0.1 (0.4 % apart).
+Arms: tip3d (mean dilatation) on the punch at h 0.0707 (0.04 mm steps to 0.34 mm) and h 0.05 (to 0.32 mm; may not land by
+21:30); 0.02 mm steps at h 0.2 and 0.1 to 0.28 mm (the step's effect on the sampled peak).
+- P9 tip3d's peak at h 0.0707: 8.6 to 10.5 mN at 0.18 to 0.26 mm; lean 0.55 that it rises more than 2 % above 8.87.
+- P10 the gap to full integration at h 0.0707 (11.03) stays above 8 %: lean 0.65. So by h/l 0.7 the two treatments do NOT yet
+  agree on the peak; both must meet as h/l -> 0 (the cell mean tends to the point value), so a persisting gap says the grids
+  are not converged, not which one is right.
+- P11 0.02 mm steps move tip3d's sampled peak by less than 2 % at h 0.2 and 0.1 (lean 0.7).
+- P12 tip3d at h 0.05 (if it lands): within 5 % of its h 0.0707 peak (lean 0.5).
+Mon 16 Nov 18:55:11 CET 2026
