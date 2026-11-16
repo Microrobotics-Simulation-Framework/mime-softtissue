@@ -60,7 +60,7 @@ def puncture_experiment(tip: Any, material: str, *, dimension: str = "axisymmetr
     exp.declare("tip.mass", kg(1.2e-5), reason="a placeholder: a steel tip of a few millimetres")
     exp.declare("tip.inertia", kg_m2((1e-11, 1e-11, 1e-12)), reason="a placeholder: the same tip's order")
     steps = int(round(depth_mm / step_mm)) + 1
-    exp.attach(st.Servo(speed=m_per_s(speed_mm_s * 1e-3), insert_steps=steps), body="tip")
+    exp.attach(st.Servo(speed=m_per_s(speed_mm_s * 1e-3), insert_steps=10 * steps), body="tip")  # down all run
     young = read_material(material)["young_modulus"]
     exp.attach(st.TipContact(friction=0.0, adhesion=0.0, stiffness=100.0 * young / (h_mm * 1e-3)), tip="tip",
                solid="clot")
@@ -88,6 +88,7 @@ def main() -> None:
     t0 = time.perf_counter()
     built = exp.build()
     dt = a.step / 0.1  # the default speed, 0.1 mm/s
+    steps = a.every * math.ceil(steps / a.every)  # a run is whole chunks of the stage's frames; the servo keeps pushing
     written = built.run_to(a.out, s(steps * dt), history=True, stage_every=s(a.every * dt))
     wall = time.perf_counter() - t0
     run = written.result
