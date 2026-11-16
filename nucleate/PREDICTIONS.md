@@ -66,3 +66,23 @@ iteration count); the bar's peak nominal stress is 0.9989 of the declared 10 kPa
 - **P2.5** At a puncture the model's depth is 1.5 to 3 times the data's (the neo-Hookean at mu 3.66 is too soft at
   depth: Fregonese's own alpha = 2 law through the data's (Pc, dc) needs mu 4.9 to 8.8 kPa) (lean 0.7).
 - **P2.6** The first damage (d > 0.5) sits in the surface skin around the tip, not on the axis below it (lean 0.5).
+
+### Round 2a status at 22:15 CET (`date`), read before round 2b was written
+8 of 30 arms in. s_ts 5 kPa punctures early (R 0.5: 9.8 mN at 1.25 mm; R 1: 27.6 mN at 1.65 mm), damage first on the axis
+0.3 mm under the apex. s_ts 10, 20, 43 at R 0.5 and 20 at R 1: no damage at all to 20 and 22 mm (the force 541 and 909
+mN, identical across s_ts: elastic). s_ts 10 and 20 at R 2: a damaged spot at about 11.5 mm that stops growing; the force
+keeps rising (a lower bound). The uniform-state surface check (`nucleate/surface.py`, local): the model matches the
+Drucker-Prager surface to 1 % on tensile paths at s_ts 5 kPa (l 0.5 and 0.1 mm, l under the material length 3 Gc / 16
+W_ts); at s_ts 20 its equibiaxial onset is 0.74 to 0.77 of the surface's and it never nucleates in uniaxial compression
+(l 2 to 10 material lengths). So the sweep above about 10 kPa tests a distorted surface.
+
+## Round 2b (written 2026-11-16 22:16 CET, `date`, before any arm ran)
+Elastic maps (no damage; s_eq = the uniaxial strength at which a point's Biot stress sits on the surface, s_hs / s_ts
+1.5): R 0.5, 1, 2, 4 at h 0.2 and 0.1. Strength sweep's finer steps: s_ts 6, 7, 8, 9 kPa at the four radii, h 0.2. At
+s_ts 5: h 0.1 at the four radii, and l 0.25 at h 0.1 (h/l 0.4) at R 0.5, 1, 2.
+- **P3.1** The elastic map's largest s_eq at R 0.5 rises with depth to a maximum between 5 and 10 kPa, then stays below
+  it to 20 mm: a knife-edge in s_ts (lean 0.6); its site is on the axis under the apex.
+- **P3.2** No s_ts in 6 to 9 kPa puts Fc at R 0.5 within 30 % of the data: either a puncture under 30 mN or none by 20 mm
+  (lean 0.7).
+- **P3.3** At s_ts 5, l 0.5 to 0.25 (h/l 0.4) moves Fc by under 10 % at R 0.5, 1 and 2 (lean 0.6).
+- **P3.4** At s_ts 5, h 0.2 to 0.1 moves Fc by under 15 % at every R (lean 0.6).

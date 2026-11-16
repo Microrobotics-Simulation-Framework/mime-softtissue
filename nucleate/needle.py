@@ -99,6 +99,29 @@ def main() -> None:
     solver = Solver(replace(block, contact=c), a.mode, tol_d=1e-5, viscosity=0.1 * a.gc / l, newton_regularise=True,
                     lag_relaxation=0.5)
     stats = jax.jit(lambda u, d: stretch_stats(solver, u, d))
+
+    def strength_fields(u, d, hist):
+        """The model's uniform-state onset function 2 H [I1 >= 0] - c_e - 3 delta Gc / 8 l and the Drucker-Prager
+        F(S) of the degraded Biot stress, at each Gauss point (Pa)."""
+        st = mat.strength
+        ce, tension = solver.strength_driving(u, d, mat)
+        onset = 2.0 * jnp.where(tension, hist, 0.0) - ce - 3.0 * st.delta * mat.gc / (8.0 * mat.l)
+        dq = solver.damage_at_gauss(d)
+        g1 = st.s_ts / (jnp.sqrt(3.0) * (3 * st.s_hs - st.s_ts))
+        g0 = -jnp.sqrt(3.0) * st.s_hs * st.s_ts / (3 * st.s_hs - st.s_ts)
+
+        def element(ue, dqe, x0, dx, dy):
+            F2, Ftt = axi.deformation(ue, x0, dx, dy)
+
+            def point(f, t, dg):
+                s = strength_surface.biot_principal(strength_surface.principal_stretches(f, t), dg, mat)
+                J2 = ((s[0] - s[1]) ** 2 + (s[1] - s[2]) ** 2 + (s[2] - s[0]) ** 2) / 6.0
+                return jnp.sqrt(jnp.maximum(J2, 0.0)) + g1 * jnp.sum(s) + g0, \
+                    (jnp.sqrt(jnp.maximum(J2, 0.0)) + g1 * jnp.sum(s)) / (-g0 / st.s_ts)
+            return jax.vmap(point)(F2, Ftt, dqe)
+        dp, seq = jax.vmap(element)(u[solver.I, solver.J], dq, solver.x0, solver.dx, solver.dy)
+        return onset, dp, seq
+    sfields = jax.jit(strength_fields) if a.sts else None
     state = solver.initial()
     n = int(round(a.depth / a.step))
     rows = []
@@ -140,6 +163,14 @@ def main() -> None:
                    x_p999_intact=float(np.percentile(x[intact], 99.9)) if intact.any() else None,
                    n_past_cut=int(np.sum(x > (a.jm * (1 - 1e-3)))) if a.jm > 0 else 0,
                    wall_s=time.perf_counter() - t0)
+        if sfields is not None:
+            onset, dp, seq = (np.asarray(v) for v in sfields(state.u, state.d, state.history))
+            ko, kd = int(np.argmax(onset.max(axis=1))), int(np.argmax(dp.max(axis=1)))
+            # seq: the uniaxial tensile strength at which this point's Biot stress sits on the surface (the ratio
+            # s_hs / s_ts held): Drucker-Prager nucleation where seq first reaches s_ts
+            row.update(onset_max=float(onset.max()), onset_at=[float(v) for v in centres[ko] / mm],
+                       dp_max=float(dp.max()), dp_at=[float(v) for v in centres[kd] / mm],
+                       seq_max=float(seq.max()), seq_at=[float(v) for v in centres[int(np.argmax(seq.max(axis=1)))] / mm])
         rows.append(row)
         write()
         print(json.dumps({k2: (round(v, 5) if isinstance(v, float) else v) for k2, v in row.items()}), flush=True)
