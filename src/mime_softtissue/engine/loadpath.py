@@ -15,17 +15,21 @@ from .solver import Solver, StepOut
 
 def run(solver: Solver, mat: Material, deltas: Any, *, notch: Any = None, keep_fields: bool = False,
         stop_below: float | None = None, verbose: bool = False, after_peak: int = 10 ** 6,
-        keep_u: bool = False) -> dict[str, Any]:
+        keep_u: bool = False, dts: Any = None) -> dict[str, Any]:
     """The load path over the displacements ``deltas`` (total), step by step. ``stop_below``: stop once the force
     has fallen below that share of its peak, or ``after_peak`` steps after the largest force so far (primal runs
-    only)."""
-    state = solver.initial()
+    only). ``dts``: each step's time (s) for a viscoelastic material, in place of the solver's rate (a hold repeats a
+    ``delta`` with its time)."""
+    state = solver.initial(mat=mat)
     rows: list[StepOut] = []
     fields: list[np.ndarray] = []
     u_fields: list[np.ndarray] = []
     peak, at = 0.0, 0
     for n, delta in enumerate(deltas):
-        state, out = solver.step(state, jnp.asarray(delta), mat, notch)
+        if dts is None:
+            state, out = solver.step(state, jnp.asarray(delta), mat, notch)
+        else:
+            state, out = solver.step(state, jnp.asarray(delta), mat, notch, None, jnp.asarray(dts[n]))
         rows.append(jax.device_get(out))
         if keep_fields:
             fields.append(np.asarray(state.d))
@@ -51,7 +55,7 @@ def run(solver: Solver, mat: Material, deltas: Any, *, notch: Any = None, keep_f
 
 def forces(solver: Solver, mat: Material, deltas: Any, notch: Any = None) -> jax.Array:
     """The force at every step as one traced array (for ``jax.jvp``): no early stop."""
-    state = solver.initial()
+    state = solver.initial(mat=mat)
     out = []
     for delta in deltas:
         state, o = solver.step(state, jnp.asarray(delta), mat, notch)
