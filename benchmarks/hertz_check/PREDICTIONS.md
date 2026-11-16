@@ -84,3 +84,9 @@ at a damaged zone's ratio); the punch at kappa 2/3 mu (nu 0) for both.
 - P15 the punch at nu 0: the treatments' peaks within 5 % (lean 0.65).
 - P16 the identity control (hist=mean on tip3d) equals tip3d to 1e-10 at every depth (lean 0.95).
 Mon 16 Nov 18:59:11 CET 2026
+
+## Addendum, round 5 (a re-launch for time, no new question; before its arms)
+Round 3's tip3d arms run to 0.34 and 0.32 mm; at h 0.2 tip3d's post-peak collapse (8.57 to 1.63 mN between 0.24 and 0.28 mm) took
+most of its wall, and a job's log arrives only when it ends. Round 5 runs the same configuration to 0.24 mm (past tip3d's
+0.20 mm peak at h 0.2 and 0.1, before the collapse) at h 0.1, 0.0707 and 0.05, so the peak lands by about 21:30. P9 to P12 stand.
+Mon 16 Nov 19:09:57 CET 2026
