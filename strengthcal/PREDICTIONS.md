@@ -148,7 +148,7 @@ the ramp, cut and stagnation stop of round 2.
 - **P3.6** R 0.5 at l 20 against l 50: Fc within 30 %.
 - **P3.7** Cost: 6-12 Newton a step; flat at l 20 0.3-1 h to nucleation; sphere R 4 at l 50 1.5-4 h.
 
-### Round 3 cancelled before any row; round 3b (written 2026-11-17 08:57 CET, `date`, before any arm ran)
+### Round 3 cancelled before any row; round 3b (written 2026-11-17 08:56 CET, `date`, before any arm ran)
 Round 1d's second peek (08:55): **at l 25 and 20 um the step after nucleation (0.92-0.94 mm, 8.3-8.6 mN) had not finished
 after 45 min** (caps 40 staggered x 60 Newton, 4 cuts: an attempt can run for hours). Round 3b is round 3 with caps of 25
 staggered x 30 Newton and one cut; a step still capped is accepted (`accepted_bad`) and the run goes on, so an unstable
