@@ -1,0 +1,45 @@
+# A probe workflow (a probe branch only, deleted after its artifacts are downloaded): DEEP-ELASTIC's arms, each one run
+# of benchmarks/deepel/axi_deep.py (deep elastic indentation by a sphere-tipped needle, engine-direct).
+name: probe-deepel-r4
+on:
+  push:
+    branches: ["probe/deepel-r4"]
+env:
+  JAX_PLATFORMS: cpu
+  JAX_ENABLE_X64: "1"
+jobs:
+  arm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {name: g4-R0.5-h0.1, args: "--R 0.5 --h 0.1 --depth 6.5 --block 60 --fine-r 2.5 --fine-z 7.5 --contact edge --kfac 1000 --jm 4"}
+          - {name: g4-R0.5-h0.025, args: "--R 0.5 --h 0.025 --depth 6.5 --block 60 --fine-r 2.5 --fine-z 7.5 --contact edge --kfac 1000 --jm 4"}
+          - {name: g4-R1-h0.1, args: "--R 1.0 --h 0.1 --depth 8.5 --block 80 --fine-r 4 --fine-z 9.5 --contact edge --kfac 1000 --jm 4"}
+          - {name: g4-R1-h0.05, args: "--R 1.0 --h 0.05 --depth 8.5 --block 80 --fine-r 4 --fine-z 9.5 --contact edge --kfac 1000 --jm 4"}
+          - {name: g4-R0.5-h0.05-b30, args: "--R 0.5 --h 0.05 --depth 6.5 --block 30 --fine-r 2.5 --fine-z 7.5 --contact edge --kfac 1000 --jm 4"}
+          - {name: g4n-R0.5-h0.05, args: "--R 0.5 --h 0.05 --depth 6.5 --block 60 --fine-r 2.5 --fine-z 7.5 --contact nodal --kfac 100 --jm 4"}
+          - {name: g4n-R0.5-h0.025, args: "--R 0.5 --h 0.025 --depth 6.5 --block 60 --fine-r 2.5 --fine-z 7.5 --contact nodal --kfac 100 --jm 4"}
+    name: ${{ matrix.name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          python-version: "3.12"
+      - run: uv venv --python 3.12
+      - run: uv pip install "mime-engine[verify] @ git+https://github.com/Microrobotics-Simulation-Framework/MIME@99614e487c90f091e1fcbfa712aa14aa583634b5"
+      - run: uv pip install -e .
+      - name: run
+        run: |
+          mkdir -p out/${{ matrix.name }}
+          lscpu | grep "Model name" | tee out/${{ matrix.name }}/cpu.txt
+          nproc | tee -a out/${{ matrix.name }}/cpu.txt
+          timeout 340m uv run --no-sync python benchmarks/deepel/axi_deep.py out/${{ matrix.name }}/run.json ${{ matrix.args }} --stop-after 325 2>&1 | tee out/${{ matrix.name }}/log.txt || echo "exit $?" >> out/${{ matrix.name }}/log.txt
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: ${{ matrix.name }}
+          path: out/${{ matrix.name }}
+          retention-days: 14
