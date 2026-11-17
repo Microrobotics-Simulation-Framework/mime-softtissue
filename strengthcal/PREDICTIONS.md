@@ -161,7 +161,7 @@ crack shows as the next steps' drop. Predictions P3.1-P3.7 stand unchanged for r
 - Spheres, l 50: s_ts 20 G' puncture at Fc/(G'R^2) 32.8 / 30.8 at R 0.5 / 1, first crack at 30.2 at R 2; s_ts 40 G' 79.5 /
   70.5 at R 0.5 / 1, none by 66.6 at R 2 (11 mm). R 4 runs at 19-20 Newton a step (not 6-9): it will not reach dc in 335 min.
 
-## Round 4: the strength the flat punch needs, at l 10 um, and the spheres there (written 2026-11-17 10:31 CET, `date`, before any arm ran)
+## Round 4: the strength the flat punch needs, at l 10 um, and the spheres there (written 2026-11-17 10:29 CET, `date`, before any arm ran)
 Round 3b's settings. Flat punch (G' 6.2, R 0.359, fillet 0.02): s_ts 100 G' at l 20 (past the ceiling: l/L about 1); s_ts 70
 and 100 G' at l 10 um (h 5 um; l/L about 0.3 and 0.5). Spheres at s_ts 80 G' (292.8 kPa): R 0.5 at l 20 (l/L about 0.4), R 1 at
 l 25 (about 0.55).
