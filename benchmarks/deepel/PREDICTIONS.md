@@ -109,7 +109,7 @@ Arms: flat punch, edge 0.2 R, R 0.5, h 0.05, edge contact 1000 E/h, Gent Jm 3, 5
   geometry); its ratio still rises with depth (spread at least 0.75-1.2).
 - **P5.2** All three drop-free to d/R 13.
 
-## Round 6 (runners): is block 60 large enough with Gent? written 08:35 CET (from `date` just before)
+## Round 6 (runners): is block 60 large enough with Gent? written 08:33 CET (`date` 08:33:36; the 08:35 first written here was wrong)
 
 Seen before writing: Gent Jm 4, R 0.5, h 0.05: block 30 against 60 +0.6 / +1.6 / +3.5 / +5.9 / +6.6 % at d/R 1 / 4 / 8 /
 12 / 13 (P4.3's 1.5 % failed). The neo-Hookean's at block 30: +0.5 to +2.1 % to d/R 4.5. Axis-refined neo-Hookean
