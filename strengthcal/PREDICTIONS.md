@@ -105,7 +105,7 @@ strength s_ts 18.3 kPa at l 25 and 20 um (`c25d`, `c20d`); elastic twin at l 20 
   step at l 25 (2.3 s a Newton), 15-18 s (2.6 s) and 30 s (4.9 s, a slower CPU) at l 20; no cuts; J stays above 0.95 (the
   collapsed surface elements of rounds 1b and 1c came with unconverged steps). Rounds 1b and 1c cancelled 08:21 (superseded).
 
-## Round 2: the flat punch's need and a calibration attempt at l 20 um; the sphere's radius sweep at l 50 um (written 2026-11-17 08:23 CET, `date`, before any arm ran)
+## Round 2: the flat punch's need and a calibration attempt at l 20 um; the sphere's radius sweep at l 50 um (written 2026-11-17 08:22 CET, `date`, before any arm ran)
 All arms: full integration, no lag, increment 2 h, `--ramp 2 --cut 4 --newton-stall 1e-6 --max-newton 60 --max-staggered 40`.
 - Flat punch R 0.359 mm, fillet 0.02 mm, G' 6.2 kPa, to 7 mm: elastic at h 0.01 and 0.025, fillet 0.07 at h 0.01, Gent
   placeholder (Jm 9.3) at h 0.01; strength at l 20 um, s_ts 4, 6, 8, 20, 100 G'. Held-out gel G' 10 kPa, R 0.358, s_ts 6 and
