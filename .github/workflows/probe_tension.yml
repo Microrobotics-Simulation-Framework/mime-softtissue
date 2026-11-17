@@ -3,7 +3,7 @@
 name: probe-tension
 on:
   push:
-    branches: ["probe/tension-r*"]
+    branches: ["probe/tension-*"]
 env:
   JAX_PLATFORMS: cpu
   JAX_ENABLE_X64: "1"
