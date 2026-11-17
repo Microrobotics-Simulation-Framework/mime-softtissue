@@ -152,6 +152,8 @@ class Solver:
             else:
                 ke = jax.vmap(lambda ue, d, dx, dy: element_hessian(ue, d, dx, dy, mat, self.stress, **self.vol))(
                     u[self.I, self.J], dq, *self.sizes(notch))
+            if c is not None and c.edge_points:
+                ke = ke + ct.edge_element_hessians(c, self.X, u, depth, self.grid.ny)
             diag, upper = self.vec.blocks(ke)
             if c is not None:
                 diag = ct.add_nodal_to_blocks(diag, ct.nodal_hessian(c, self.X, u, depth, lag))
@@ -305,6 +307,8 @@ class Solver:
                 v[self.I, self.J], dq, self.x0, *self.sizes(notch)) if self.axi else
                 jax.vmap(lambda ue, dd, dx, dy: element_hessian(ue, dd, dx, dy, mat, self.stress, **self.vol))(
                     v[self.I, self.J], dq, *self.sizes(notch)))
+            if c is not None and c.edge_points:
+                ke = ke + ct.edge_element_hessians(c, self.X, v, depth, self.grid.ny)
             du, uu = self.vec.blocks(ke)
             if c is not None:
                 du = ct.add_nodal_to_blocks(du, ct.nodal_hessian(c, self.X, v, depth, lag))
