@@ -76,7 +76,8 @@ def main() -> None:
     ap.add_argument("--band", type=float, default=1.5, help="mm")
     ap.add_argument("--dlam", type=float, default=0.005)
     ap.add_argument("--lam-max", type=float, default=2.2)
-    ap.add_argument("--delta-plant", type=float, default=1.0)
+    ap.add_argument("--delta-plant", type=float, default=1.0, help="delta alone scaled (beta1, beta2 kept)")
+    ap.add_argument("--delta-factor", type=float, default=1.0, help="delta scaled, beta1 and beta2 recomputed")
     a = ap.parse_args()
     mm = 1e-3
     H, h, l = a.H * mm, a.h * mm, a.l * mm
@@ -87,7 +88,7 @@ def main() -> None:
     gc_in = a.gc if a.sts else discretisation_toughness(a.gc, h, l)
     mat = Material(mu=mu, kappa=kappa, gc=gc_in, l=l, k_res=1e-6, stretch_limit=10.0)
     if a.sts:
-        st = S.coefficients(mat, a.sts * 1e3, a.ratio * a.sts * 1e3, h)
+        st = S.coefficients(mat, a.sts * 1e3, a.ratio * a.sts * 1e3, h, delta_factor=a.delta_factor)
         mat = mat._replace(strength=st._replace(delta=st.delta * a.delta_plant))
     solver = Solver(sp, "phase_field", tol_d=1e-5, viscosity=0.1 * a.gc / l, newton_regularise=True, max_staggered=400)
     state = solver.initial()

@@ -77,6 +77,7 @@ def main() -> None:
     ap.add_argument("--stop-drop", type=float, default=0.0, help="stop once the force falls this share below its max")
     ap.add_argument("--sts", type=float, default=0.0, help="kPa: the uniaxial tensile strength (0: AT2)")
     ap.add_argument("--ratio", type=float, default=1.5, help="s_hs / s_ts")
+    ap.add_argument("--delta-factor", type=float, default=1.0, help="delta scaled, beta1 and beta2 recomputed")
     ap.add_argument("--no-fields", action="store_true", help="skip the npz field snapshots")
     a = ap.parse_args()
     mm = 1e-3
@@ -87,7 +88,8 @@ def main() -> None:
     mat = Material(mu=mu, kappa=kappa, gc=gc, l=l, k_res=1e-6, stretch_limit=2.0,
                    gent_jm=(a.jm if a.jm > 0 else None))
     if a.sts:
-        mat = mat._replace(strength=strength_surface.coefficients(mat, a.sts * 1e3, a.ratio * a.sts * 1e3, h))
+        mat = mat._replace(strength=strength_surface.coefficients(mat, a.sts * 1e3, a.ratio * a.sts * 1e3, h,
+                                                                  delta_factor=a.delta_factor))
         print(json.dumps(dict(strength=mat.strength._asdict())), flush=True)
     block = axisymmetric_block(radius=a.block * mm, height=a.block * mm, h=h, fine_r=a.fine * mm, fine_z=a.fine * mm,
                                predictor="proportional")

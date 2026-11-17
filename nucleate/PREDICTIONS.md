@@ -123,3 +123,18 @@ beta2 changes sign at s_ts 7-8 kPa for l 0.5 and at about 10 kPa for l 0.25 (mu 
 needle's switch is beta2's, it moves with l. Arms: l 0.25, h 0.1, s_ts 8, 9 and 12 at R 0.5 and R 2.
 - **P6.1** s_ts 8 and 9 puncture (a drop >= 30 %) at R 0.5 and R 2 at l 0.25, where at l 0.5 they did not (lean 0.7).
 - **P6.2** s_ts 12 does not puncture at either radius by 20 mm at l 0.25 (lean 0.6).
+
+### Status at 03:12 CET (`date`), read before round 2f was written
+**Propagation control (round 2d), failed:** the H 10 mm slab (s_hs/s_ts 8, h 0.2) ran its crack at lambda 1.280 for s_ts 5
+(H W = 14.4 J/m^2 = **0.53 Gc**) and 1.425 for s_ts 7 (31.9 = **1.18 Gc**); Griffith 1.390. P5.1 and P5.2 failed: with
+eq. (26)'s delta, propagation follows neither Gc nor a strength-independent toughness (and > 3.25 Gc at s_ts 60). s_ts 7
+had 8 steps at the staggered cap. Round 2e: at l 0.25, s_ts 8 and 9 puncture (9.2 / 128 and 13.2 / 188 mN at R 0.5 / 2):
+P6.1 held, the switch moves with l. l test at s_ts 5: Fc fell 36-41 % from l 0.5 h 0.2 to l 0.25 h 0.1 (P3.3 failed).
+
+## Round 2f (written 2026-11-17 03:12 CET, `date`, before any arm ran): delta calibrated, as Kumar et al. 2020 do
+`coefficients(..., delta_factor)` scales delta and recomputes beta1, beta2 from it. Slab (as round 2d) at s_ts 5, s_hs/s_ts
+8, h 0.2, delta factor 0.7, 1.3, 1.7, 2.2, 3.0. Needle at s_ts 5, s_hs/s_ts 8, h 0.2, l 0.5, R 0.5, 1, 2, 4, delta factor
+1, 1.7, 2.2.
+- **P7.1** The slab's toughness rises with the factor and reaches Gc between 1.3 and 3 (lean 0.6).
+- **P7.2** With delta near the calibrated value, the needle's Fc changes by under 50 % from factor 1 at every R and stays
+  stress-limited: Fc/(mu R^2) <= 15 at every R, at most 0.35 of the data at R <= 1 (lean 0.7).

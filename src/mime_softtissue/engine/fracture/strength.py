@@ -142,10 +142,11 @@ def hydrostatic_state(mat: law.Material, s: float) -> tuple[float, float]:
 
 
 def coefficients(mat: law.Material, s_ts: float, s_hs: float, h: float, gc: float | None = None,
-                 l: float | None = None) -> Strength:
+                 l: float | None = None, delta_factor: float = 1.0) -> Strength:
     """The strength surface's numbers for the law ``mat`` (its mu, kappa, Gent limit; its gc and l unless given),
     the strengths ``s_ts`` and ``s_hs`` (Biot, Pa; 3 s_hs > s_ts) and the cell size ``h``: delta by the 2024 paper's
-    eq. (26) (with its first-order element correction), beta1 and beta2 by its eq. (16)."""
+    eq. (26) (with its first-order element correction) times ``delta_factor`` (a calibration, as the 2020 paper
+    calibrates delta against a pre-cracked test), beta1 and beta2 by its eq. (16) from that delta."""
     if not 3.0 * s_hs > s_ts:
         raise ValueError("the Drucker-Prager surface needs 3 s_hs > s_ts")
     if mat.fibre is not None:
@@ -158,7 +159,7 @@ def coefficients(mat: law.Material, s_ts: float, s_hs: float, h: float, gc: floa
     r3 = np.sqrt(3.0)
     corr = 1.0 + 3.0 * h / (8.0 * l)
     delta = (corr ** -2 * (s_ts + (1.0 + 2.0 * r3) * s_hs) / ((8.0 + 3.0 * r3) * s_hs) * 3.0 * gc / (16.0 * w_ts * l)
-             + 0.4 / corr)
+             + 0.4 / corr) * delta_factor
     q = delta * gc / (8.0 * l)
     beta1 = -q / s_hs + 2.0 * w_hs / (3.0 * s_hs)
     beta2 = -r3 * (3.0 * s_hs - s_ts) / (s_hs * s_ts) * q + 2.0 * r3 * w_ts / s_ts - 2.0 * w_hs / (r3 * s_hs)
