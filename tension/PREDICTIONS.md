@@ -52,3 +52,19 @@ deep) and R 0.5 scale-equivalent (h 0.025): the largest principal Biot stress s1
 - P0.3 The energy branch is weaker than the data's: R 0.5 and R 1 come out below the data, R 0.5 by more than
   the 1.35 factor (Pc / (G' R^2) rising from R 4 to R 0.5 by 1.5-3 times, not the data's 7). Test fails on R 0.5.
   Probability that all three held-out radii pass: about 15 %.
+
+## Controls round c1, written 2026-11-17 10:05 CET (`date`), pushed with the probe a minute before this file (no arm had output)
+
+Pass lines (each control can fail):
+- (a) off is bit-equal: G2's driver (Drucker-Prager, neo-Hookean nodal and Gent edge) on the tree before the change
+  against after: every force, crack area and iteration count equal (local).
+- (b) uniform bar in tension (Gent Jm 3.7, nu 0.49): peak nominal stress within 3 % of s_ts at l 0.05 and 0.1 mm, at
+  s_ts 5 and 10 G'. Local, measured before this entry: 0.989 (l 0.05) and 0.994 (l 0.1) at 10 G'.
+- (c) bar in uniaxial compression to stretch 0.35 (s_ts 2 G'): the tension-only option never damages (d <= 1e-3); the
+  Drucker-Prager option (s_hs/s_ts 1.5) does, near a nominal stress of 1.8 s_ts. Confined (uniaxial strain) to 0.8:
+  tension-only never damages.
+- (d) plant, coefficients for 2 s_ts while s_ts is declared (12 random draws: s_ts 2-20 G', Jm 3-6, l 0.03-0.15 l_max):
+  caught (peak off s_ts by more than 3 %) in 12 of 12; the unplanted twins pass in 12 of 12.
+- (e) slab with a pre-crack (H W(lambda_c) = Gc): measured Gc / input in [0.8, 1.25] where the far field stays below
+  s_ts (prediction: 0.7-1.4, the delta being borrowed from Drucker-Prager at s_hs = s_ts); a delta planted 2 times high is
+  caught (Gc / input moved by more than 25 %).
