@@ -103,3 +103,17 @@ R 0.5 and 4, h 0.2.
   (lean 0.55).
 - **P4.3** s_hs/s_ts 3 changes Fc at s_ts 7 by under 15 % at R 0.5 and 4 (nucleation in this model is not hydrostatic-
   limited) (lean 0.5).
+
+### Status at 01:49 CET (`date`), read before round 2d was written
+Propagation control, first form (H 4 mm slab, s_ts 60 and 200, s_hs/s_ts 1.5): **failed**: the pre-crack never grew to
+lambda 2.2 (H W = 3.25 Gc; Griffith 1.634). There beta2 is +161 (l 0.5 is 10^3 material lengths): c_e grows with shear
+and holds the tip. beta2 changes sign where l is about 0.6 to 0.7 material lengths (s_ts 7 to 8 kPa at mu 3.66, l 0.5;
+10 at l 0.25; 12 at mu 7.2), the same place the needle's punctures stop. The H 20 mm local slab at s_ts 7 ran 2.3 h for 38
+steps and was stopped.
+
+## Round 2d (written 2026-11-17 01:50 CET, `date`, before any arm ran): the propagation control on the runners
+Slab H 10 mm (r 50-90 mm, pre-crack 15 mm, band +/-1 mm), mu 3.66, nu 0.45, Gc 27, l 0.5, s_hs/s_ts 8 (so the far field
+stays inside the surface): s_ts 5 and 7 at h 0.2, s_ts 7 at h 0.1. Measured toughness H W(lambda at the peak).
+- **P5.1** At s_ts 5 and 7 (beta2 < 0, l under the material length) the measured toughness is within 25 % of Gc 27 at
+  both strengths (lean 0.5); if it is not, propagation does not follow Gc in the regime the needle test uses.
+- **P5.2** The two strengths' toughnesses differ by under 20 % (lean 0.5).
