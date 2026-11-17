@@ -302,163 +302,14 @@
   "mean_h0.0354_step0.01": {
    "peak": 11.616767371732596,
    "depth_mm": 0.24000000000000002
+  },
+  "mean_h0.0125_step0.01": {
+   "peak": 11.599773774791016,
+   "depth_mm": 0.22
   }
  },
  "needle_y": {
-  "gent-m-h0.1-R0.5/MIME": {
-   "material": "softtissue.puncture_gel_gent",
-   "volumetric": "mean",
-   "h": 0.1,
-   "block": 25.0,
-   "R_mm": 0.5,
-   "y": 58.41964008023299,
-   "dc_mm": 3.648538621522656
-  },
-  "gent-m-h0.1-R1/MIME": {
-   "material": "softtissue.puncture_gel_gent",
-   "volumetric": "mean",
-   "h": 0.1,
-   "block": 25.0,
-   "R_mm": 1.0,
-   "y": 30.379616403749036,
-   "dc_mm": 5.0954134827253945
-  },
-  "gent-m-h0.2-R2/MIME": {
-   "material": "softtissue.puncture_gel_gent",
-   "volumetric": "mean",
-   "h": 0.2,
-   "block": 25.0,
-   "R_mm": 2.0,
-   "y": 10.69271453350471,
-   "dc_mm": 5.192162426654771
-  },
-  "gent-m-h0.2-R4/MIME": {
-   "material": "softtissue.puncture_gel_gent",
-   "volumetric": "mean",
-   "h": 0.2,
-   "block": 25.0,
-   "R_mm": 4.0,
-   "y": 11.497268687222382,
-   "dc_mm": 10.731556203747031
-  },
-  "nh-m-h0.1-R0.5/MIME": {
-   "material": "softtissue.puncture_gel",
-   "volumetric": "mean",
-   "h": 0.1,
-   "block": 25.0,
-   "R_mm": 0.5,
-   "y": 8.79005828152507,
-   "dc_mm": 1.149914754941337
-  },
-  "nh-m-h0.1-R1/MIME": {
-   "material": "softtissue.puncture_gel",
-   "volumetric": "mean",
-   "h": 0.1,
-   "block": 25.0,
-   "R_mm": 1.0,
-   "y": 7.031549762794139,
-   "dc_mm": 1.6996150597613364
-  },
-  "gent-m-h0.1-R2/MIME": {
-   "material": "softtissue.puncture_gel_gent",
-   "volumetric": "mean",
-   "h": 0.1,
-   "block": 25.0,
-   "R_mm": 2.0,
-   "y": 13.445691828336304,
-   "dc_mm": 6.0390045931197065
-  },
-  "nh-m-h0.1-R2/MIME": {
-   "material": "softtissue.puncture_gel",
-   "volumetric": "mean",
-   "h": 0.1,
-   "block": 25.0,
-   "R_mm": 2.0,
-   "y": 6.225435829297697,
-   "dc_mm": 3.0474560533553867
-  },
-  "nh-m-h0.1-R4/MIME": {
-   "material": "softtissue.puncture_gel",
-   "volumetric": "mean",
-   "h": 0.1,
-   "block": 25.0,
-   "R_mm": 4.0,
-   "y": 5.690782138302412,
-   "dc_mm": 5.433200144491678
-  },
-  "gent-g-h0.1-R0.5-b24/MIME": {
-   "material": "softtissue.puncture_gel_gent",
-   "volumetric": "gauss",
-   "h": 0.1,
-   "block": 24.0,
-   "R_mm": 0.5,
-   "y": 65.53520318218071,
-   "dc_mm": 3.898251131407661
-  },
-  "gent-g-h0.1-R1-b24/MIME": {
-   "material": "softtissue.puncture_gel_gent",
-   "volumetric": "gauss",
-   "h": 0.1,
-   "block": 24.0,
-   "R_mm": 1.0,
-   "y": 30.100435791637704,
-   "dc_mm": 5.045480659845374
-  },
-  "gent-g-h0.2-R2-b24/MIME": {
-   "material": "softtissue.puncture_gel_gent",
-   "volumetric": "gauss",
-   "h": 0.2,
-   "block": 24.0,
-   "R_mm": 2.0,
-   "y": 16.872312394090585,
-   "dc_mm": 7.134405690483955
-  },
-  "gent-m-h0.2-R0.5/MIME": {
-   "material": "softtissue.puncture_gel_gent",
-   "volumetric": "mean",
-   "h": 0.2,
-   "block": 25.0,
-   "R_mm": 0.5,
-   "y": 16.19069031448368,
-   "dc_mm": 1.5998078759781007
-  },
-  "gent-m-h0.2-R1/MIME": {
-   "material": "softtissue.puncture_gel_gent",
-   "volumetric": "mean",
-   "h": 0.2,
-   "block": 25.0,
-   "R_mm": 1.0,
-   "y": 21.732432465591746,
-   "dc_mm": 4.1971796293166115
-  },
-  "gent-m-h0.2-R2-b24/MIME": {
-   "material": "softtissue.puncture_gel_gent",
-   "volumetric": "mean",
-   "h": 0.2,
-   "block": 24.0,
-   "R_mm": 2.0,
-   "y": 11.370588304534362,
-   "dc_mm": 5.441367079716663
-  },
-  "gent-m-h0.1-R0.5-b24/MIME": {
-   "material": "softtissue.puncture_gel_gent",
-   "volumetric": "mean",
-   "h": 0.1,
-   "block": 24.0,
-   "R_mm": 0.5,
-   "y": 58.515423204812876,
-   "dc_mm": 3.648536954239265
-  },
-  "gent-m-h0.1-R1-b24/MIME": {
-   "material": "softtissue.puncture_gel_gent",
-   "volumetric": "mean",
-   "h": 0.1,
-   "block": 24.0,
-   "R_mm": 1.0,
-   "y": 24.61383893988322,
-   "dc_mm": 4.446661318918882
-  },
-  "pf-m-h0.05-R0.5/engine": {
+  "pf-m-h0.05-R0.5/run.json/engine": {
    "volumetric": "mean",
    "h": 0.05,
    "block": 25.0,
@@ -467,7 +318,7 @@
    "dc_mm": 4.5,
    "dropped": true
   },
-  "pf-m-h0.05-R1/engine": {
+  "pf-m-h0.05-R1/run.json/engine": {
    "volumetric": "mean",
    "h": 0.05,
    "block": 25.0,
@@ -476,7 +327,16 @@
    "dc_mm": 4.75,
    "dropped": true
   },
-  "pf-m-h0.05-R4/engine": {
+  "pf-m-h0.05-R2/run.json/engine": {
+   "volumetric": "mean",
+   "h": 0.05,
+   "block": 25.0,
+   "R_mm": 2.0,
+   "y": 11.547252305981251,
+   "dc_mm": 5.300000000000001,
+   "dropped": false
+  },
+  "pf-m-h0.05-R4/run.json/engine": {
    "volumetric": "mean",
    "h": 0.05,
    "block": 25.0,
@@ -485,7 +345,7 @@
    "dc_mm": 8.3,
    "dropped": true
   },
-  "pf-g-h0.1-R2/engine": {
+  "pf-g-h0.1-R2/run.json/engine": {
    "volumetric": "gauss",
    "h": 0.1,
    "block": 25.0,
@@ -494,7 +354,7 @@
    "dc_mm": 6.3500000000000005,
    "dropped": true
   },
-  "pf-g-h0.1-R4/engine": {
+  "pf-g-h0.1-R4/run.json/engine": {
    "volumetric": "gauss",
    "h": 0.1,
    "block": 25.0,
@@ -503,7 +363,7 @@
    "dc_mm": 9.15,
    "dropped": true
   },
-  "pf-m-h0.1-R2/engine": {
+  "pf-m-h0.1-R2/run.json/engine": {
    "volumetric": "mean",
    "h": 0.1,
    "block": 25.0,
@@ -512,7 +372,7 @@
    "dc_mm": 6.300000000000001,
    "dropped": true
   },
-  "pf-m-h0.1-R4/engine": {
+  "pf-m-h0.1-R4/run.json/engine": {
    "volumetric": "mean",
    "h": 0.1,
    "block": 25.0,
@@ -521,7 +381,7 @@
    "dc_mm": 8.85,
    "dropped": true
   },
-  "pf-g-h0.1-R2-b24/engine": {
+  "pf-g-h0.1-R2-b24/run.json/engine": {
    "volumetric": "gauss",
    "h": 0.1,
    "block": 24.0,
@@ -530,7 +390,7 @@
    "dc_mm": 5.95,
    "dropped": true
   },
-  "pf-g-h0.1-R4-b24/engine": {
+  "pf-g-h0.1-R4-b24/run.json/engine": {
    "volumetric": "gauss",
    "h": 0.1,
    "block": 24.0,
@@ -538,6 +398,159 @@
    "y": 10.212192223885571,
    "dc_mm": 9.5,
    "dropped": true
+  },
+  "gent-m-h0.1-R0.5/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "mean",
+   "h": 0.1,
+   "block": 25.0,
+   "R_mm": 0.5,
+   "y": 58.41964008023299,
+   "dc_mm": 3.648538621522656
+  },
+  "gent-m-h0.1-R1/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "mean",
+   "h": 0.1,
+   "block": 25.0,
+   "R_mm": 1.0,
+   "y": 30.379616403749036,
+   "dc_mm": 5.0954134827253945
+  },
+  "gent-m-h0.2-R2/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "mean",
+   "h": 0.2,
+   "block": 25.0,
+   "R_mm": 2.0,
+   "y": 10.69271453350471,
+   "dc_mm": 5.192162426654771
+  },
+  "gent-m-h0.2-R4/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "mean",
+   "h": 0.2,
+   "block": 25.0,
+   "R_mm": 4.0,
+   "y": 11.497268687222382,
+   "dc_mm": 10.731556203747031
+  },
+  "nh-m-h0.1-R0.5/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel",
+   "volumetric": "mean",
+   "h": 0.1,
+   "block": 25.0,
+   "R_mm": 0.5,
+   "y": 8.79005828152507,
+   "dc_mm": 1.149914754941337
+  },
+  "nh-m-h0.1-R1/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel",
+   "volumetric": "mean",
+   "h": 0.1,
+   "block": 25.0,
+   "R_mm": 1.0,
+   "y": 7.031549762794139,
+   "dc_mm": 1.6996150597613364
+  },
+  "gent-m-h0.1-R2/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "mean",
+   "h": 0.1,
+   "block": 25.0,
+   "R_mm": 2.0,
+   "y": 13.445691828336304,
+   "dc_mm": 6.0390045931197065
+  },
+  "nh-m-h0.1-R2/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel",
+   "volumetric": "mean",
+   "h": 0.1,
+   "block": 25.0,
+   "R_mm": 2.0,
+   "y": 6.225435829297697,
+   "dc_mm": 3.0474560533553867
+  },
+  "nh-m-h0.1-R4/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel",
+   "volumetric": "mean",
+   "h": 0.1,
+   "block": 25.0,
+   "R_mm": 4.0,
+   "y": 5.690782138302412,
+   "dc_mm": 5.433200144491678
+  },
+  "gent-g-h0.1-R0.5-b24/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "gauss",
+   "h": 0.1,
+   "block": 24.0,
+   "R_mm": 0.5,
+   "y": 65.53520318218071,
+   "dc_mm": 3.898251131407661
+  },
+  "gent-g-h0.1-R1-b24/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "gauss",
+   "h": 0.1,
+   "block": 24.0,
+   "R_mm": 1.0,
+   "y": 30.100435791637704,
+   "dc_mm": 5.045480659845374
+  },
+  "gent-g-h0.2-R2-b24/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "gauss",
+   "h": 0.2,
+   "block": 24.0,
+   "R_mm": 2.0,
+   "y": 16.872312394090585,
+   "dc_mm": 7.134405690483955
+  },
+  "gent-m-h0.2-R0.5/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "mean",
+   "h": 0.2,
+   "block": 25.0,
+   "R_mm": 0.5,
+   "y": 16.19069031448368,
+   "dc_mm": 1.5998078759781007
+  },
+  "gent-m-h0.2-R1/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "mean",
+   "h": 0.2,
+   "block": 25.0,
+   "R_mm": 1.0,
+   "y": 21.732432465591746,
+   "dc_mm": 4.1971796293166115
+  },
+  "gent-m-h0.2-R2-b24/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "mean",
+   "h": 0.2,
+   "block": 24.0,
+   "R_mm": 2.0,
+   "y": 11.370588304534362,
+   "dc_mm": 5.441367079716663
+  },
+  "gent-m-h0.1-R0.5-b24/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "mean",
+   "h": 0.1,
+   "block": 24.0,
+   "R_mm": 0.5,
+   "y": 58.515423204812876,
+   "dc_mm": 3.648536954239265
+  },
+  "gent-m-h0.1-R1-b24/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "mean",
+   "h": 0.1,
+   "block": 24.0,
+   "R_mm": 1.0,
+   "y": 24.61383893988322,
+   "dc_mm": 4.446661318918882
   }
  },
  "plant_rate": [
