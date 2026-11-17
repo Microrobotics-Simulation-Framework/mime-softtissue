@@ -108,3 +108,14 @@ Arms: R 4 at 2.5 and 3.5 G', R 1 and R 0.5 at 3.0 G' (l 0.1, h 0.05).
   2.9 G'.
 - P2b.3 At R 0.5 the first crack is arrested and puncture comes deeper (even odds); R 1 between.
 - P2b.4 The bars: tension-only with the s1 gate does not damage in uniaxial (to 0.5) or confined (to 0.8) compression.
+
+## Controls round c3 (the slab again), before its arms (2026-11-17 10:59 CET)
+c1's slabs were not pure shear: a pre-crack of 6 mm and a 34 mm ligament against H 20-40 mm, so the crack's release rate
+sits well below H W and "H W at the peak" overstates the toughness (cancelled at about 1.7-5 x Gc with the crack still
+held; read only as bounds on nothing). c3: H 8 mm, a0 30, ligament 30 (3.75 H), r_i 20, h 0.05, l 0.1, Gent Jm 3.7.
+- Pass line unchanged: Gc_measured / Gc in [0.8, 1.25] where the far field at the peak stays below s_ts (s_ts 10 and 20 G'
+  at nu 0.45; 20 G' at nu 0.49); delta planted 2 x high moves it by more than 25 %.
+- Prediction: 0.9-1.4 (NUCLEATE's Drucker-Prager slab ran at 1.18 Gc at 7 kPa); the plant 1.5-2.2 x.
+- The needle's strengths (2.5-3.5 G') are below the range where a slab of affordable width can discriminate (the far field
+  would reach s_ts first unless H exceeds about 18 mm at nu 0.45 and 80 mm at nu 0.49): propagation at the needle's
+  strength is not tested by this control, as in NUCLEATE.
