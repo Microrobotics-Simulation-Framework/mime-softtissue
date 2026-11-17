@@ -1,0 +1,138 @@
+{
+ "counts": {
+  "steps": 31,
+  "rejected": 0,
+  "staggered": 33,
+  "newton": 201,
+  "krylov": 12331,
+  "shifts": 242,
+  "damage_krylov": 0,
+  "wall_s": 539.5423030853271,
+  "status": "depth reached",
+  "rejected_rows": [],
+  "unknowns": 5967,
+  "cells": [
+   16,
+   8,
+   12
+  ],
+  "jax": "0.12.0.1",
+  "devices": [
+   "cpu:0"
+  ],
+  "energy_balance": 0.25477617643825035
+ },
+ "meta": {
+  "block": {
+   "half_width": 0.005,
+   "height": 0.005,
+   "h": 0.00025,
+   "symmetry": "half",
+   "fine_xy": 0.0008,
+   "fine_z": 0.002,
+   "ratio": 1.5,
+   "cap": 16.0,
+   "axis_x": 5e-05
+  },
+  "settings": {
+   "rtol": 1e-08,
+   "maxit": 200,
+   "rtol_damage": 1e-10,
+   "max_newton": 100,
+   "max_staggered": 400,
+   "tol_damage": 1e-05,
+   "newton_tol": 1e-11,
+   "chebyshev_degree": 4,
+   "galerkin": true,
+   "penalty_factor": 100.0,
+   "inexact": 0.001,
+   "mixed": true,
+   "anderson": 3,
+   "stagger_cap": 60,
+   "newton_cap": 60,
+   "adaptive": true,
+   "step": 5e-05,
+   "first_step": 2.5e-05,
+   "min_step": 2.5e-06,
+   "grow_at": 8,
+   "shrink_at": 25,
+   "volumetric": "mean",
+   "residual": "residual",
+   "trace": false,
+   "fracture": "deletion",
+   "damage_bound": "active_set",
+   "contact_at": "nodes"
+  },
+  "tip": {
+   "kind": "cone",
+   "radius": 1.0,
+   "fillet": 5e-05,
+   "inner": 0.0,
+   "half_angle": 0.3490658503988659,
+   "head_radius": 0.0,
+   "head_length": 0.0
+  },
+  "material": {
+   "mu": 726.0,
+   "kappa": 36300.0,
+   "gc": 0.5533333333333333,
+   "l": 0.00025,
+   "k_res": 1e-06,
+   "stretch_limit": 1.55,
+   "c2": 434.0,
+   "c3": 0.0
+  },
+  "gc_physical": 0.83,
+  "penalty": 865430463.576159,
+  "multiplier": 2.0,
+  "depth_m": 0.0015,
+  "x_m": [
+   -0.005,
+   -0.0033684834123222755,
+   -0.0022808056872037916,
+   -0.0015556872037914694,
+   -0.0010722748815165878,
+   -0.00075,
+   -0.0005,
+   -0.00025,
+   -0.0,
+   0.00025,
+   0.0005,
+   0.00075,
+   0.0010722748815165878,
+   0.0015556872037914694,
+   0.0022808056872037916,
+   0.0033684834123222755,
+   0.005
+  ],
+  "y_m": [
+   0.0,
+   0.00025,
+   0.0005,
+   0.00075,
+   0.0010722748815165878,
+   0.0015556872037914694,
+   0.0022808056872037916,
+   0.0033684834123222755,
+   0.005
+  ],
+  "z_m": [
+   0.0,
+   0.0012461538461538465,
+   0.002076923076923077,
+   0.002630769230769231,
+   0.003,
+   0.0032500000000000003,
+   0.0035,
+   0.00375,
+   0.004,
+   0.00425,
+   0.0045000000000000005,
+   0.00475,
+   0.005
+  ]
+ },
+ "symmetry_planes": [
+  "y"
+ ]
+}

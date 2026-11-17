@@ -50,7 +50,8 @@ class Specimen:
     """``force_factor`` scales the reaction of a half model to the whole specimen's force (symmetry);
     ``energy_factor`` the stored and crack energies likewise. ``kinematics``: "plane_strain" or "axisymmetric" (x is
     then the radius, the energy is the whole ring's, and thickness and both factors are 1). ``contact``: a rigid
-    indenter moved by the load's ``delta`` (its depth) instead of prescribed nodes; the force is then its reaction."""
+    indenter moved by the load's ``delta`` (its depth) instead of prescribed nodes; the force is then its reaction.
+    "plane_stress" is the incompressible thin sheet (``thickness`` its reference thickness)."""
 
     grid: Grid
     free: np.ndarray  # (nx+1, ny+1, 2): 1 where a displacement is solved for, 0 where prescribed
@@ -95,12 +96,14 @@ def _row(count: int, row: int) -> tuple[np.ndarray, np.ndarray]:
 
 
 def edge_notched_strip(*, width: float, half_height: float, thickness: float, notch: float, h: float,
-                       fine: float = 2.4e-3, ratio: float = 1.25, cap: float = 8.0) -> Specimen:
+                       fine: float = 2.4e-3, ratio: float = 1.25, cap: float = 8.0,
+                       kinematics: str = "plane_strain") -> Specimen:
     """A single-edge-notched strip, the upper half by symmetry: ``width`` across, ``half_height`` from the crack
     plane to the grip, a notch of length ``notch`` from the left edge on the crack plane (traction free there,
     symmetric on the ligament), the grip clamped and pulled. ``h``: the grid spacing along the crack plane and over
     ``fine``. The tip node is the nearest to the notch; a notch off a node by up to a quarter cell is placed
-    exactly by the morph."""
+    exactly by the morph. ``kinematics``: "plane_strain", or "plane_stress" for a thin sheet (the pure-shear test). A
+    notch of 0 is the unnotched specimen (run it with ``notch=None``: there is no tip to morph)."""
     n = width / h
     if abs(n - round(n)) > 1e-6:
         raise ValueError(f"the width {width} is not a whole number of cells {h}")
@@ -115,7 +118,7 @@ def edge_notched_strip(*, width: float, half_height: float, thickness: float, no
     top = _row(grid.nx + 1, grid.ny)
     return Specimen(grid=grid, free=free, thickness=thickness, force_factor=1.0,
                     load=Load(top, sense=0.5, predictor="spread"), reaction=Reaction(top, sign=1.0),
-                    morph=Morph(tip, width))
+                    morph=Morph(tip, width) if tip > 0 else None, kinematics=kinematics)
 
 
 def blade_block(*, half_width: float, height: float, thickness: float, punch: float, h: float, fine_x: float,

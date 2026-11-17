@@ -7,10 +7,11 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-import mime_softtissue.entries as st
+from mime_softtissue.dynamics import GelBlock
+from mime_softtissue.scene import HeadedTip
 from mime.core import shape_named
 from mime.testing import installed_entries
-from mime.units import s
+from mime.units import mm, s
 from tip_retrieval import DT, tip_experiment
 
 OBS = "softtissue.tip_force:clot"
@@ -24,7 +25,7 @@ def test_the_registry_walk_lists_the_tip_entries():
 
 
 def test_the_kind_refuses_a_neck_wider_than_its_head():
-    kind = st.HeadedTip.__new__(st.HeadedTip)
+    kind = HeadedTip.__new__(HeadedTip)
     found = kind.setting_problems({"neck_radius": 0.7e-3, "head_radius": 0.6e-3, "head_length": 0.2e-3,
                                    "fillet": 0.05e-3, "length": 3e-3})
     assert any("wider" in line for line in found), found
@@ -49,8 +50,8 @@ def test_a_short_mime_run_equals_the_engine_at_its_depths():
     poses = np.asarray(run.history[block]["tip_pose"])
     depth = np.asarray(run.history[OBS]["depth"])
     assert np.all(np.diff(depth[:3]) > 0) and force[2] > 0, (depth, force)
-    from mime_softtissue.entries.gel_block import BlockNode
-    from mime_softtissue.entries._material_record import engine_material
+    from mime_softtissue.dynamics.gel_block import BlockNode
+    from mime_softtissue._material_record import engine_material
     node = BlockNode("replay", DT, radius=5e-3, height=5e-3, h=1e-4, fine=1.5e-3, young=50e3, poisson=0.4,
                      toughness=1.0, length_scale=1e-4, stretch_limit=2.0, residual=1e-6, viscosity=0.1,
                      origin=(0.0, 0.0, 0.0), shape="softtissue.headed_tip", mode="phase_field")
@@ -71,3 +72,54 @@ def test_a_short_mime_run_equals_the_engine_at_its_depths():
         state = state._replace(delta=dk)
         replay.append(float(out.force))
     np.testing.assert_allclose(replay, force, rtol=1e-9, atol=1e-12 * float(np.max(np.abs(force))))
+
+
+def test_the_3d_block_refuses_a_symmetry_it_has_not_and_shows_the_part_it_solves_mirrored():
+    """The 3-D block's surface is the part solved drawn with its reflections (MIME's ``display="mirrored"``; the whole
+    block is drawn as it is): every symmetry reaches across x and y, the quadrant x < 0, y < 0 is left open (no vertex
+    inside it but on the cut planes x = 0 and y = 0), and every vertex lies on the block's faces or those planes. A
+    quarter's and a half's surface carry more vertices than the part solved has on its boundary (the reflections)."""
+    radius, height, h = 2e-3, 2e-3, 0.5e-3
+    settings = {"radius": radius, "height": height, "h": h, "fine": 1e-3, "fine_across": 0.8e-3}
+    for symmetry, shown in (("quarter", "mirrored"), ("half", "mirrored"), ("full", None)):
+        block = GelBlock(radius=mm(2.0), height=mm(2.0), material="softtissue.whole_blood_clot", h=mm(0.5),
+                         dimension="3d", symmetry=symmetry, tip_shape="softtissue.cone_tip")
+        assert block.setting_problems({}) == []
+        (mesh,) = block.surface_meshes(settings)
+        assert mesh.display == shown and mesh.problems() == []
+        rest = np.asarray(mesh.rest)
+        assert mesh.faces.max() == len(rest) - 1
+        x, y, z = rest.T
+        on_face = (np.isclose(abs(x), radius) | np.isclose(abs(y), radius) | np.isclose(z, height)
+                   | np.isclose(x, 0.0) | np.isclose(y, 0.0))
+        assert on_face.all(), symmetry
+        assert np.isclose(x.min(), -radius) and np.isclose(y.min(), -radius), symmetry
+        inside_open = (x < -1e-12) & (y < -1e-12)
+        assert inside_open.any() == (symmetry == "full"), symmetry
+    wrong = GelBlock(radius=mm(2.0), height=mm(2.0), material="softtissue.whole_blood_clot", dimension="3d",
+                        symmetry="eighth")
+    assert any("symmetry" in line for line in wrong.setting_problems({}))
+
+
+def test_a_tip_whose_shape_does_not_fit_the_interface_is_refused_at_the_plan(monkeypatch):
+    """The contact hands the block the tip's shape parameters in one vector of a fixed length (``N_REGION``): a tip
+    whose shape has more is an input the plan refuses with its code and what to use instead, never a failure of the
+    build. The control: the same experiment plans while the shape fits; with the interface narrowed to one parameter
+    (the cone has three), it is refused, every time."""
+    from mime.build import BuildRefused
+    from mime_softtissue.interactions import tip_contact
+    from mime_softtissue.studies.puncture import puncture_experiment, tips
+
+    def planned() -> None:
+        puncture_experiment(material="softtissue.whole_blood_clot", tip=tips()["cone"], resolution=mm(0.5),
+                            depth=mm(0.1)).experiment.plan()
+
+    planned()
+    monkeypatch.setattr(tip_contact, "N_REGION", 1)
+    try:
+        planned()
+    except BuildRefused as refused:
+        assert refused.codes() == ["softtissue.tip-shape"], refused.codes()
+        assert "has 3 parameters" in str(refused)
+    else:
+        raise AssertionError("a shape of three parameters planned against an interface of one")

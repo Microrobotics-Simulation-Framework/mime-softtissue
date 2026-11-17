@@ -9,6 +9,10 @@ placeholder, and no force curve of the paper was read. Laid out by `mime scaffol
 `src/mime_softtissue/records/` (the fibrin and gel records ship in the wheel, the lab's is a placeholder that is referenced
 and never shipped).
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Microrobotics-Simulation-Framework/mime-softtissue/blob/cleanup/notebooks/tutorial_puncture_3d.ipynb) **Puncture a clot in 3-D**
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Microrobotics-Simulation-Framework/mime-softtissue/blob/cleanup/notebooks/replicate_pure_shear.ipynb) **Tearing a blood-clot sheet: a simulation-based measurement of its toughness**
+
 ## Use
 
 Install this plugin, with its test tools; MIME comes with it:
@@ -56,17 +60,27 @@ axis today). `python examples/tip_retrieval.py` presses a headed tip into a gel 
 harness: `python examples/fit_synthetic/make_example.py OUT && python -m mime_softtissue.fit OUT/manifest.toml --out RESULT`
 (the column spec is `docs/fit_spec.md`).
 
-**5. Cite it.** `CITATION.cff`, and Tutwiler et al. 2020 for the benchmark.
+**5. Cite it.** `CITATION.cff`, and Tutwiler et al. 2020 for the benchmark. Third-party data, its sources and licences: [`DATA_NOTICE.md`](DATA_NOTICE.md).
 
 ## Names
 
 The namespace `softtissue` is filled in six places from one value: the `mime.entries` and `mime.assets` entry points in
-`pyproject.toml`, `src/mime_softtissue/entries/_vocabulary.py`, the entry's name, the record's name and the instance in
+`pyproject.toml`, `src/mime_softtissue/_vocabulary.py`, the entry's name, the record's name and the instance in
 `examples/`. Three separators, as MIME names things today:
 
 - an entry, with a dot: `softtissue.notched_strip`;
-- a record, with an underscore: `softtissue_fibrin_plasma`;
+- a record, with an underscore (the first records) or a dot (the later ones): `softtissue_fibrin_plasma`,
+  `softtissue.whole_blood_clot`; dotted record names wait for MIME's one-`asset()` change;
 - an instance of an entry on a thing, with a colon: `softtissue.grip_force:strip`.
+
+A script imports an entry from its kind, as it does MIME's (`from mime.dynamics import RigidInertial`):
+
+```python
+from mime_softtissue.dynamics import GelBlock, NotchedStrip, ReplayedTear
+from mime_softtissue.interactions import Servo, TipContact
+from mime_softtissue.observations import CrackSize, GripForce, TipForce
+from mime_softtissue.scene import ConeTip, HeadedTip, PunchTip
+```
 
 ## Layout
 
@@ -74,10 +88,20 @@ The namespace `softtissue` is filled in six places from one value: the `mime.ent
 src/mime_softtissue/
   engine/        pure JAX, no `mime` import (a test holds it): material.py (the energy law in invariants), kinematics/
                  (plane_strain, axisymmetric), fracture/ (phase_field, deletion), solvers/, contact.py, specimen.py
-                 (a specimen is data), solver.py loadpath.py (the staggered step, the load steps), readouts/
-  fit/           the fitting harness (pure JAX on the engine's law; `python -m mime_softtissue.fit`)
-  entries/       the adapter: one module per entry kind, found through the `mime.entries` entry point
-  records/       records.json, and the data it names in data/ (the `mime.assets` entry point)
+                 (a specimen is data), solver.py loadpath.py (the staggered step, the load steps), puncture3d.py (the 3-D
+                 block's solver), readouts/
+  dynamics/      the entries by kind, as MIME's packages hold MIME's, one file an entry, each kind's __init__ exporting
+  interactions/  them: dynamics (gel_block, notched_strip, replayed_tear), interactions (tip_contact, servo),
+  observations/  observations (tip_force, crack_size, grip_force), scene (the tips as lab geometry kinds: cone_tip,
+  scene/         punch_tip, headed_tip)
+  entries.py     the `mime.entries` entry point: imports every kind, which registers its entries
+  _vocabulary.py the namespace and the interfaces the entries publish and accept (as `mime.vocabulary`)
+  _material_record.py  a material record's values as the engine's Material (interim: OpenMaterica's, when it resumes)
+  _display.py    the block's surface for display: the axisymmetric section revolved, the 3-D part mirrored
+  fit/           the fitting harness (pure JAX on the engine's law; `python -m mime_softtissue.fit`; interim: OpenMaterica's)
+  studies/       the studies that compare the model with published data, and the loaders of their shipped results
+  records/       records.json, and the data it names in data/ (the `mime.assets` entry point): material records, and
+                 every result a notebook shows (the MIME runs' results, the engine's 3-D runs, the pure-shear study's)
 tests/
   conftest.py test_registry.py test_nodes.py test_validity.py test_engine_imports.py test_relative_imports.py
   engine/        closed forms, properties (Hypothesis), the energy balance, the tips' shapes and pull-out

@@ -5,7 +5,6 @@ MIME lists what is installed by importing every package that declares a `mime.en
 entry does not register on import, or if an entry's settings do not survive a save: the three things a user hits first.
 """
 
-import hashlib
 import json
 from pathlib import Path
 
@@ -16,7 +15,10 @@ from mime.testing import installed_entries, round_trip_failures
 RECORDS = Path(__file__).resolve().parent.parent / "src" / "mime_softtissue" / "records"
 ENTRIES = {("dynamics", "softtissue.notched_strip"), ("observation", "softtissue.grip_force"),
            ("dynamics", "softtissue.gel_block"), ("interaction", "softtissue.tip_contact"),
-           ("interaction", "softtissue.servo"), ("observation", "softtissue.tip_force"), ("geometry", "softtissue.headed_tip")}
+           ("interaction", "softtissue.servo"), ("observation", "softtissue.tip_force"), ("geometry", "softtissue.headed_tip"),
+           ("geometry", "softtissue.punch_tip"), ("geometry", "softtissue.cone_tip"),
+           ("observation", "softtissue.crack_size"),
+           ("dynamics", "softtissue.replayed_tear")}
 
 
 def test_the_registry_lists_the_entries():
@@ -28,19 +30,22 @@ def test_the_saved_round_trip(experiment: Experiment, tmp_path: Path):
     assert round_trip_failures(experiment, tmp_path / "strip") == []
 
 
-def test_every_record_is_listed_and_names_its_bytes():
-    """Each record is found through the `mime.assets` entry point; a record that ships its bytes has the sha256 and size of the
-    file it names (the lab's placeholder names only a URL, and never ships)."""
+def test_every_record_is_listed():
+    """Each record is found through the `mime.assets` entry point; the materials are exactly the known set (the rest are
+    the shipped results, `RESULTS`). That each shipped record's bytes are the ones it names, and that every shipped data
+    file is a record, is tests/test_records.py's, with its controls."""
     listed = json.loads((RECORDS / "records.json").read_text())["assets"]
-    assert {a["name"] for a in listed} == {"softtissue_fibrin_plasma", "softtissue_gel_placeholder",
-                                           "softtissue_clot_lab_placeholder"}
+    materials = {a["name"] for a in listed if not a["name"].startswith(RESULTS)}
+    assert materials == {"softtissue_fibrin_plasma", "softtissue_gel_placeholder", "softtissue_clot_lab_placeholder",
+                         "softtissue.whole_blood_clot", "softtissue.puncture_gel", "softtissue.puncture_gel_gent"}
     for entry in listed:
-        record = reference(entry["name"])
-        assert record.name == entry["name"]
-        shipped = [loc for loc in entry["locations"] if loc.startswith("package:")]
-        for loc in shipped:
-            data = (RECORDS / "data" / loc.rsplit("/", 1)[1]).read_bytes()
-            assert record.sha256 == hashlib.sha256(data).hexdigest() and record.size == len(data), entry["name"]
+        assert reference(entry["name"]).name == entry["name"]
+
+
+#: The shipped results' record names begin with one of these: the MIME runs, their index and the display's run, the
+#: 3-D engine's runs, and the pure-shear and viscoelastic studies' results.
+RESULTS = ("softtissue.puncture_run.", "softtissue.puncture_runs", "softtissue.puncture3d.", "softtissue.pure_shear_",
+           "softtissue.visco_")
 
 
 def test_the_entry_declares_the_record_it_reads(experiment: Experiment, tmp_path: Path):

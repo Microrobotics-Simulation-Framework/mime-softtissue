@@ -1,0 +1,45 @@
+{
+  "duration": 16.0,
+  "environment": {
+    "blas_threads": 2,
+    "cpu": {
+      "flags_sha256": "3ab29091a6f541c6194a5c61cc539d59f5ef695b4f6691cd3ad20fa35f8e118f",
+      "model": "AMD EPYC 9V74 80-Core Processor"
+    },
+    "deterministic": false,
+    "device": "cpu",
+    "gpu": null,
+    "jax": "0.12.0.1",
+    "jaxlib": "0.12.0.1",
+    "maddening": "0.4.2",
+    "matmul_precision": null,
+    "mime": "0.3.0.dev1",
+    "openmaterica": "0.1.0.dev4",
+    "platform": "linux-x86_64",
+    "prng": "threefry2x32 (jax_threefry_partitionable=True)",
+    "python": "3.12.16",
+    "runner": {},
+    "runner_info": {},
+    "usable_cpus": 2,
+    "usd_core": "26.11",
+    "x64": true,
+    "xla_flags": ""
+  },
+  "every": 0.4,
+  "folder": null,
+  "load_report": null,
+  "non_finite": null,
+  "recorded": [
+    "softtissue.crack_size:clot.area",
+    "softtissue.tip_force:clot.depth",
+    "softtissue.tip_force:clot.force"
+  ],
+  "recording": "recording.usdc",
+  "seconds": {
+    "load_and_build": null,
+    "run": 1571.354,
+    "save": 297.581
+  },
+  "stage_every": 0.8,
+  "steps": 40
+}

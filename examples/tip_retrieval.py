@@ -4,7 +4,10 @@ gel block (``softtissue.gel_block``) to a set depth and back, joined by ``softti
 ``softtissue.tip_force``. Every number is a placeholder."""
 from __future__ import annotations
 
-import mime_softtissue.entries as st
+from mime_softtissue.dynamics import GelBlock
+from mime_softtissue.interactions import Servo, TipContact
+from mime_softtissue.observations import TipForce
+from mime_softtissue.scene import HeadedTip
 from mime.dynamics import RigidInertial
 from mime.experiment import Experiment
 from mime.scene import Scene, Z
@@ -22,10 +25,10 @@ def tip_experiment(*, head_radius_mm: float = 0.6, friction: float = 0.3, set_de
                    name: str = "tip_retrieval") -> tuple[Experiment, int]:
     """The experiment and its number of base steps (insertion to the set depth, withdrawal to the end depth)."""
     exp = Experiment(name, scene=Scene.new(up=Z, units="m"), gravity=m_per_s2(0.0), dt=s(DT))
-    exp.add_body(Body("clot", dynamics=st.GelBlock(radius=mm(5.0), height=mm(5.0),
+    exp.add_body(Body("clot", dynamics=GelBlock(radius=mm(5.0), height=mm(5.0),
                                                    material="softtissue_gel_placeholder", h=mm(h_mm)),
                       initial=State(position=mm((0.0, 0.0, 0.0)))))
-    tip = st.HeadedTip(neck_radius=mm(0.4), head_radius=mm(head_radius_mm), head_length=mm(0.2), fillet=mm(0.05),
+    tip = HeadedTip(neck_radius=mm(0.4), head_radius=mm(head_radius_mm), head_length=mm(0.2), fillet=mm(0.05),
                        length=mm(3.0))
     exp.add_body(Body("tip", dynamics=RigidInertial(), parts={"tip": Part(tip)},
                       initial=State(position=mm((0.0, 0.0, 5.0)), orientation=(1.0, 0.0, 0.0, 0.0),
@@ -34,8 +37,8 @@ def tip_experiment(*, head_radius_mm: float = 0.6, friction: float = 0.3, set_de
     exp.declare("tip.mass", kg(1.2e-5), reason="a placeholder: a 3 mm steel tip of 0.4 mm radius")
     exp.declare("tip.inertia", kg_m2((1e-11, 1e-11, 1e-12)), reason="a placeholder: the same tip's order")
     insert = int(round(set_depth_mm * 1e-3 / STEP))
-    exp.attach(st.Servo(speed=m_per_s(SPEED), insert_steps=insert), body="tip")
-    exp.attach(st.TipContact(friction=friction, adhesion=0.0), tip="tip", solid="clot")
-    exp.observe(st.TipForce(solid="clot"))
+    exp.attach(Servo(speed=m_per_s(SPEED), insert_steps=insert), body="tip")
+    exp.attach(TipContact(friction=friction, adhesion=0.0), tip="tip", solid="clot")
+    exp.observe(TipForce(solid="clot"))
     steps = insert + int(round((set_depth_mm - end_depth_mm) * 1e-3 / STEP))
     return exp, steps

@@ -13,7 +13,8 @@ import jax.numpy as jnp
 from mime.experiment import Experiment
 from mime.testing import NodeCase, node_failures, param_reach_failures
 
-import mime_softtissue.entries as st
+from mime_softtissue.dynamics import NotchedStrip
+from mime_softtissue.observations import GripForce
 
 NODE_STEPS = 5
 
@@ -47,12 +48,12 @@ UNREAD = {"fine", "half_height", "stretch_limit", "width"}
 
 def test_node_verification_of_the_solid(experiment: Experiment):
     failed = {line.split(": ")[1].split(":")[0].split()[-1]
-              for line in node_failures(experiment.build(), st.NotchedStrip, NODE_CASE) if ": FAIL" in line.splitlines()[0]}
+              for line in node_failures(experiment.build(), NotchedStrip, NODE_CASE) if ": FAIL" in line.splitlines()[0]}
     assert failed == FORWARD_ONLY, failed
 
 
 def test_node_verification_of_the_observation(experiment: Experiment):
-    assert node_failures(experiment.build(), st.GripForce, GRIP_CASE) == []
+    assert node_failures(experiment.build(), GripForce, GRIP_CASE) == []
 
 
 def test_parameter_reach(experiment: Experiment):
