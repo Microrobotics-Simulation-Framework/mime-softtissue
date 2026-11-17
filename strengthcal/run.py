@@ -74,6 +74,9 @@ def main() -> None:
                          "a non-finite force), from the last accepted state")
     ap.add_argument("--newton-stall", type=float, default=0.0,
                     help="Newton's stagnation stop, in units of h (solvers.newton's stall_step; 0 off)")
+    ap.add_argument("--edge-points", type=int, default=0,
+                    help="the contact penalty at this many Gauss points on each top edge (spike-deep-elastic); 0 nodal")
+    ap.add_argument("--contact-k", type=float, default=100.0, help="the penalty stiffness, in units of E / h")
     ap.add_argument("--no-lag", action="store_true",
                     help="no lagged pressure (the friction is zero, so the lag only adds staggered iterations)")
     a = ap.parse_args()
@@ -102,8 +105,8 @@ def main() -> None:
     w = np.broadcast_to(nodal_ring_area(g.x)[:, None], (g.nx + 1, g.ny + 1)).copy()
     fillet = R if a.tip == "sphere" else a.fillet * mm
     tip = ct.Indenter("punch", radius=R, fillet=fillet, top=a.block * mm)
-    c = ct.Contact(indenter=tip, stiffness=100.0 * young / h, weights=w, active=np.ones_like(w), friction=0.0,
-                   slip=1e-2 * h, always_sliding=not a.no_lag)
+    c = ct.Contact(indenter=tip, stiffness=a.contact_k * young / h, weights=w, active=np.ones_like(w), friction=0.0,
+                   slip=1e-2 * h, always_sliding=not a.no_lag, edge_points=a.edge_points)
     solver = Solver(replace(block, contact=c), a.mode, tol_d=1e-5, viscosity=0.1 * a.gc / l, newton_regularise=True,
                     lag_relaxation=0.5, volumetric=a.volumetric, max_staggered=a.max_staggered,
                     max_newton=a.max_newton, newton_stall=a.newton_stall * h)
