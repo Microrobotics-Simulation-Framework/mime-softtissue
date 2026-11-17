@@ -153,3 +153,18 @@ Round 1d's second peek (08:55): **at l 25 and 20 um the step after nucleation (0
 after 45 min** (caps 40 staggered x 60 Newton, 4 cuts: an attempt can run for hours). Round 3b is round 3 with caps of 25
 staggered x 30 Newton and one cut; a step still capped is accepted (`accepted_bad`) and the run goes on, so an unstable
 crack shows as the next steps' drop. Predictions P3.1-P3.7 stand unchanged for round 3b.
+
+### Round 3b status at 10:28 CET (`date`; second peek of run 44042620884), read before round 4 was written
+- Flat punch, l 20, G' 6.2: s_ts 20 G' punctures at Pc/(G'R^2) 23.9; 40 G' at 46 and rising; 70 G' at 93 and rising (first
+  crack 62); 150 G' no crack by 237 (d/R 11). Held-out G' 10: 20 G' first crack 21 (stuck at 31); 70 G' first crack 129, at 184
+  and rising.
+- Spheres, l 50: s_ts 20 G' puncture at Fc/(G'R^2) 32.8 / 30.8 at R 0.5 / 1, first crack at 30.2 at R 2; s_ts 40 G' 79.5 /
+  70.5 at R 0.5 / 1, none by 66.6 at R 2 (11 mm). R 4 runs at 19-20 Newton a step (not 6-9): it will not reach dc in 335 min.
+
+## Round 4: the strength the flat punch needs, at l 10 um, and the spheres there (written 2026-11-17 10:31 CET, `date`, before any arm ran)
+Round 3b's settings. Flat punch (G' 6.2, R 0.359, fillet 0.02): s_ts 100 G' at l 20 (past the ceiling: l/L about 1); s_ts 70
+and 100 G' at l 10 um (h 5 um; l/L about 0.3 and 0.5). Spheres at s_ts 80 G' (292.8 kPa): R 0.5 at l 20 (l/L about 0.4), R 1 at
+l 25 (about 0.55).
+- **P4.1** Flat at 70 G': the first crack at l 10 within 25 % of l 20's (62 G'R^2).
+- **P4.2** Flat at 100 G', l 10: punctures at Pc/(G'R^2) 110-200.
+- **P4.3** Sphere R 0.5 at 80 G' (l 20): Fc 130-260 mN; R 1 (l 25): Fc/(G'R^2) within 25 % of R 0.5's, i.e. Fc 500-1000 mN.
