@@ -9,6 +9,10 @@ placeholder, and no force curve of the paper was read. Laid out by `mime scaffol
 `src/mime_softtissue/records/` (the fibrin and gel records ship in the wheel, the lab's is a placeholder that is referenced
 and never shipped).
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Microrobotics-Simulation-Framework/mime-softtissue/blob/cleanup/notebooks/tutorial_puncture_3d.ipynb) **Puncture a clot in 3-D**
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Microrobotics-Simulation-Framework/mime-softtissue/blob/cleanup/notebooks/replicate_pure_shear.ipynb) **Tearing a blood-clot sheet: a simulation-based measurement of its toughness**
+
 ## Use
 
 Install this plugin, with its test tools; MIME comes with it:
