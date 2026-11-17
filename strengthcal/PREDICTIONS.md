@@ -92,7 +92,7 @@ committed fit, set at another modulus: a placeholder, not a calibration), elasti
   c25b's fifth step had run 20 min. Peak RSS: 1.22 / 2.47 / 3.51 GB at l 50 / 25 / 20 (P1b.2 held).
 - c50b repeats round 1 to 1.30 mm (nucleation on the snapped axis element, 11.2 mN).
 
-## Round 1d: the fine grids at an increment of 2 h with Newton's stagnation stop (written 2026-11-17 07:58 CET, before any arm ran)
+## Round 1d: the fine grids at an increment of 2 h with Newton's stagnation stop (written 2026-11-17 07:54 CET, `date`, before any arm ran; first stamped 07:58, a guess, corrected)
 Arms (gauss, no lag, `--step` 2 h, `--ramp 2`, `--cut 4`, `--newton-stall 1e-6` (h), `--max-newton 60`, `--max-staggered 40`):
 strength s_ts 18.3 kPa at l 25 and 20 um (`c25d`, `c20d`); elastic twin at l 20 um (`e20d`).
 - **P1d.1** Newton a step before nucleation 5-15; s/step l 25: 10-30 s, l 20: 25-60 s; few or no cuts before nucleation.
