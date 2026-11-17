@@ -37,3 +37,21 @@ Arms: nodal (100 E / h) and edge (4 points, 1000 E / h) at R 0.5 (h 0.1, 0.05, 0
 - **P1.7 Penalty:** 100 E / h fails earlier than 1000 E / h at h 0.05 (a drop before d/R 13); where both are artefact-free
   they differ by under 3 %. 8 points against 4: under 1 % where both are artefact-free.
 - Runtime: h 0.025 at R 0.5 within the runner's wall (2-5 h); R 1 at h 0.025 not run (an estimated 10-15 h).
+
+## Round 2 (runners): Gent's Jm against eq. 5 at R 0.5, written 07:05 CET
+
+Launched before round 1's fine-grid neo-Hookean result, on the local h 0.2 numbers (seen before writing): neo-Hookean
+edge 0.53-0.55 of eq. 5 from d/R 1 to 8 (flat), far outside the band; Gent at h 0.2: Jm 3 rises 0.56 (d/R 1), 0.86 (4),
+1.16 (8), 1.38 (12); Jm 10 rises 0.54, 0.66, 0.80, 0.91; no drop to d/R 13 for either (Gent bounds the stretch: largest
+1.9 and 2.8). Control (a) passed locally (06:59): edge_points 0 against 8110f3f, the nodal elastic deep run and the
+phase-field needle with the lagged pressure (axi_run.py, mean), 20 steps each, every entry bit for bit.
+If round 1's fine neo-Hookean lands inside the band at depth, these arms are discarded.
+
+Arms: edge contact (4 points, 1000 E / h), R 0.5, h 0.05, block 60, to 6.5 mm; Jm 2, 3, 4, 5, 7, 10, 15.
+
+- **P2.1 Shape:** for every Jm the ratio to eq. 5 rises with depth (Gent's stiffening is steeper than d^2): no single Jm
+  stays inside the band (k' +- 1 sigma, about +-4 % in P at depth) over d/R 2-12. Confidence 80 %.
+- **P2.2 The least-squares Jm** over d/R 2-12 (relative error, k' at its stated value): 3-7 at h 0.05; it falls by
+  under a factor 1.5 from h 0.2's. Its ratio spans about 0.75-1.25 over that range.
+- **P2.3 No drop** to d/R 13 for Jm <= 10 at h 0.05 (the stretch bounded); Jm 15 may drop past d/R 10 (40 %).
+- **P2.4 Grid:** h 0.05 lowers P against h 0.2 by 5-20 % at d/R 8 for every Jm.
