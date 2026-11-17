@@ -1,0 +1,74 @@
+# A probe workflow (a probe branch only, deleted after its artifacts are downloaded): TENSION's arms, each one
+# run of a TENSION script (the axisymmetric engine called directly), with partial uploads while it runs.
+name: probe-tension
+on:
+  push:
+    branches: ["probe/tension-*"]
+env:
+  JAX_PLATFORMS: cpu
+  JAX_ENABLE_X64: "1"
+jobs:
+  arm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        include:
+          - {name: o-R4-s2.5, script: tension/run.py, args: "--tip sphere --R 4.0 --block 160 --fine-r 5.0 --fine-z 6 --coarse 4.0 --step 0.1 --depth 20 --fields-at 12 16 --sts 9.15 --criterion tension --gate s1 --jm 3.7 --l 0.1 --h 0.05 --gc 27.6 --mu 3660 --nu 0.49 --volumetric gauss --edge-points 4 --contact-k 1000 --no-lag --ramp 2 --cut 1 --newton-stall 1e-6 --max-newton 30 --max-staggered 25 --stop-drop 0.5"}
+          - {name: o-R1-s3.0, script: tension/run.py, args: "--tip sphere --R 1.0 --block 80 --fine-r 1.75 --fine-z 6 --coarse 1.0 --step 0.05 --depth 14 --fields-at 3 4 6 8 12 --sts 10.98 --criterion tension --gate s1 --jm 3.7 --l 0.1 --h 0.05 --gc 27.6 --mu 3660 --nu 0.49 --volumetric gauss --edge-points 4 --contact-k 1000 --no-lag --ramp 2 --cut 1 --newton-stall 1e-6 --max-newton 30 --max-staggered 25 --stop-drop 0.5"}
+          - {name: o-R0.5-s3.0, script: tension/run.py, args: "--tip sphere --R 0.5 --block 60 --fine-r 1.0 --fine-z 3 --coarse 1.0 --step 0.05 --depth 9 --fields-at 1.5 2 3 4 6 --sts 10.98 --criterion tension --gate s1 --jm 3.7 --l 0.1 --h 0.05 --gc 27.6 --mu 3660 --nu 0.49 --volumetric gauss --edge-points 4 --contact-k 1000 --no-lag --ramp 2 --cut 1 --newton-stall 1e-6 --max-newton 30 --max-staggered 25 --stop-drop 0.5"}
+          - {name: o-R4-s3.5, script: tension/run.py, args: "--tip sphere --R 4.0 --block 160 --fine-r 5.0 --fine-z 6 --coarse 4.0 --step 0.1 --depth 20 --fields-at 12 16 --sts 12.81 --criterion tension --gate s1 --jm 3.7 --l 0.1 --h 0.05 --gc 27.6 --mu 3660 --nu 0.49 --volumetric gauss --edge-points 4 --contact-k 1000 --no-lag --ramp 2 --cut 1 --newton-stall 1e-6 --max-newton 30 --max-staggered 25 --stop-drop 0.5"}
+    name: ${{ matrix.name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          python-version: "3.12"
+      - run: uv venv --python 3.12
+      - run: uv pip install "mime-engine[verify] @ git+https://github.com/Microrobotics-Simulation-Framework/MIME@99614e487c90f091e1fcbfa712aa14aa583634b5"
+      - run: uv pip install -e .
+      - name: start
+        run: |
+          lscpu | grep "Model name" | tee cpu.txt
+          nproc | tee -a cpu.txt
+          free -m | tee -a cpu.txt
+          mkdir -p out/${{ matrix.name }}
+          nohup bash -c 'timeout 335m uv run --no-sync python ${{ matrix.script }} out/${{ matrix.name }}/run.json ${{ matrix.args }} > log.txt 2>&1; echo "exit $?" >> log.txt' > /dev/null 2>&1 &
+          echo $! > run.pid
+      - name: peek1
+        run: |
+          end=$((SECONDS + 1800))
+          while kill -0 $(cat run.pid) 2>/dev/null && [ $SECONDS -lt $end ]; do sleep 20; done
+          mkdir -p peek1/${{ matrix.name }}
+          cp out/${{ matrix.name }}/* cpu.txt peek1/${{ matrix.name }}/ 2>/dev/null || true
+          tail -c 20000 log.txt > peek1/${{ matrix.name }}/log.txt || true
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.name }}-peek1
+          path: peek1/${{ matrix.name }}
+          retention-days: 14
+      - name: peek2
+        run: |
+          end=$((SECONDS + 3600))
+          while kill -0 $(cat run.pid) 2>/dev/null && [ $SECONDS -lt $end ]; do sleep 20; done
+          mkdir -p peek2/${{ matrix.name }}
+          cp out/${{ matrix.name }}/* cpu.txt peek2/${{ matrix.name }}/ 2>/dev/null || true
+          tail -c 20000 log.txt > peek2/${{ matrix.name }}/log.txt || true
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.name }}-peek2
+          path: peek2/${{ matrix.name }}
+          retention-days: 14
+      - name: finish
+        run: |
+          while kill -0 $(cat run.pid) 2>/dev/null; do sleep 30; done
+          tail -c 200000 log.txt > out/${{ matrix.name }}/log.txt
+          cp cpu.txt out/${{ matrix.name }}/
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: ${{ matrix.name }}
+          path: out/${{ matrix.name }}
+          retention-days: 14
