@@ -75,7 +75,7 @@ cubed): R 0.5, h 0.05 with 0.0125 within 0.75 mm; h 0.025 with 0.00625 within 0.
 - **P3.3** Gent narrows the sphere/flat gap at depth against neo-Hookean (both near the same stiffened core).
 - **P3.4** The flat punch's edge drops (the gel wrapping a 0.2 R edge) before d/R 13 at h 0.05 (50 %).
 
-## Round 4 (runners): Gent at the fitted range, its grid, block, held-out radius and the nodal penalty, written 08:12 CET
+## Round 4 (runners): Gent at the fitted range, its grid, block, held-out radius and the nodal penalty, written 08:08 CET (my 08:12 was a guess; commit time)
 
 Seen before writing (rounds 1-3 so far): neo-Hookean edge drops at d/R 4.8 (h/R 0.1, R 0.5) and 3.7 (h/R 0.1, R 1), 8.4
 (h/R 0.2); the axis column ahead of the tip is squashed to axial stretch 0.03-0.07, hoop 4-7, and snaps (lmax 4.4 -> 6.1 in
