@@ -1,0 +1,90 @@
+# A probe workflow (a probe branch only, deleted after its artifacts are downloaded): STRENGTH-CAL's arms, each one
+# run of strengthcal/run.py (the axisymmetric engine called directly), with partial uploads while it runs.
+name: probe-strengthcal
+on:
+  push:
+    branches: ["probe/strengthcal-r*"]
+env:
+  JAX_PLATFORMS: cpu
+  JAX_ENABLE_X64: "1"
+jobs:
+  arm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        include:
+          - {name: fe3-f02b, args: "--tip flat --R 0.359 --fillet 0.02 --h 0.01 --l 0.02 --mu 6200 --sts 124 --mode elastic --fine-r 0.75 --fine-z 1.0 --coarse 1.0 --step 0.02 --depth 7 --no-lag --ramp 2 --cut 1 --newton-stall 1e-6 --max-newton 30 --max-staggered 25 --volumetric gauss --jm 4 --edge-points 4 --contact-k 1000 --fields-at 1 2.5 3.5 4.65 6 7"}
+          - {name: fe3-f07b, args: "--tip flat --R 0.359 --fillet 0.07 --h 0.01 --l 0.02 --mu 6200 --sts 124 --mode elastic --fine-r 0.75 --fine-z 1.0 --coarse 1.0 --step 0.02 --depth 7 --no-lag --ramp 2 --cut 1 --newton-stall 1e-6 --max-newton 30 --max-staggered 25 --volumetric gauss --jm 4 --edge-points 4 --contact-k 1000 --fields-at 1 2.5 3.5 4.65 6 7"}
+          - {name: se3-R0.5b, args: "--tip sphere --R 0.5 --h 0.01 --l 0.02 --mu 3660 --sts 73.2 --mode elastic --fine-r 1.0 --fine-z 2.0 --coarse 1.0 --step 0.02 --depth 7 --no-lag --ramp 2 --cut 1 --newton-stall 1e-6 --max-newton 30 --max-staggered 25 --volumetric gauss --jm 4 --edge-points 4 --contact-k 1000 --fields-at 1 2 4 5 6 7"}
+          - {name: fs3-10b, args: "--tip flat --R 0.359 --fillet 0.02 --h 0.01 --l 0.02 --mu 6200 --sts 62 --fine-r 0.75 --fine-z 1.0 --coarse 1.0 --step 0.02 --depth 7 --stop-drop 0.5 --no-lag --ramp 2 --cut 1 --newton-stall 1e-6 --max-newton 30 --max-staggered 25 --volumetric gauss --jm 4 --edge-points 4 --contact-k 1000"}
+          - {name: fs3-20b, args: "--tip flat --R 0.359 --fillet 0.02 --h 0.01 --l 0.02 --mu 6200 --sts 124 --fine-r 0.75 --fine-z 1.0 --coarse 1.0 --step 0.02 --depth 7 --stop-drop 0.5 --no-lag --ramp 2 --cut 1 --newton-stall 1e-6 --max-newton 30 --max-staggered 25 --volumetric gauss --jm 4 --edge-points 4 --contact-k 1000"}
+          - {name: fs3-40b, args: "--tip flat --R 0.359 --fillet 0.02 --h 0.01 --l 0.02 --mu 6200 --sts 248 --fine-r 0.75 --fine-z 1.0 --coarse 1.0 --step 0.02 --depth 7 --stop-drop 0.5 --no-lag --ramp 2 --cut 1 --newton-stall 1e-6 --max-newton 30 --max-staggered 25 --volumetric gauss --jm 4 --edge-points 4 --contact-k 1000"}
+          - {name: fs3-70b, args: "--tip flat --R 0.359 --fillet 0.02 --h 0.01 --l 0.02 --mu 6200 --sts 434 --fine-r 0.75 --fine-z 1.0 --coarse 1.0 --step 0.02 --depth 7 --stop-drop 0.5 --no-lag --ramp 2 --cut 1 --newton-stall 1e-6 --max-newton 30 --max-staggered 25 --volumetric gauss --jm 4 --edge-points 4 --contact-k 1000"}
+          - {name: fs3-150b, args: "--tip flat --R 0.359 --fillet 0.02 --h 0.01 --l 0.02 --mu 6200 --sts 930 --fine-r 0.75 --fine-z 1.0 --coarse 1.0 --step 0.02 --depth 7 --stop-drop 0.5 --no-lag --ramp 2 --cut 1 --newton-stall 1e-6 --max-newton 30 --max-staggered 25 --volumetric gauss --jm 4 --edge-points 4 --contact-k 1000"}
+          - {name: fs3-20-G10b, args: "--tip flat --R 0.358 --fillet 0.02 --h 0.01 --l 0.02 --mu 10000 --sts 200 --fine-r 0.75 --fine-z 1.0 --coarse 1.0 --step 0.02 --depth 7 --stop-drop 0.5 --no-lag --ramp 2 --cut 1 --newton-stall 1e-6 --max-newton 30 --max-staggered 25 --volumetric gauss --jm 4 --edge-points 4 --contact-k 1000"}
+          - {name: fs3-70-G10b, args: "--tip flat --R 0.358 --fillet 0.02 --h 0.01 --l 0.02 --mu 10000 --sts 700 --fine-r 0.75 --fine-z 1.0 --coarse 1.0 --step 0.02 --depth 7 --stop-drop 0.5 --no-lag --ramp 2 --cut 1 --newton-stall 1e-6 --max-newton 30 --max-staggered 25 --volumetric gauss --jm 4 --edge-points 4 --contact-k 1000"}
+          - {name: ss3-20-R0.5b, args: "--tip sphere --R 0.5 --h 0.025 --l 0.05 --mu 3660 --sts 73.2 --fine-r 1.0 --fine-z 2.0 --coarse 1.0 --step 0.05 --depth 8 --stop-drop 0.5 --no-lag --ramp 2 --cut 1 --newton-stall 1e-6 --max-newton 30 --max-staggered 25 --volumetric gauss --jm 4 --edge-points 4 --contact-k 1000"}
+          - {name: ss3-20-R1b, args: "--tip sphere --R 1.0 --h 0.025 --l 0.05 --mu 3660 --sts 73.2 --fine-r 1.5 --fine-z 2.0 --coarse 1.0 --step 0.05 --depth 11 --stop-drop 0.5 --no-lag --ramp 2 --cut 1 --newton-stall 1e-6 --max-newton 30 --max-staggered 25 --volumetric gauss --jm 4 --edge-points 4 --contact-k 1000"}
+          - {name: ss3-20-R2b, args: "--tip sphere --R 2.0 --h 0.025 --l 0.05 --mu 3660 --sts 73.2 --fine-r 2.5 --fine-z 3.0 --coarse 1.0 --step 0.05 --depth 11 --stop-drop 0.5 --no-lag --ramp 2 --cut 1 --newton-stall 1e-6 --max-newton 30 --max-staggered 25 --volumetric gauss --jm 4 --edge-points 4 --contact-k 1000"}
+          - {name: ss3-20-R4b, args: "--tip sphere --R 4.0 --h 0.025 --l 0.05 --mu 3660 --sts 73.2 --fine-r 4.5 --fine-z 5.0 --coarse 1.0 --step 0.05 --depth 15 --stop-drop 0.5 --no-lag --ramp 2 --cut 1 --newton-stall 1e-6 --max-newton 30 --max-staggered 25 --volumetric gauss --jm 4 --edge-points 4 --contact-k 1000"}
+          - {name: ss3-40-R0.5b, args: "--tip sphere --R 0.5 --h 0.025 --l 0.05 --mu 3660 --sts 146.4 --fine-r 1.0 --fine-z 2.0 --coarse 1.0 --step 0.05 --depth 8 --stop-drop 0.5 --no-lag --ramp 2 --cut 1 --newton-stall 1e-6 --max-newton 30 --max-staggered 25 --volumetric gauss --jm 4 --edge-points 4 --contact-k 1000"}
+          - {name: ss3-40-R1b, args: "--tip sphere --R 1.0 --h 0.025 --l 0.05 --mu 3660 --sts 146.4 --fine-r 1.5 --fine-z 2.0 --coarse 1.0 --step 0.05 --depth 11 --stop-drop 0.5 --no-lag --ramp 2 --cut 1 --newton-stall 1e-6 --max-newton 30 --max-staggered 25 --volumetric gauss --jm 4 --edge-points 4 --contact-k 1000"}
+          - {name: ss3-40-R2b, args: "--tip sphere --R 2.0 --h 0.025 --l 0.05 --mu 3660 --sts 146.4 --fine-r 2.5 --fine-z 3.0 --coarse 1.0 --step 0.05 --depth 11 --stop-drop 0.5 --no-lag --ramp 2 --cut 1 --newton-stall 1e-6 --max-newton 30 --max-staggered 25 --volumetric gauss --jm 4 --edge-points 4 --contact-k 1000"}
+          - {name: ss3-40-R4b, args: "--tip sphere --R 4.0 --h 0.025 --l 0.05 --mu 3660 --sts 146.4 --fine-r 4.5 --fine-z 5.0 --coarse 1.0 --step 0.05 --depth 15 --stop-drop 0.5 --no-lag --ramp 2 --cut 1 --newton-stall 1e-6 --max-newton 30 --max-staggered 25 --volumetric gauss --jm 4 --edge-points 4 --contact-k 1000"}
+          - {name: ss3-20-R0.5-l20b, args: "--tip sphere --R 0.5 --h 0.01 --l 0.02 --mu 3660 --sts 73.2 --fine-r 1.0 --fine-z 2.0 --coarse 1.0 --step 0.02 --depth 8 --stop-drop 0.5 --no-lag --ramp 2 --cut 1 --newton-stall 1e-6 --max-newton 30 --max-staggered 25 --volumetric gauss --jm 4 --edge-points 4 --contact-k 1000"}
+          - {name: ss3-40-R0.5-l20b, args: "--tip sphere --R 0.5 --h 0.01 --l 0.02 --mu 3660 --sts 146.4 --fine-r 1.0 --fine-z 2.0 --coarse 1.0 --step 0.02 --depth 8 --stop-drop 0.5 --no-lag --ramp 2 --cut 1 --newton-stall 1e-6 --max-newton 30 --max-staggered 25 --volumetric gauss --jm 4 --edge-points 4 --contact-k 1000"}
+    name: ${{ matrix.name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          python-version: "3.12"
+      - run: uv venv --python 3.12
+      - run: uv pip install "mime-engine[verify] @ git+https://github.com/Microrobotics-Simulation-Framework/MIME@99614e487c90f091e1fcbfa712aa14aa583634b5"
+      - run: uv pip install -e .
+      - name: start
+        run: |
+          lscpu | grep "Model name" | tee cpu.txt
+          nproc | tee -a cpu.txt
+          free -m | tee -a cpu.txt
+          mkdir -p out/${{ matrix.name }}
+          nohup bash -c 'timeout 335m uv run --no-sync python strengthcal/run.py out/${{ matrix.name }}/run.json ${{ matrix.args }} > log.txt 2>&1; echo "exit $?" >> log.txt' > /dev/null 2>&1 &
+          echo $! > run.pid
+      - name: peek1
+        run: |
+          end=$((SECONDS + 1800))
+          while kill -0 $(cat run.pid) 2>/dev/null && [ $SECONDS -lt $end ]; do sleep 20; done
+          mkdir -p peek1/${{ matrix.name }}
+          cp out/${{ matrix.name }}/* cpu.txt peek1/${{ matrix.name }}/ 2>/dev/null || true
+          tail -c 20000 log.txt > peek1/${{ matrix.name }}/log.txt || true
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.name }}-peek1
+          path: peek1/${{ matrix.name }}
+          retention-days: 14
+      - name: peek2
+        run: |
+          end=$((SECONDS + 3600))
+          while kill -0 $(cat run.pid) 2>/dev/null && [ $SECONDS -lt $end ]; do sleep 20; done
+          mkdir -p peek2/${{ matrix.name }}
+          cp out/${{ matrix.name }}/* cpu.txt peek2/${{ matrix.name }}/ 2>/dev/null || true
+          tail -c 20000 log.txt > peek2/${{ matrix.name }}/log.txt || true
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.name }}-peek2
+          path: peek2/${{ matrix.name }}
+          retention-days: 14
+      - name: finish
+        run: |
+          while kill -0 $(cat run.pid) 2>/dev/null; do sleep 30; done
+          tail -c 200000 log.txt > out/${{ matrix.name }}/log.txt
+          cp cpu.txt out/${{ matrix.name }}/
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: ${{ matrix.name }}
+          path: out/${{ matrix.name }}
+          retention-days: 14
