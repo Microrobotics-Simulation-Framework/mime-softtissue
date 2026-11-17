@@ -168,3 +168,10 @@ l 25 (about 0.55).
 - **P4.1** Flat at 70 G': the first crack at l 10 within 25 % of l 20's (62 G'R^2).
 - **P4.2** Flat at 100 G', l 10: punctures at Pc/(G'R^2) 110-200.
 - **P4.3** Sphere R 0.5 at 80 G' (l 20): Fc 130-260 mN; R 1 (l 25): Fc/(G'R^2) within 25 % of R 0.5's, i.e. Fc 500-1000 mN.
+
+## Round 5: the calibration's fillet (written 2026-11-17 11:03 CET, `date`, before any arm ran)
+Read first: round 3b's elastic twins at fillets 0.02 and 0.07 mm carry the same force to 1-3 % at every depth, but the largest
+equivalent strength at fillet 0.07 is 2.4-5 times lower (e.g. 200 against 610 G' at 3 mm). Arms: round 3b's flat-punch
+calibration at fillet 0.07 mm, l 20 um, s_ts 20, 40, 70 G'.
+- **P5.1** At fillet 0.07 Pc/(G'R^2) is 1.5-4 times fillet 0.02's at the same s_ts (23.9 at 20 G'), so s_ts* falls by 1.5-4
+  times with the fillet: the paper's unreported edge radius is a factor of that size in the calibrated strength.
