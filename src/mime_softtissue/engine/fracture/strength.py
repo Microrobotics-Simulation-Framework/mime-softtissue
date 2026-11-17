@@ -50,6 +50,17 @@ class Strength(NamedTuple):
     beta2: Any
 
 
+class Tension(NamedTuple):
+    """A tension-only strength surface (a pytree, an option beside ``Strength``): the largest principal Biot stress
+    reaching ``s_ts`` (Pa), F(S) = max(S_i) - s_ts, so that no state whose principal stresses are all <= 0 (uniaxial
+    or confined compression) ever reaches it. ``tension_coefficients`` fills ``delta`` and the driving force's
+    ``beta`` (1/1): c_e = beta max(S_i)."""
+
+    s_ts: Any
+    delta: Any
+    beta: Any
+
+
 def _energy(stretches: jax.Array, dq: Any, mat: law.Material) -> jax.Array:
     """The degraded energy at principal ``stretches`` (3,): g(d) psi_plus + psi_minus."""
     J = stretches[0] * stretches[1] * stretches[2]
@@ -73,9 +84,11 @@ def principal_stretches(F2: jax.Array, Ftt: jax.Array) -> jax.Array:
     return jnp.stack([jnp.sqrt(jnp.maximum(half + root, 1e-300)), jnp.sqrt(jnp.maximum(half - root, 1e-300)), Ftt])
 
 
-def driving(s: jax.Array, st: Strength) -> tuple[jax.Array, jax.Array]:
-    """(c_e, tension) at one point from the Biot stress's principal values ``s`` (3,): c_e = beta2 sqrt(J2) + beta1 I1;
-    tension: I1 >= 0."""
+def driving(s: jax.Array, st: Strength | Tension) -> tuple[jax.Array, jax.Array]:
+    """(c_e, tension) at one point from the Biot stress's principal values ``s`` (3,): c_e = beta2 sqrt(J2) + beta1 I1
+    (``Strength``, Drucker-Prager) or beta max(S_i) (``Tension``); tension: I1 >= 0."""
+    if isinstance(st, Tension):
+        return st.beta * jnp.max(s), jnp.sum(s) >= 0.0
     I1 = jnp.sum(s)
     J2 = ((s[0] - s[1]) ** 2 + (s[1] - s[2]) ** 2 + (s[2] - s[0]) ** 2) / 6.0
     return st.beta2 * jnp.sqrt(jnp.maximum(J2, 0.0)) + st.beta1 * I1, I1 >= 0.0
@@ -166,7 +179,31 @@ def coefficients(mat: law.Material, s_ts: float, s_hs: float, h: float, gc: floa
     return Strength(s_ts=float(s_ts), s_hs=float(s_hs), delta=float(delta), beta1=float(beta1), beta2=float(beta2))
 
 
-def homogeneous_onset(mat: law.Material, st: Strength, stretches: Any) -> Any:
+def tension_coefficients(mat: law.Material, s_ts: float, h: float, gc: float | None = None, l: float | None = None,
+                         delta_factor: float = 1.0) -> Tension:
+    """The tension-only surface's numbers for the law ``mat``, the strength ``s_ts`` (Biot, Pa) and the cell size ``h``.
+    The uniform onset 2 W [I1 >= 0] - c_e - 3 q (q = delta Gc / 8 l) with c_e = beta max(S_i) and
+    beta = (2 W_ts - 3 q) / s_ts is zero exactly at uniaxial tension at s_ts, at any l; under all-compressive principal
+    stresses it is -3 q + |beta| max(S_i) <= -3 q < 0, so compression never nucleates. delta is the 2024 paper's eq.
+    (26) for the Drucker-Prager surface through the same uniaxial and hydrostatic points (s_hs = s_ts: a principal-
+    stress criterion fails hydrostatic tension at s_ts), times ``delta_factor`` (a calibration against a pre-cracked
+    test). Raises where beta >= 0 (l past the length at which 3 q = 2 W_ts: the surface no longer drives by stress)."""
+    if mat.fibre is not None:
+        raise ValueError("the strength surface reads an isotropic law (no fibre families)")
+    gc = float(mat.gc if gc is None else gc)
+    l = float(mat.l if l is None else l)
+    _, _, w_ts = uniaxial_state(mat._replace(k_res=0.0), s_ts)
+    r3 = np.sqrt(3.0)
+    corr = 1.0 + 3.0 * h / (8.0 * l)
+    delta = (corr ** -2 * (2.0 + 2.0 * r3) / (8.0 + 3.0 * r3) * 3.0 * gc / (16.0 * w_ts * l) + 0.4 / corr) * delta_factor
+    q = delta * gc / (8.0 * l)
+    beta = (2.0 * w_ts - 3.0 * q) / s_ts
+    if not beta < 0.0:
+        raise ValueError(f"l = {l} is past the tension-only surface's length (3 q <= 2 W_ts; beta = {beta})")
+    return Tension(s_ts=float(s_ts), delta=float(delta), beta=float(beta))
+
+
+def homogeneous_onset(mat: law.Material, st: Strength | Tension, stretches: Any) -> Any:
     """The phase field's uniform onset function at undamaged principal ``stretches`` (..., 3): 2 W [I1 >= 0] - c_e -
     3 delta Gc / (8 l); damage starts where it turns positive (the paper's eq. (20) at a uniform state)."""
     zero = jnp.zeros(())
