@@ -39,9 +39,9 @@ def bar(radius: float, height: float, nx: int, ny: int, confined: bool, sense: f
                     reaction=Reaction(top, sign=1.0), kinematics="axisymmetric", energy_factor=1.0)
 
 
-def coefficients(criterion: str, base: Material, sts: float, ratio: float, h: float):
+def coefficients(criterion: str, base: Material, sts: float, ratio: float, h: float, gate: str = "i1"):
     if criterion == "tension":
-        return S.tension_coefficients(base, sts, h)
+        return S.tension_coefficients(base, sts, h, gate=gate)
     return S.coefficients(base, sts, ratio * sts, h)
 
 
@@ -61,6 +61,7 @@ def main() -> None:
     ap.add_argument("--sts", type=float, default=None, help="kPa; fixed instead of random")
     ap.add_argument("--ratio", type=float, default=1.5, help="s_hs / s_ts (dp)")
     ap.add_argument("--compress", action="store_true")
+    ap.add_argument("--gate", choices=("i1", "s1"), default="i1")
     ap.add_argument("--confined", action="store_true")
     ap.add_argument("--lam-min", type=float, default=0.35)
     ap.add_argument("--viscosity", type=float, default=0.0,
@@ -90,7 +91,7 @@ def main() -> None:
         lmax = 3 * a.gc / (16 * w_ts)
         l = (lmm * 1e-3 if lmm is not None else float(rng.uniform(0.03, 0.15)) * lmax)
         base = base._replace(l=l)
-        st = coefficients(a.criterion, base, a.plant * sts, a.ratio, h)
+        st = coefficients(a.criterion, base, a.plant * sts, a.ratio, h, a.gate)
         mat = base._replace(strength=st)
         if a.compress:
             lams = np.linspace(1.0, a.lam_min, 131)[1:]

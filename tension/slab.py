@@ -66,6 +66,7 @@ def main() -> None:
     ap.add_argument("--sts", type=float, default=0.0, help="kPa (0: AT2)")
     ap.add_argument("--ratio", type=float, default=1.5)
     ap.add_argument("--criterion", choices=("dp", "tension"), default="dp")
+    ap.add_argument("--gate", choices=("i1", "s1"), default="i1")
     ap.add_argument("--jm", type=float, default=0.0, help="Gent's Jm (0: neo-Hookean)")
     ap.add_argument("--mu", type=float, default=3660.0)
     ap.add_argument("--nu", type=float, default=0.45)
@@ -92,7 +93,7 @@ def main() -> None:
     mat = Material(mu=mu, kappa=kappa, gc=gc_in, l=l, k_res=1e-6, stretch_limit=10.0,
                    gent_jm=(a.jm if a.jm > 0 else None))
     if a.sts and a.criterion == "tension":
-        st = S.tension_coefficients(mat, a.sts * 1e3, h, delta_factor=a.delta_factor)
+        st = S.tension_coefficients(mat, a.sts * 1e3, h, delta_factor=a.delta_factor, gate=a.gate)
         mat = mat._replace(strength=st._replace(delta=st.delta * a.delta_plant))
     elif a.sts:
         st = S.coefficients(mat, a.sts * 1e3, a.ratio * a.sts * 1e3, h, delta_factor=a.delta_factor)

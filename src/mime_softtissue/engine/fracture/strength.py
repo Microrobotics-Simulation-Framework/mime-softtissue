@@ -59,6 +59,7 @@ class Tension(NamedTuple):
     s_ts: Any
     delta: Any
     beta: Any
+    gate: Any = 0.0  # 0: the elastic driving acts where I1 >= 0 (the papers'); 1: where max(S_i) > 1e-3 s_ts (crack opening)
 
 
 def _energy(stretches: jax.Array, dq: Any, mat: law.Material) -> jax.Array:
@@ -88,7 +89,8 @@ def driving(s: jax.Array, st: Strength | Tension) -> tuple[jax.Array, jax.Array]
     """(c_e, tension) at one point from the Biot stress's principal values ``s`` (3,): c_e = beta2 sqrt(J2) + beta1 I1
     (``Strength``, Drucker-Prager) or beta max(S_i) (``Tension``); tension: I1 >= 0."""
     if isinstance(st, Tension):
-        return st.beta * jnp.max(s), jnp.sum(s) >= 0.0
+        opening = jnp.max(s) > 1e-3 * st.s_ts
+        return st.beta * jnp.max(s), jnp.where(st.gate > 0.5, opening, jnp.sum(s) >= 0.0)
     I1 = jnp.sum(s)
     J2 = ((s[0] - s[1]) ** 2 + (s[1] - s[2]) ** 2 + (s[2] - s[0]) ** 2) / 6.0
     return st.beta2 * jnp.sqrt(jnp.maximum(J2, 0.0)) + st.beta1 * I1, I1 >= 0.0
@@ -180,14 +182,17 @@ def coefficients(mat: law.Material, s_ts: float, s_hs: float, h: float, gc: floa
 
 
 def tension_coefficients(mat: law.Material, s_ts: float, h: float, gc: float | None = None, l: float | None = None,
-                         delta_factor: float = 1.0) -> Tension:
+                         delta_factor: float = 1.0, gate: str = "i1") -> Tension:
     """The tension-only surface's numbers for the law ``mat``, the strength ``s_ts`` (Biot, Pa) and the cell size ``h``.
     The uniform onset 2 W [I1 >= 0] - c_e - 3 q (q = delta Gc / 8 l) with c_e = beta max(S_i) and
     beta = (2 W_ts - 3 q) / s_ts is zero exactly at uniaxial tension at s_ts, at any l; under all-compressive principal
     stresses it is -3 q + |beta| max(S_i) <= -3 q < 0, so compression never nucleates. delta is the 2024 paper's eq.
     (26) for the Drucker-Prager surface through the same uniaxial and hydrostatic points (s_hs = s_ts: a principal-
     stress criterion fails hydrostatic tension at s_ts), times ``delta_factor`` (a calibration against a pre-cracked
-    test). Raises where beta >= 0 (l past the length at which 3 q = 2 W_ts: the surface no longer drives by stress)."""
+    test). Raises where beta >= 0 (l past the length at which 3 q = 2 W_ts: the surface no longer drives by stress).
+    ``gate``: where the elastic energy drives the damage: "i1" where the Biot stress's trace is >= 0 (the papers' indicator),
+    "s1" where its largest principal value is tensile (above 1e-3 s_ts), so a crack opened by in-plane tension under a
+    large pressure (the shell over a needle's tip) can grow by Gc; uniaxial and confined compression stay excluded."""
     if mat.fibre is not None:
         raise ValueError("the strength surface reads an isotropic law (no fibre families)")
     gc = float(mat.gc if gc is None else gc)
@@ -200,7 +205,9 @@ def tension_coefficients(mat: law.Material, s_ts: float, h: float, gc: float | N
     beta = (2.0 * w_ts - 3.0 * q) / s_ts
     if not beta < 0.0:
         raise ValueError(f"l = {l} is past the tension-only surface's length (3 q <= 2 W_ts; beta = {beta})")
-    return Tension(s_ts=float(s_ts), delta=float(delta), beta=float(beta))
+    if gate not in ("i1", "s1"):
+        raise ValueError(f"gate is 'i1' or 's1', not {gate!r}")
+    return Tension(s_ts=float(s_ts), delta=float(delta), beta=float(beta), gate=1.0 if gate == "s1" else 0.0)
 
 
 def homogeneous_onset(mat: law.Material, st: Strength | Tension, stretches: Any) -> Any:

@@ -64,6 +64,7 @@ def main() -> None:
     ap.add_argument("--stop-drop", type=float, default=0.0, help="stop once the force falls this share below its max")
     ap.add_argument("--sts", type=float, default=0.0, help="kPa: the uniaxial tensile strength (Biot)")
     ap.add_argument("--ratio", type=float, default=1.5, help="s_hs / s_ts (Drucker-Prager only)")
+    ap.add_argument("--gate", choices=("i1", "s1"), default="i1", help="tension: where the elastic energy drives damage")
     ap.add_argument("--criterion", choices=("dp", "tension"), default="dp",
                     help="dp: Drucker-Prager (strength.Strength); tension: the largest principal stress (strength.Tension)")
     ap.add_argument("--delta-factor", type=float, default=1.0)
@@ -93,7 +94,7 @@ def main() -> None:
                    gent_jm=(a.jm if a.jm > 0 else None))
     if a.sts and a.criterion == "tension":
         mat = mat._replace(strength=strength_surface.tension_coefficients(mat, a.sts * 1e3, h,
-                                                                          delta_factor=a.delta_factor))
+                                                                          delta_factor=a.delta_factor, gate=a.gate))
         st = mat.strength
         q = st.delta * a.gc / (8.0 * l)
         w_ts = 0.5 * (st.beta * st.s_ts + 3.0 * q)

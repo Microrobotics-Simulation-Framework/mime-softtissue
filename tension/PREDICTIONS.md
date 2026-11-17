@@ -93,3 +93,18 @@ pass line unchanged: 12 of 12 planted caught, 12 of 12 unplanted within 3 %. c1'
 viscosity: with no elastic driving the damage system then has no zero-order term (singular), and the Drucker-Prager bar
 "nucleated" at stretch 0.84 under 2 kPa, an artefact; the tension-only bar lost its homogeneous state at 0.47 (an elastic
 instability, ur no longer uniform, before any damage). Rerun locally with the needle's viscosity (0.1 Gc/l) to stretch 0.5.
+
+## Round 2 at its first upload, and round 2b (a second gate), before 2b's arms (2026-11-17 10:57 CET)
+Read at 30 min (d/R 2-4.5): damage starts on the axis under the apex where s1 reaches 1.04-1.07 s_ts (P2.1 held at R 1
+and 2; R 0.5 later), but it stays partial (d_max 0.05-0.22) and the force keeps rising: there I1 is -30 to -100 G', and
+the papers' indicator [I1 >= 0] switches the elastic driving off, so only the strength term acts and damage stops where the
+degraded s1 falls back to s_ts. A crack whose plane is normal to s1 opens under s1 whatever the pressure along its faces.
+Round 2b tests that reading with a second gate, Tension(gate="s1"): the elastic energy drives damage where the largest
+principal Biot stress is tensile (> 1e-3 s_ts); uniaxial and confined compression stay excluded (checked on the bars).
+Arms: R 4 at 2.5 and 3.5 G', R 1 and R 0.5 at 3.0 G' (l 0.1, h 0.05).
+- P2b.1 Nucleation on the apex earlier than with the I1 gate: at s1 about 0.8-0.9 s_ts (the elastic term 2W, W near the
+  Gent lock about 10 G', now counts against 3q).
+- P2b.2 At R 4 a >= 30 % drop within 5 steps of nucleation; Pc/(G' R^2) about 22 (2.5 G') and 30 (3.5 G'); s_ts* about
+  2.9 G'.
+- P2b.3 At R 0.5 the first crack is arrested and puncture comes deeper (even odds); R 1 between.
+- P2b.4 The bars: tension-only with the s1 gate does not damage in uniaxial (to 0.5) or confined (to 0.8) compression.
