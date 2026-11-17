@@ -72,6 +72,8 @@ def main() -> None:
     ap.add_argument("--cut", type=int, default=0,
                     help="halve a step up to this many times where it does not converge (staggered or Newton cap, or "
                          "a non-finite force), from the last accepted state")
+    ap.add_argument("--newton-stall", type=float, default=0.0,
+                    help="Newton's stagnation stop, in units of h (solvers.newton's stall_step; 0 off)")
     ap.add_argument("--no-lag", action="store_true",
                     help="no lagged pressure (the friction is zero, so the lag only adds staggered iterations)")
     a = ap.parse_args()
@@ -104,7 +106,7 @@ def main() -> None:
                    slip=1e-2 * h, always_sliding=not a.no_lag)
     solver = Solver(replace(block, contact=c), a.mode, tol_d=1e-5, viscosity=0.1 * a.gc / l, newton_regularise=True,
                     lag_relaxation=0.5, volumetric=a.volumetric, max_staggered=a.max_staggered,
-                    max_newton=a.max_newton)
+                    max_newton=a.max_newton, newton_stall=a.newton_stall * h)
     info = dict(nx=g.nx, ny=g.ny, n_el=g.n_elements, dofs=2 * (g.nx + 1) * (g.ny + 1), block_m=2 * (g.ny + 1),
                 blocks=g.nx + 1, nproc=os.cpu_count(), rss_after_build_mb=rss_mb())
     print(json.dumps(info), flush=True)

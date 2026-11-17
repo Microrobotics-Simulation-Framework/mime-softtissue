@@ -84,3 +84,18 @@ committed fit, set at another modulus: a placeholder, not a calibration), elasti
 - **P1c.2** s_ts 18.3 kPa nucleates at 0.80-1.0 mm, Fc 7.5-9.5 mN (Fc/(mu R^2) 8-10.5) at both l, off the first axis element.
 - **P1c.3** The Gent placeholder carries 5-40 % more force than neo-Hookean at 3-6 mm, and its seq at a given force is lower
   than neo-Hookean's at the same force.
+
+### Round 1b status at 07:52 CET (`date`; first peek of run 44031188892), read before round 1d was written
+- The ramped start converges at every l (P1b.1's first half held). **At h 12.5 and 10 um an increment of 4 h costs 56-100
+  Newton (113-703 s); 1-2 h costs 6-9 Newton (10-40 s);** a failed attempt (a cap reached) costs 160-560 s before the cut.
+  The step that grows back to 0.05 mm after a cut fails again, so the fine arms alternate: c20b reached 0.10 mm in 23 min,
+  c25b's fifth step had run 20 min. Peak RSS: 1.22 / 2.47 / 3.51 GB at l 50 / 25 / 20 (P1b.2 held).
+- c50b repeats round 1 to 1.30 mm (nucleation on the snapped axis element, 11.2 mN).
+
+## Round 1d: the fine grids at an increment of 2 h with Newton's stagnation stop (written 2026-11-17 07:58 CET, before any arm ran)
+Arms (gauss, no lag, `--step` 2 h, `--ramp 2`, `--cut 4`, `--newton-stall 1e-6` (h), `--max-newton 60`, `--max-staggered 40`):
+strength s_ts 18.3 kPa at l 25 and 20 um (`c25d`, `c20d`); elastic twin at l 20 um (`e20d`).
+- **P1d.1** Newton a step before nucleation 5-15; s/step l 25: 10-30 s, l 20: 25-60 s; few or no cuts before nucleation.
+- **P1d.2** Wall to 6 mm (the data's dc at R 0.5), elastic at l 20: 2.5-5 h (300 steps).
+- **P1d.3** The strength arms nucleate at 0.8-1.0 mm, Fc 7.5-9.5 mN, off the first axis element (as P1c.2).
+- **P1d.4** The nucleation step reaches a drop of at least 30 % within 0.3 mm with at most 4 cuts at both l (lean 0.5).
