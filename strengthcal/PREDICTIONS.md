@@ -35,3 +35,31 @@ punch, G' 6.2 kPa, R 0.359 mm, elastic, to 7 mm (19.5 R): fillet 0.02 mm at h 0.
   flat punch puncture as deep as d = 13 R cannot be represented faithfully at l 20 um with this law.
 - **P1.8** That seq differs by more than 20 % between fillet 0.02 and 0.07 mm at the same depth, and by more than 10 %
   between h 0.025 and 0.0125 at fillet 0.02 (the corner sets it).
+
+### Round 1 status at 07:22 CET (`date`; first peek of run 44027009704, cancelled at 07:25), read before round 1b was written
+- **The first load step never converged at l 25 and 20 um** (h 12.5 and 10 um): 0.05 mm of sudden penetration is 4-5 cells
+  under a stiff nodal penalty; no row in 28 min. At l 50 um it converged after 3 staggered passes (67 Newton).
+- **The elastic twins and flat-punch arms are invalid:** without the lag an elastic step is one Newton solve, capped at 40;
+  the first step capped and every later one diverged (J below 0, forces of newtons). No reading is taken from them.
+- **c50 (no lag) against c50-lag:** forces equal at every step to 1.30 mm (the lag changes no fixed point, P1.2's second half
+  held); the lag costs 1.4-2.5 times the step (P1.2 held). No-lag median 9.7 s a step (P1.1 held at l 50), RSS 1.23 GB.
+- **Nucleation at 1.20-1.30 mm, on the axis element under the apex** (the strength fields' maximum there from 0.85 mm; J there
+  dips 0.85 to 0.50 and back to 0.84 between 1.15 and 1.30 mm), at 11.2 mN; then c50-lag went NaN at 1.35 mm (590 Newton in one
+  step) and c50 did not finish the 1.35 mm step in over 20 min.
+
+## Round 1b: the same costs with a ramped start and step cutting (written 2026-11-17 07:27 CET, `date`, before any arm ran)
+
+Driver: `--ramp 4` (the first step is 1/16 of the step, doubling back), `--cut 5` (a step whose staggered loop or a Newton
+solve reaches its cap, or whose force is not finite, is retried from the last accepted state at half the increment, down to
+1/32 of the step after the ramp), `--max-newton 60` and `--max-staggered 40` for the strength arms, `--max-newton 100` for
+the elastic ones; no lag throughout. Arms as round 1 (sphere R 0.5, s_ts 5 G' = 18.3 kPa at G' 3.66; elastic twins; flat
+punch G' 6.2, R 0.359, elastic, fillet 0.02 at h 0.025, 0.0125, 0.01 and fillet 0.07 at h 0.0125).
+
+- **P1b.1** The ramped first step converges at every l. Median s/step (no lag, 4-vCPU runner) before nucleation: l 50: 5-15 s;
+  l 25: 20-60 s; l 20: 40-120 s.
+- **P1b.2** Peak RSS: l 50 1.1-1.5 GB; l 25 2-3 GB; l 20 3-4.5 GB.
+- **P1b.3** The strength arms nucleate at 1.1-1.4 mm on the axis element under the apex at every l; with the cut, the arm either
+  passes to a drop of at least 30 % within 0.5 mm or ends at the cut's floor or NaN (lean: ends, 0.6).
+- **P1b.4** The elastic twins reach 6.5 mm with finite forces; the axis element under the apex dips below J 0.6 between 1.0 and
+  1.4 mm on every grid, i.e. the dip does not shrink with h (lean 0.6).
+- **P1b.5** Flat punch: P1.6-P1.8 restated for these arms.

@@ -67,6 +67,11 @@ def main() -> None:
     ap.add_argument("--max-wall", type=float, default=0.0, help="s: stop after this wall time (0: none)")
     ap.add_argument("--fields-at", type=float, nargs="*", default=[], help="mm: depths whose fields are saved")
     ap.add_argument("--max-staggered", type=int, default=400)
+    ap.add_argument("--max-newton", type=int, default=40)
+    ap.add_argument("--ramp", type=int, default=0, help="start with this many halvings of the step, doubling back")
+    ap.add_argument("--cut", type=int, default=0,
+                    help="halve a step up to this many times where it does not converge (staggered or Newton cap, or "
+                         "a non-finite force), from the last accepted state")
     ap.add_argument("--no-lag", action="store_true",
                     help="no lagged pressure (the friction is zero, so the lag only adds staggered iterations)")
     a = ap.parse_args()
@@ -98,7 +103,8 @@ def main() -> None:
     c = ct.Contact(indenter=tip, stiffness=100.0 * young / h, weights=w, active=np.ones_like(w), friction=0.0,
                    slip=1e-2 * h, always_sliding=not a.no_lag)
     solver = Solver(replace(block, contact=c), a.mode, tol_d=1e-5, viscosity=0.1 * a.gc / l, newton_regularise=True,
-                    lag_relaxation=0.5, volumetric=a.volumetric, max_staggered=a.max_staggered)
+                    lag_relaxation=0.5, volumetric=a.volumetric, max_staggered=a.max_staggered,
+                    max_newton=a.max_newton)
     info = dict(nx=g.nx, ny=g.ny, n_el=g.n_elements, dofs=2 * (g.nx + 1) * (g.ny + 1), block_m=2 * (g.ny + 1),
                 blocks=g.nx + 1, nproc=os.cpu_count(), rss_after_build_mb=rss_mb())
     print(json.dumps(info), flush=True)
@@ -138,7 +144,6 @@ def main() -> None:
     centres = np.stack([np.asarray(solver.x0) + 0.5 * np.asarray(solver.dx),
                         np.asarray(g.y[:-1][g.element_columns()[1]]) + 0.5 * np.asarray(solver.dy)], axis=1)
     state = solver.initial()
-    n = int(round(a.depth / a.step))
     rows: list[dict] = []
     t0 = time.perf_counter()
     fmax = 0.0
@@ -150,18 +155,34 @@ def main() -> None:
                            strength=None if mat.strength is None else mat.strength._asdict()), fh, indent=1)
 
     stop = "depth"
-    for k in range(1, n + 1):
-        depth = k * a.step * mm
+    done = 0.0  # mm, the last accepted depth
+    level = a.ramp  # the step is a.step / 2**level
+    k = 0
+    while done < a.depth - 1e-9:
+        k += 1
         ts = time.perf_counter()
-        state, out = solver.step(state, jnp.asarray(depth), mat)
-        f = float(out.force)
+        retries = 0
+        while True:
+            inc = min(a.step / 2 ** level, a.depth - done)
+            trial, out = solver.step(state, jnp.asarray((done + inc) * mm), mat)
+            f = float(out.force)
+            bad = (not np.isfinite(f)) or (a.cut and (int(out.iterations) >= a.max_staggered or int(out.newton_capped) > 0))
+            if bad and a.cut and level < a.ramp + a.cut:
+                level += 1
+                retries += 1
+                continue
+            break
+        state = trial
+        done += inc
+        depth = done * mm
         step_s = time.perf_counter() - ts
         x, lmax, Jd, dp, seq, I1, onset, dq = (np.asarray(v) for v in fields_j(state.u, state.d, state.history))
         fmax = max(fmax, f)
         ke = lambda arr: [float(v) for v in centres[int(np.argmax(arr.max(axis=1)))] / mm]
         row = dict(depth_mm=depth / mm, force_N=f, crack_area_mm2=float(out.crack_energy) / float(a.gc) * 1e6,
                    staggered=int(out.iterations), newton=int(out.newton), capped=int(out.newton_capped),
-                   step_s=step_s, wall_s=time.perf_counter() - t0, rss_mb=rss_mb(),
+                   step_s=step_s, wall_s=time.perf_counter() - t0, rss_mb=rss_mb(), inc_mm=inc, retries=retries,
+                   accepted_bad=bool(bad),
                    x_max=float(x.max()), lmax=float(lmax.max()), J_min=float(Jd.min()), d_max=float(dq.max()),
                    d_at=ke(dq))
         if mat.strength is not None:
@@ -183,6 +204,11 @@ def main() -> None:
         if a.max_wall and time.perf_counter() - t0 > a.max_wall:
             stop = "max_wall"
             break
+        if not np.isfinite(f):
+            stop = "nan"
+            break
+        if level > 0 and not bad and retries == 0:
+            level -= 1  # grow back towards the full step after a converged one
     write(stop)
 
 
