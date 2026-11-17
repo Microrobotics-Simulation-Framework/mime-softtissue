@@ -99,3 +99,26 @@ strength s_ts 18.3 kPa at l 25 and 20 um (`c25d`, `c20d`); elastic twin at l 20 
 - **P1d.2** Wall to 6 mm (the data's dc at R 0.5), elastic at l 20: 2.5-5 h (300 steps).
 - **P1d.3** The strength arms nucleate at 0.8-1.0 mm, Fc 7.5-9.5 mN, off the first axis element (as P1c.2).
 - **P1d.4** The nucleation step reaches a drop of at least 30 % within 0.3 mm with at most 4 cuts at both l (lean 0.5).
+
+### Round 1d status at 08:20 CET (`date`; first peek of run 44034706104), read before round 2 was written
+- **At 2 h with the stagnation stop the fine grids converge in 5-9 Newton a step** (c25d, c20d, e20d; P1d.1 held): 13.7 s a
+  step at l 25 (2.3 s a Newton), 15-18 s (2.6 s) and 30 s (4.9 s, a slower CPU) at l 20; no cuts; J stays above 0.95 (the
+  collapsed surface elements of rounds 1b and 1c came with unconverged steps). Rounds 1b and 1c cancelled 08:21 (superseded).
+
+## Round 2: the flat punch's need and a calibration attempt at l 20 um; the sphere's radius sweep at l 50 um (written 2026-11-17 08:23 CET, `date`, before any arm ran)
+All arms: full integration, no lag, increment 2 h, `--ramp 2 --cut 4 --newton-stall 1e-6 --max-newton 60 --max-staggered 40`.
+- Flat punch R 0.359 mm, fillet 0.02 mm, G' 6.2 kPa, to 7 mm: elastic at h 0.01 and 0.025, fillet 0.07 at h 0.01, Gent
+  placeholder (Jm 9.3) at h 0.01; strength at l 20 um, s_ts 4, 6, 8, 20, 100 G'. Held-out gel G' 10 kPa, R 0.358, s_ts 6 and
+  20 G' (the same s_ts/G' scaling; read off without refitting).
+- Sphere at l 50 um, s_ts 5 G' (18.3 kPa at G' 3.66): R 0.5, 1, 2, 4 (fine zones 1.0 x 2.0, 1.5 x 2.0, 2.5 x 3.0, 4.5 x 5.0 mm);
+  R 1 at l 20 um.
+- **P2.1** Flat elastic, neo-Hookean: P/(G'R^2) at d/R 13 is 110-160; the largest equivalent strength there is at least 300 G'
+  and moves by more than 20 % between h 0.025 and 0.01, and between fillets 0.02 and 0.07.
+- **P2.2** The Gent placeholder reaches P/(G'R^2) 100-150 at d/R 8-10.
+- **P2.3** Flat strength at l 20: s_ts 4, 6, 8 G' puncture (a drop of at least 30 % with crack) at Pc/(G'R^2) <= 15; s_ts 20 G'
+  at <= 40; s_ts 100 G' does not puncture by 7 mm or does at <= 80. So no s_ts inside the ceiling (6-8 G') calibrates (lean 0.85).
+- **P2.4** The held-out gel at the same s_ts/G' gives Pc/(G'R^2) within 25 % of the calibration gel's at each s_ts.
+- **P2.5** Sphere sweep at l 50: Fc/(mu R^2) 5-15 at all four radii, local slope d ln Fc / d ln R 1.6-2.2 throughout: strength-
+  governed at every radius, no stretch of Fc proportional to R.
+- **P2.6** Sphere R 1 at l 20: Fc within 25 % of l 50's.
+- **P2.7** Cost: flat punch at l 20 5-10 s a step (350 steps, 0.5-1 h before nucleation); sphere R 4 at l 50 2-4 h.
