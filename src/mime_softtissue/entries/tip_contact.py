@@ -58,8 +58,10 @@ class TipContactNode(MimeNode):
 
     def made(self, p: Mapping[str, Any], pose: Array, force: Array) -> tuple[Array, Array]:
         dtype = pose.dtype
+        region = self.region(p, dtype)
+        region += [jnp.zeros((), dtype=dtype)] * (N_REGION - len(region))  # a shape of fewer parameters, padded
         vector = jnp.concatenate([pose, jnp.asarray(p["hull_centre"], dtype=dtype),
-                                  jnp.asarray(p["hull_rotation"], dtype=dtype), jnp.stack(self.region(p, dtype)),
+                                  jnp.asarray(p["hull_rotation"], dtype=dtype), jnp.stack(region),
                                   jnp.stack([jnp.asarray(p["friction"], dtype=dtype),
                                              jnp.asarray(p["adhesion"], dtype=dtype),
                                              jnp.asarray(p["stiffness"], dtype=dtype)])])
@@ -127,7 +129,7 @@ class TipContact(Interaction):
         shape = kind.region_shapes[region_name]
         region = kind.region_parameters(region_name, hull.settings)
         names = shape_named(shape).parameter_names
-        if len(names) != N_REGION:
+        if len(names) > N_REGION:
             raise ValueError(f"the tip's shape {shape!r} has {len(names)} parameters; the block's interface holds "
                              f"{N_REGION} (an interface's shape is fixed when it is defined)")
         node = b.add_response_node(TipContactNode(

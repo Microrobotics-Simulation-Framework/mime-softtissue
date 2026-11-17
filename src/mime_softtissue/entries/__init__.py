@@ -5,6 +5,7 @@ namespace `softtissue`, so importing it must register every entry. One module pe
 `mime_softtissue.engine`, which imports no `mime`.
 """
 
+from .crack_size import CrackSize
 from .gel_block import GelBlock
 from .grip_force import GripForce
 from .headed_tip import HeadedTip
@@ -12,5 +13,7 @@ from .notched_strip import NotchedStrip
 from .replayed_tear import ReplayedTear
 from .tip_contact import Servo, TipContact
 from .tip_force import TipForce
+from .tips import ConeTip, PunchTip
 
-__all__ = ["GelBlock", "GripForce", "HeadedTip", "NotchedStrip", "ReplayedTear", "Servo", "TipContact", "TipForce"]
+__all__ = ["ConeTip", "CrackSize", "GelBlock", "GripForce", "HeadedTip", "NotchedStrip", "PunchTip", "ReplayedTear", "Servo",
+           "TipContact", "TipForce"]
