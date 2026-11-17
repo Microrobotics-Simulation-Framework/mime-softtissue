@@ -63,3 +63,24 @@ punch G' 6.2, R 0.359, elastic, fillet 0.02 at h 0.025, 0.0125, 0.01 and fillet 
 - **P1b.4** The elastic twins reach 6.5 mm with finite forces; the axis element under the apex dips below J 0.6 between 1.0 and
   1.4 mm on every grid, i.e. the dip does not shrink with h (lean 0.6).
 - **P1b.5** Flat punch: P1.6-P1.8 restated for these arms.
+
+### A local control read before round 1c (07:36 CET, `date`): the axis element under the apex snaps under mean dilatation
+Elastic sphere R 0.5, local, h 0.1 and 0.05 (engine-direct, ramp, no lag), both volumetric treatments, to 1.8 mm:
+- **mean:** the first element on the axis under the apex snaps: J there falls from 0.74-0.77 to 0.32-0.42 within one step, at
+  0.95 mm (h 0.1) and 1.10 mm (h 0.05) (and 1.20 mm at h 0.025 in round 1's c50); the strength fields' maximum sits on it from
+  then (seq 280-3100 kPa by 1.8 mm). The snap moves with h: a discretisation artefact of the element on the axis.
+- **gauss:** no snap; J falls smoothly (0.92 to 0.58 at h 0.05 by 1.8 mm); the strength fields' maximum lies off the axis under
+  the apex (r 0.175-0.25, 0.2-0.3 mm below the top) to about 1.45 mm, then on the axis 0.5-0.7 mm below; seq agrees between
+  h 0.1 and 0.05 to 1-3 % at 0.85-1.3 mm (17 / 28 / 87 kPa at 0.85 / 1.0 / 1.3 mm).
+- So round 1b's strength arms (mean) will nucleate on the artefact; their cost still reads, their forces do not.
+
+## Round 1c: full integration, and a stiffening placeholder (written 2026-11-17 07:38 CET, `date`, before any arm ran)
+Arms (gauss, no lag, ramp 4, cut 5): strength s_ts 18.3 kPa at l 50 and 20 um (`c50g`, `c20g`); elastic twins h 0.025 and
+0.01 (`e50g`, `e20g`); flat punch elastic h 0.0125 fillet 0.02 (`fe-f02-h125g`); and a placeholder Gent law, Jm 9.3 (GENT's
+committed fit, set at another modulus: a placeholder, not a calibration), elastic sphere h 0.025 and flat punch h 0.0125
+(`e50g-gent`, `fe-f02-h125g-gent`).
+- **P1c.1** gauss elastic: J on the axis element under the apex stays above 0.55 to 2 mm at h 0.025 and 0.01; no force drop
+  above 2 % to 6.5 mm.
+- **P1c.2** s_ts 18.3 kPa nucleates at 0.80-1.0 mm, Fc 7.5-9.5 mN (Fc/(mu R^2) 8-10.5) at both l, off the first axis element.
+- **P1c.3** The Gent placeholder carries 5-40 % more force than neo-Hookean at 3-6 mm, and its seq at a given force is lower
+  than neo-Hookean's at the same force.
