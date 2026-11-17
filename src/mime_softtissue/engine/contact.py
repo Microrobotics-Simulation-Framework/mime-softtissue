@@ -10,7 +10,14 @@ The penalty energy is
 
     E_c = sum over nodes of w_n (k / 2) <-phi(X_n + u_n)>^2,
 
-``w_n`` a node's ring area (``axisymmetric.nodal_ring_area``), ``k`` a stiffness in Pa/m. Friction is the step's
+``w_n`` a node's ring area (``axisymmetric.nodal_ring_area``), ``k`` a stiffness in Pa/m. With ``edge_points`` = n > 0
+the penalty is evaluated instead at n Gauss points on each edge of the top face (the boundary the indenter presses),
+against the same exact signed distance:
+
+    E_c = sum over top edges, Gauss points g of w_g (k / 2) <-phi(x_g)>^2,     x_g the deformed edge's point,
+    w_g = pi dR_e W_g R_g   (the edge's reference ring area, 2 pi R dR, by n-point Gauss: exact for n >= 1),
+
+so that the tip cannot pass between two surface nodes (frictionless only). Friction is the step's
 pseudo-potential with the normal pressure and the normal lagged (taken from the last iterate):
 
     D = sum over nodes of (mu_f p_n + tau_a chi_n) w_n (sqrt(|s_t|^2 + eps^2) - eps),
@@ -63,6 +70,12 @@ class Contact:
     distance: Callable[..., Any] | None = None  # (indenter, R, Z, depth) -> phi; None: signed_distance
     #: The step lags a pressure whatever the friction's value (a caller whose friction is traced says so here).
     always_sliding: bool = False
+    #: Gauss points on each edge of the top face (the penalty's integration points); 0: the nodal penalty.
+    edge_points: int = 0
+
+    def __post_init__(self) -> None:
+        if self.edge_points and (_nonzero(self.friction) or _nonzero(self.adhesion)):
+            raise ValueError("the edge penalty (edge_points > 0) is frictionless: friction and adhesion 0")
 
     @property
     def sliding(self) -> bool:
@@ -156,10 +169,57 @@ def _positions(X: jax.Array, u: jax.Array) -> tuple[jax.Array, jax.Array]:
     return x[..., 0], x[..., 1]
 
 
+def edge_quadrature(c: Contact, X: jax.Array) -> tuple[jax.Array, jax.Array]:
+    """The top face's edge quadrature: the Gauss points' positions along each edge (n,) in [0, 1] and their reference
+    ring-area weights (n_edges, n), an edge counted where both its nodes are active."""
+    xi, wg = np.polynomial.legendre.leggauss(c.edge_points)
+    s = jnp.asarray(0.5 * (1.0 + xi))
+    R0 = X[:, -1, 0]
+    dR = R0[1:] - R0[:-1]
+    Rg = R0[:-1, None] + dR[:, None] * s[None, :]
+    on = jnp.asarray(c.active[:-1, -1] * c.active[1:, -1])
+    return s, jnp.pi * (dR * on)[:, None] * jnp.asarray(wg)[None, :] * Rg
+
+
+def _edge_energy(c: Contact, xa: jax.Array, xb: jax.Array, s: jax.Array, w: jax.Array,
+                 depth: jax.Array) -> jax.Array:
+    """The penalty of one edge from its deformed end points ``xa``, ``xb`` (2,), its Gauss points ``s`` and weights."""
+    p = xa[None, :] * (1.0 - s)[:, None] + xb[None, :] * s[:, None]
+    gap = jnp.minimum(c.phi(p[:, 0], p[:, 1], depth), 0.0)
+    return 0.5 * c.stiffness * jnp.sum(w * gap * gap)
+
+
 def penalty_energy(c: Contact, X: jax.Array, u: jax.Array, depth: jax.Array) -> jax.Array:
+    if c.edge_points:
+        s, w = edge_quadrature(c, X)
+        top = X[:, -1] + u[:, -1]
+        return jnp.sum(jax.vmap(lambda xa, xb, we: _edge_energy(c, xa, xb, s, we, depth))(top[:-1], top[1:], w))
     phi = c.phi(*_positions(X, u), depth)
     gap = jnp.minimum(phi, 0.0)
     return 0.5 * c.stiffness * jnp.sum(jnp.asarray(c.active * c.weights) * gap * gap)
+
+
+#: The top edge's degrees of freedom in its element's local numbering: the element's nodes (i, j), (i+1, j),
+#: (i+1, j+1), (i, j+1); the edge's (R_a, Z_a, R_b, Z_b) are the nodes (i, j+1) and (i+1, j+1).
+_EDGE_DOFS = np.array([6, 7, 4, 5])
+
+
+def edge_element_hessians(c: Contact, X: jax.Array, u: jax.Array, depth: jax.Array, ny: int) -> jax.Array:
+    """The edge penalty's Hessian as element matrices (n_el, 8, 8), zero but in the top row's elements, to be added to
+    the solid's before assembly (an edge couples its two nodes, which the nodal blocks cannot carry)."""
+    s, w = edge_quadrature(c, X)
+    top0, ut = X[:, -1], u[:, -1]
+
+    def one(ua, ub, xa, xb, we):
+        def e(v):
+            return _edge_energy(c, xa + v[:2], xb + v[2:], s, we, depth)
+        return jax.hessian(e)(jnp.concatenate([ua, ub]))
+
+    He = jax.vmap(one)(ut[:-1], ut[1:], top0[:-1], top0[1:], w)  # (nx, 4, 4)
+    nx = He.shape[0]
+    elements = np.arange(nx) * ny + (ny - 1)
+    out = jnp.zeros((nx * ny, 8, 8), dtype=u.dtype)
+    return out.at[elements[:, None, None], _EDGE_DOFS[None, :, None], _EDGE_DOFS[None, None, :]].add(He)
 
 
 def shear_strength(c: Contact, pressure: jax.Array) -> jax.Array:
@@ -198,13 +258,14 @@ def pressure_and_normal(c: Contact, X: jax.Array, u: jax.Array, depth: jax.Array
 
 
 def nodal_hessian(c: Contact, X: jax.Array, u: jax.Array, depth: jax.Array, lag: Lag) -> jax.Array:
-    """The contact energy's 2 x 2 Hessian at each node (it couples no two nodes): (nx+1, ny+1, 2, 2)."""
+    """The contact energy's 2 x 2 Hessian at each node (it couples no two nodes): (nx+1, ny+1, 2, 2). With
+    ``edge_points`` the penalty is the edges' (``edge_element_hessians``) and only the friction is nodal here."""
     w = jnp.asarray(c.active * c.weights)
 
     def node_energy(un, Xn, wn, pn, nn, usn):
         phi = c.phi(Xn[0] + un[0], Xn[1] + un[1], depth)
         gap = jnp.minimum(phi, 0.0)
-        e = 0.5 * c.stiffness * wn * gap * gap
+        e = 0.5 * c.stiffness * wn * gap * gap if not c.edge_points else jnp.zeros((), un.dtype)
         if c.sliding and lag is not None:
             rel = (un - usn).at[1].add(indenter_step(depth, lag.depth_start))
             st = rel - jnp.sum(rel * nn) * nn
