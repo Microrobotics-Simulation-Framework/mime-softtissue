@@ -40,6 +40,26 @@ def grid_coords(size: float, h: float, fine: float, cap: float) -> np.ndarray:
     return graded_rows(size, h, fine, 1.25, cap / h)
 
 
+def axis_columns(size: float, h: float, fine: float, cap: float, axis_h: float, axis_zone: float) -> np.ndarray:
+    """Columns uniform ``axis_h`` within ``axis_zone`` of the axis, growing by 1.25 to ``h``, uniform ``h`` to ``fine``,
+    then growing to ``cap``; the last stretch rescaled to land on ``size``."""
+    pts = list(np.arange(0.0, axis_zone + 0.5 * axis_h, axis_h))
+    s = axis_h
+    while s < h:
+        s = min(s * 1.25, h)
+        pts.append(pts[-1] + s)
+    while pts[-1] < fine - 1e-12:
+        pts.append(pts[-1] + h)
+    start = len(pts) - 1
+    while pts[-1] < size - 1e-12:
+        s = min(s * 1.25, cap)
+        pts.append(pts[-1] + s)
+    a = np.asarray(pts)
+    tail = a[start:]
+    a[start:] = tail[0] + (tail - tail[0]) * (size - tail[0]) / (tail[-1] - tail[0])
+    return a
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("out")
@@ -60,6 +80,10 @@ def main() -> None:
     ap.add_argument("--kfac", type=float, default=100.0, help="penalty stiffness k = kfac E / h")
     ap.add_argument("--max-newton", type=int, default=60)
     ap.add_argument("--plant-radius", type=float, default=1.0, help="the contact's tip radius times this (a plant)")
+    ap.add_argument("--axis-h", type=float, default=0.0, help="mm: the column spacing near the axis (0: h)")
+    ap.add_argument("--axis-zone", type=float, default=0.0, help="mm: how far from the axis --axis-h holds")
+    ap.add_argument("--fillet", type=float, default=1.0, help="the tip's edge radius over R (1: the sphere-tipped needle; "
+                    "small: a flat punch)")
     ap.add_argument("--save-every", type=float, default=0.5, help="mm between saved fields")
     ap.add_argument("--stop-after", type=float, default=0.0, help="minutes: stop (state saved) once past this")
     ap.add_argument("--resume", default="", help="a previous run's OUT.json: continue from its saved state")
@@ -70,7 +94,8 @@ def main() -> None:
     mu, kappa = shear_and_bulk(young, a.nu)
     mat = Material(mu=mu, kappa=kappa, gc=1.0, l=1.0, k_res=1e-6, stretch_limit=2.0,
                    gent_jm=(a.jm if a.jm > 0 else None))
-    x = grid_coords(a.block * mm, h, a.fine_r * mm, a.cap * mm)
+    x = (axis_columns(a.block * mm, h, a.fine_r * mm, a.cap * mm, a.axis_h * mm, a.axis_zone * mm) if a.axis_h > 0
+         else grid_coords(a.block * mm, h, a.fine_r * mm, a.cap * mm))
     y = a.block * mm - grid_coords(a.block * mm, h, a.fine_z * mm, a.cap * mm)[::-1]
     x[0], x[-1], y[0], y[-1] = 0.0, a.block * mm, 0.0, a.block * mm
     block = axisymmetric_block(radius=a.block * mm, height=a.block * mm, h=h, fine_r=0.0, fine_z=0.0,
@@ -78,8 +103,8 @@ def main() -> None:
     g = block.grid
     w = np.broadcast_to(nodal_ring_area(g.x)[:, None], (g.nx + 1, g.ny + 1)).copy()
     rc = R * a.plant_radius
-    tip = ct.Indenter("punch", radius=rc, fillet=rc, top=a.block * mm)
-    true_tip = ct.Indenter("punch", radius=R, fillet=R, top=a.block * mm)
+    tip = ct.Indenter("punch", radius=rc, fillet=rc * a.fillet, top=a.block * mm)
+    true_tip = ct.Indenter("punch", radius=R, fillet=R * a.fillet, top=a.block * mm)
     extra = {} if a.contact == "nodal" else {"edge_points": a.edge_points}
     c = ct.Contact(indenter=tip, stiffness=a.kfac * young / h, weights=w, active=np.ones_like(w), friction=0.0,
                    **extra)
