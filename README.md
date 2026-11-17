@@ -56,7 +56,7 @@ axis today). `python examples/tip_retrieval.py` presses a headed tip into a gel 
 harness: `python examples/fit_synthetic/make_example.py OUT && python -m mime_softtissue.fit OUT/manifest.toml --out RESULT`
 (the column spec is `docs/fit_spec.md`).
 
-**5. Cite it.** `CITATION.cff`, and Tutwiler et al. 2020 for the benchmark.
+**5. Cite it.** `CITATION.cff`, and Tutwiler et al. 2020 for the benchmark. Third-party data, its sources and licences: [`DATA_NOTICE.md`](DATA_NOTICE.md).
 
 ## Names
 
