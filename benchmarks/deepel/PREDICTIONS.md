@@ -108,3 +108,14 @@ Arms: flat punch, edge 0.2 R, R 0.5, h 0.05, edge contact 1000 E/h, Gent Jm 3, 5
 - **P5.1** The flat-punch least-squares Jm over d/R 2-12 lies in 4.5-7, above the sphere's 3.7 (the sphere's fit absorbs
   geometry); its ratio still rises with depth (spread at least 0.75-1.2).
 - **P5.2** All three drop-free to d/R 13.
+
+## Round 6 (runners): is block 60 large enough with Gent? written 08:35 CET (from `date` just before)
+
+Seen before writing: Gent Jm 4, R 0.5, h 0.05: block 30 against 60 +0.6 / +1.6 / +3.5 / +5.9 / +6.6 % at d/R 1 / 4 / 8 /
+12 / 13 (P4.3's 1.5 % failed). The neo-Hookean's at block 30: +0.5 to +2.1 % to d/R 4.5. Axis-refined neo-Hookean
+(0.0125 near the axis at h 0.05): first drop earlier, d/R 3.2 (P3.1 failed).
+
+Arms: Gent Jm 4, R 0.5, h 0.05, edge, blocks 120 and 240 mm.
+
+- **P6.1** The wall's share falls about as R / L (L the tip-to-bottom distance): block 60 sits 2-4 % above block 120 at
+  d/R 12, and 120 within 1.5 % of 240. The fitted Jm moves up by 3-10 % with the larger block.
