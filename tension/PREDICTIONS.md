@@ -85,3 +85,11 @@ Pass lines (each control can fail):
 - P2.3 At R 1 and R 0.5 (Gc/(G' R) 7.5 and 15) the first crack is arrested and the force rises again; puncture comes
   deeper, with Pc/(G' R^2) at R 0.5 at least 1.5 times R 4's at the same s_ts (about even odds).
 - P2.4 At s_ts 2.5 G', R 2's Pc within the 1.35 factor of the data's; P2.5 R 0.5's Pc at 2.5 G' below the band (fails).
+
+## Controls round c2, before its arms (2026-11-17 10:28 CET)
+c1's plant arm at seed 1 stopped on its second draw: at s_ts 17.8 G' and l 0.08 l_max, the planted surface (35.5 G') is
+past its own length (beta >= 0) and the coefficients refuse it. The draws now take s_ts 2-10 G' (the needle's range);
+pass line unchanged: 12 of 12 planted caught, 12 of 12 unplanted within 3 %. c1's compression arms ran with no damage
+viscosity: with no elastic driving the damage system then has no zero-order term (singular), and the Drucker-Prager bar
+"nucleated" at stretch 0.84 under 2 kPa, an artefact; the tension-only bar lost its homogeneous state at 0.47 (an elastic
+instability, ur no longer uniform, before any damage). Rerun locally with the needle's viscosity (0.1 Gc/l) to stretch 0.5.

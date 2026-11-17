@@ -63,6 +63,9 @@ def main() -> None:
     ap.add_argument("--compress", action="store_true")
     ap.add_argument("--confined", action="store_true")
     ap.add_argument("--lam-min", type=float, default=0.35)
+    ap.add_argument("--viscosity", type=float, default=0.0,
+                    help="the damage viscosity, in units of Gc / l (the needle driver's is 0.1; with no elastic driving, as in "
+                         "compression, zero leaves the damage system without a zero-order term)")
     a = ap.parse_args()
     rng = np.random.default_rng(a.seed)
     radius, height, nx, ny = 1e-3, 2e-3, 4, 8
@@ -70,14 +73,16 @@ def main() -> None:
     young = 2 * a.mu * (1 + a.nu)
     mu, kappa = shear_and_bulk(young, a.nu)
     sense = -1.0 if a.compress else 1.0
-    solver = Solver(bar(radius, height, nx, ny, a.confined, sense), "phase_field", tol_d=1e-7, max_staggered=200,
-                    newton_regularise=True, volumetric="gauss")
+    def make_solver(l):
+        return Solver(bar(radius, height, nx, ny, a.confined, sense), "phase_field", tol_d=1e-7, max_staggered=200,
+                      newton_regularise=True, volumetric="gauss", viscosity=a.viscosity * a.gc / l)
+    solver = make_solver(1e-4) if a.viscosity == 0.0 else None
     area = np.pi * radius ** 2
     rows = []
     t0 = time.perf_counter()
     ls = a.l if a.l else [None] * a.draws
     for lmm in ls:
-        sts = (a.sts if a.sts is not None else float(np.exp(rng.uniform(np.log(2.0), np.log(20.0)))) * a.mu / 1e3) * 1e3
+        sts = (a.sts if a.sts is not None else float(np.exp(rng.uniform(np.log(2.0), np.log(10.0)))) * a.mu / 1e3) * 1e3
         jm = a.jm if a.draws == 1 or a.l else float(rng.uniform(3.0, 6.0))
         base = Material(mu=mu, kappa=kappa, gc=a.gc, l=1e-4, k_res=1e-6, stretch_limit=10.0,
                         gent_jm=(jm if jm > 0 else None))
@@ -97,6 +102,7 @@ def main() -> None:
                 lam_pl = S.uniaxial_state(base._replace(k_res=0.0), a.plant * sts)[0]
                 fine = np.concatenate([fine, np.linspace(fine[-1], 1.1 * lam_pl, 60)[1:]])
             lams = np.concatenate([coarse, fine])
+        solver = solver if a.viscosity == 0.0 else make_solver(l)
         state = solver.initial()
         res = []
         for lam in lams:
