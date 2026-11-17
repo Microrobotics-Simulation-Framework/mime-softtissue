@@ -118,7 +118,7 @@ stays inside the surface): s_ts 5 and 7 at h 0.2, s_ts 7 at h 0.1. Measured toug
   both strengths (lean 0.5); if it is not, propagation does not follow Gc in the regime the needle test uses.
 - **P5.2** The two strengths' toughnesses differ by under 20 % (lean 0.5).
 
-## Round 2e (written 2026-11-17 01:53 CET, `date`, before any arm ran): is the switch the regularisation's?
+## Round 2e (written 2026-11-17 01:51 CET, `date`, before any arm ran): is the switch the regularisation's?
 beta2 changes sign at s_ts 7-8 kPa for l 0.5 and at about 10 kPa for l 0.25 (mu 3.66; `strength.coefficients`). If the
 needle's switch is beta2's, it moves with l. Arms: l 0.25, h 0.1, s_ts 8, 9 and 12 at R 0.5 and R 2.
 - **P6.1** s_ts 8 and 9 puncture (a drop >= 30 %) at R 0.5 and R 2 at l 0.25, where at l 0.5 they did not (lean 0.7).
