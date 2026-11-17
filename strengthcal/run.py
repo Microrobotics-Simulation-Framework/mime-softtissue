@@ -81,7 +81,11 @@ def main() -> None:
     if a.sts:
         mat = mat._replace(strength=strength_surface.coefficients(mat, a.sts * 1e3, a.ratio * a.sts * 1e3, h,
                                                                   delta_factor=a.delta_factor))
-        _, _, w_ts = strength_surface.uniaxial_state(mat._replace(k_res=0.0, strength=None), a.sts * 1e3)
+        st = mat.strength  # W_hs and W_ts read back from beta1, beta2 (eq. 16), not recomputed
+        q = st.delta * a.gc / (8.0 * l)
+        w_hs = 1.5 * st.s_hs * (st.beta1 + q / st.s_hs)
+        w_ts = st.s_ts / (2.0 * np.sqrt(3.0)) * (st.beta2 + np.sqrt(3.0) * (3 * st.s_hs - st.s_ts) / (st.s_hs * st.s_ts) * q
+                                                 + 2.0 * w_hs / (np.sqrt(3.0) * st.s_hs))
         validity = 3.0 * a.gc / (16.0 * w_ts)
         print(json.dumps(dict(strength=mat.strength._asdict(), w_ts=w_ts, l_validity_mm=validity / mm,
                               l_over_validity=l / validity)), flush=True)
