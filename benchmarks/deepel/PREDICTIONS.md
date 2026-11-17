@@ -74,3 +74,24 @@ cubed): R 0.5, h 0.05 with 0.0125 within 0.75 mm; h 0.025 with 0.00625 within 0.
   ratio to eq. 5 is 0.85-1.05 at d/R 1 (eq. 5's linear term is the incompressible flat punch's small-strain law).
 - **P3.3** Gent narrows the sphere/flat gap at depth against neo-Hookean (both near the same stiffened core).
 - **P3.4** The flat punch's edge drops (the gel wrapping a 0.2 R edge) before d/R 13 at h 0.05 (50 %).
+
+## Round 4 (runners): Gent at the fitted range, its grid, block, held-out radius and the nodal penalty, written 08:12 CET
+
+Seen before writing (rounds 1-3 so far): neo-Hookean edge drops at d/R 4.8 (h/R 0.1, R 0.5) and 3.7 (h/R 0.1, R 1), 8.4
+(h/R 0.2); the axis column ahead of the tip is squashed to axial stretch 0.03-0.07, hoop 4-7, and snaps (lmax 4.4 -> 6.1 in
+two steps) before the first small drop; nodal drops at d/R 2.8 (h 0.1). Scaling held: R 0.5 h 0.05 and R 1 h 0.1 give
+P/(mu R^2) 9.9 / 19.3 / 41.4 against 9.9 / 19.3 / 41.6 at d/R 2 / 4 / 8. Gent Jm 2-15 at h 0.05: no drop to d/R 13; the ratio
+to eq. 5 rises with depth for every Jm (Jm putting P on eq. 5: 2.4 at d/R 5, 4.5 at 8, 7.2 at 12); least squares Jm 3.7
+over d/R 2-12 (ratio 0.63-1.26), 3.6 over 1-12, 4.35 over 4-12. Flat punch (edge 0.2 R) Gent Jm 4 / 7: above the sphere
+by 57 / 27 / 16 / 5 % at d/R 1 / 2 / 4 / 12 (Jm 4).
+
+Arms (edge 1000 E/h unless said; Jm 4): R 0.5 at h 0.1 and 0.025 (the ladder with h 0.05); R 1 at h 0.1 and 0.05 (held
+out: the same h/R as R 0.5's h 0.05 and 0.025); R 0.5 h 0.05 with block 30; the nodal penalty (100 E/h) at R 0.5 h 0.05
+and h 0.025.
+
+- **P4.1 Ladder:** h 0.05 -> 0.025 moves P by under 3 % at every d/R <= 12; h 0.1 sits 2-8 % above h 0.05 at depth.
+- **P4.2 Held out:** R 1 at h 0.1 reproduces R 0.5 at h 0.05 in P / (E R^2) to 1 % at every d/R <= 8.5 (scale-free; it
+  can only fail through the numerics). The fitted Jm transfers to R 1 by construction.
+- **P4.3 Block 30:** under 1.5 % from block 60 to d/R 12 (Gent's larger force reaches the walls more than neo-Hookean's).
+- **P4.4 Nodal with Gent:** no drop above 0.5 % to d/R 13 at h 0.05 (55 %); its P within 3 % of the edge's where both clean.
+- **P4.5** Every arm drop-free to d/R 13 except possibly the nodal ones.
