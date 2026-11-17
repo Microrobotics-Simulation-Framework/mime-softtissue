@@ -68,3 +68,20 @@ Pass lines (each control can fail):
 - (e) slab with a pre-crack (H W(lambda_c) = Gc): measured Gc / input in [0.8, 1.25] where the far field stays below
   s_ts (prediction: 0.7-1.4, the delta being borrowed from Drucker-Prager at s_hs = s_ts); a delta planted 2 times high is
   caught (Gc / input moved by more than 25 %).
+
+## Round 1, read at its first upload (to d/R 3-7.5), 2026-11-17 10:24 CET
+- P1.1 held (to d/R 2.5 the largest s1 is on the surface ring, r/R 0.6-1.0, I1 >= 0, 0.8-1.4 G'); from d/R 3 it is on
+  the axis under the apex (r < 0.15 R, 0.3-1 R below the surface in the reference), where I1 is -28 to -100 G' and s1 is
+  the in-plane (radial = hoop) tension of the shell drawn over the tip: 2.1 / 3.7 / 5.3 / 7.1 G' at d/R 3 / 4 / 5 / 6.
+- P1.3 held (R 0.5 equal to R 1 to every printed digit); P1.5 held (Jm 3.5 / 3.7 / 4.5: s1 3.64 / 3.66 / 3.73 at d/R 4).
+- P1.4 failed on the surface ring: h 0.025 gives 0.44-0.97 G' where h 0.05 gives 0.78-1.29 (not converged, falling
+  with h); the apex values at h 0.025 are not in yet. Fine zone 9 against 6 mm: equal to every printed digit to d/R 3.
+
+## Round 2: the s_ts ladder (l 0.1, h 0.05; R 4 at 2, 2.5, 3, 4 G'; R 2 at 2.5, 3; R 1 and R 0.5 at 2, 2.5, 3), before its arms (2026-11-17 10:24 CET)
+- P2.1 Every arm nucleates on the axis under the apex (r < 0.2 R, I1 < 0), at the depth where the elastic s1 reaches
+  s_ts: d/R about 2.9 / 3.25 / 3.55 / 4.2 at 2 / 2.5 / 3 / 4 G' at every R (R 0.5 up to 10 % deeper, l/R 0.2).
+- P2.2 At R 4 and R 2 a >= 30 % drop follows nucleation within 3 steps (puncture at nucleation): Pc/(G' R^2) near the
+  elastic force at that depth, about 21 / 25 / 30 / 40. So s_ts* at R 4 is about 2.5 G' (9 kPa).
+- P2.3 At R 1 and R 0.5 (Gc/(G' R) 7.5 and 15) the first crack is arrested and the force rises again; puncture comes
+  deeper, with Pc/(G' R^2) at R 0.5 at least 1.5 times R 4's at the same s_ts (about even odds).
+- P2.4 At s_ts 2.5 G', R 2's Pc within the 1.35 factor of the data's; P2.5 R 0.5's Pc at 2.5 G' below the band (fails).
