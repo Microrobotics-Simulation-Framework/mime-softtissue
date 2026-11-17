@@ -10,7 +10,15 @@ so R_g > 0 even in the column on the axis (R_g = dR (1 - 1/sqrt 3) / 2 there), w
 u_R / R stays finite. Fibre families lie in the (R, Z) plane at +-angle to R (as plane strain's lie in (x, y)).
 
 Same functions as ``plane_strain`` with the element's left radius ``x0`` added. The pieces a planted error replaces
-(``hoop_stretch``, ``gauss_weights``) are module functions looked up at trace time."""
+(``hoop_stretch``, ``gauss_weights``, ``mean_dilatation``) are module functions looked up at trace time.
+
+Near incompressibility (``volumetric``): ``"gauss"`` (the default) evaluates the law's volumetric term at every Gauss point
+(full integration: four constraints an element, which lock as kappa / mu grows); ``"mean"`` evaluates it once per element
+at the element's mean dilatation Jbar = sum w_g J_g / sum w_g with the ring weights w_g = 2 pi R_g dR dZ / 4 (Jbar is the
+deformed ring's volume over the reference ring's, exact: J R is at most quadratic in each reference coordinate), and the
+tension/compression split is switched on Jbar, as the 3-D kinematics does (``solid3d``, ``volumetric="mean"``). The
+isochoric part stays pointwise; the damage degrades the volumetric part in tension (by the element's weighted mean of g)
+and never in compression."""
 
 from __future__ import annotations
 
@@ -24,6 +32,7 @@ from ..material import Material
 
 XI_GAUSS = np.asarray(_GAUSS)[:, 0]  # the Gauss points' reference radial coordinate
 N_CENTRE = np.full(4, 0.25)
+VOLUMETRIC = ("gauss", "mean")
 
 
 def gauss_radii(x0: jax.Array, dx: jax.Array) -> jax.Array:
@@ -67,30 +76,73 @@ def energy_parts(F2: jax.Array, Ftt: jax.Array, mat: Material) -> tuple[jax.Arra
     return law.energy_parts(*invariants(F2, Ftt, mat), mat)
 
 
+def mean_dilatation(J: jax.Array, w: jax.Array) -> jax.Array:
+    """The element's mean dilatation from J at its Gauss points (4,) and their ring weights ``w`` (4,)."""
+    return jnp.sum(w * J) / jnp.sum(w)
+
+
+def isochoric_law(mat: Material) -> Material:
+    return mat._replace(kappa=0.0)
+
+
+def volumetric_law(mat: Material) -> Material:
+    return mat._replace(mu=0.0, c2=0.0, c3=0.0, fibre=None, gent_jm=None)
+
+
+def mean_parts(F2: jax.Array, Ftt: jax.Array, w: jax.Array,
+               mat: Material) -> tuple[jax.Array, jax.Array, jax.Array, jax.Array]:
+    """(iso (4,), Jbar, vol_plus, vol_minus): the isochoric and fibre energy at the Gauss points (none of it compressive)
+    and the volumetric energy at the element's mean dilatation, split on Jbar."""
+    J, I1, fibres = jax.vmap(lambda f, t: invariants(f, t, mat))(F2, Ftt)
+    iso, _ = law.energy_parts(J, I1, fibres, isochoric_law(mat))
+    Jb = mean_dilatation(J, w)
+    vp, vm = law.energy_parts(Jb, jnp.full_like(Jb, 3.0), (), volumetric_law(mat))
+    return iso, Jb, vp, vm
+
+
 def element_strain_energy(ue: jax.Array, dq: jax.Array, x0: jax.Array, dx: jax.Array, dy: jax.Array,
-                          mat: Material) -> jax.Array:
+                          mat: Material, volumetric: str = "gauss") -> jax.Array:
     """Degraded strain energy of one ring element (the whole ring, 2 pi included): ``ue`` (4, 2), ``dq`` (4,)."""
     F2, Ftt = deformation(ue, x0, dx, dy)
+    if volumetric == "mean":
+        w = gauss_weights(x0, dx, dy)
+        g = law.degradation(dq, mat.k_res)
+        iso, _, vp, vm = mean_parts(F2, Ftt, w, mat)
+        return jnp.sum(w * g * iso) + jnp.sum(w * g) * vp + jnp.sum(w) * vm
     plus, minus = jax.vmap(lambda f, t: energy_parts(f, t, mat))(F2, Ftt)
     g = law.degradation(dq, mat.k_res)
     return jnp.sum(gauss_weights(x0, dx, dy) * (g * plus + minus))
 
 
 def element_hessian(ue: jax.Array, dq: jax.Array, x0: jax.Array, dx: jax.Array, dy: jax.Array,
-                    mat: Material) -> jax.Array:
+                    mat: Material, volumetric: str = "gauss") -> jax.Array:
+    if volumetric == "mean":
+        return jax.hessian(lambda v: element_strain_energy(v.reshape(4, 2), dq, x0, dx, dy, mat, "mean"))(
+            ue.reshape(8))
     return jax.hessian(lambda v: element_strain_energy(v.reshape(4, 2), dq, x0, dx, dy, mat))(ue.reshape(8))
 
 
-def element_plus(ue: jax.Array, x0: jax.Array, dx: jax.Array, dy: jax.Array, mat: Material) -> jax.Array:
-    """psi_plus at the four Gauss points (the history field's source)."""
+def element_plus(ue: jax.Array, x0: jax.Array, dx: jax.Array, dy: jax.Array, mat: Material,
+                 volumetric: str = "gauss") -> jax.Array:
+    """psi_plus at the four Gauss points (the history field's source; with ``"mean"`` the element's volumetric tension
+    part is added at each of its Gauss points, as in 3-D)."""
     F2, Ftt = deformation(ue, x0, dx, dy)
+    if volumetric == "mean":
+        iso, _, vp, _ = mean_parts(F2, Ftt, gauss_weights(x0, dx, dy), mat)
+        return iso + vp
     return jax.vmap(lambda f, t: energy_parts(f, t, mat)[0])(F2, Ftt)
 
 
 def element_stored(ue: jax.Array, dq: jax.Array, x0: jax.Array, dx: jax.Array, dy: jax.Array,
-                   mat: Material) -> jax.Array:
-    """The stored energy at each Gauss point times its weight: (4,) (a readout)."""
+                   mat: Material, volumetric: str = "gauss") -> jax.Array:
+    """The stored energy at each Gauss point times its weight: (4,) (a readout; with ``"mean"`` the element's
+    volumetric energy shared out by weight)."""
     F2, Ftt = deformation(ue, x0, dx, dy)
+    if volumetric == "mean":
+        w = gauss_weights(x0, dx, dy)
+        g = law.degradation(dq, mat.k_res)
+        iso, _, vp, vm = mean_parts(F2, Ftt, w, mat)
+        return w * (g * (iso + vp) + vm)
     plus, minus = jax.vmap(lambda f, t: energy_parts(f, t, mat))(F2, Ftt)
     return gauss_weights(x0, dx, dy) * (law.degradation(dq, mat.k_res) * plus + minus)
 

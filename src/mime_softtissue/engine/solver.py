@@ -6,7 +6,8 @@ by Newton (``solvers.newton``) and the damage by one of three modes:
 - ``"elastic"``: no damage.
 
 The kinematics is the specimen's (``kinematics.plane_strain``, in plane strain or incompressible plane stress, or
-``kinematics.axisymmetric``); a specimen with a
+``kinematics.axisymmetric``), its volumetric term at every Gauss point (``volumetric="gauss"``, the default) or at
+each element's mean dilatation (``"mean"``, plane strain and axisymmetric); a specimen with a
 ``contact`` is pressed by a rigid indenter (``engine.contact``) whose depth is the load's ``delta``. ``viscosity``
 adds eta/2 (d - d_n)^2 to the damage functional (a viscous regularisation, off by default).
 
@@ -76,6 +77,9 @@ class Solver:
     lag_relaxation: float = 1.0
     #: Newton's stagnation stop (m; 0 off): ``solvers.newton.minimise``'s ``stall_step``.
     newton_stall: float = 0.0
+    #: The volumetric term: at every Gauss point ("gauss", full integration) or at the element's mean dilatation
+    #: ("mean"; not in incompressible plane stress). See ``kinematics.axisymmetric``.
+    volumetric: str = "gauss"
     grid: Any = field(init=False)
 
     def __post_init__(self) -> None:
@@ -85,6 +89,12 @@ class Solver:
         self.grid = g = sp.grid
         self.axi = sp.kinematics == "axisymmetric"
         self.stress = sp.kinematics == "plane_stress"
+        if self.volumetric not in axi.VOLUMETRIC:
+            raise ValueError(f"volumetric is one of {axi.VOLUMETRIC}")
+        if self.stress and self.volumetric != "gauss":
+            raise ValueError("incompressible plane stress has no volumetric term: volumetric='gauss' only")
+        #: the kinematics' keyword for the volumetric treatment (none for the default, so its calls are unchanged)
+        self.vol = {} if self.volumetric == "gauss" else {"volumetric": self.volumetric}
         self.I, self.J = (jnp.asarray(a) for a in g.element_nodes())
         dx, dy = g.element_sizes()
         self.dx, self.dy = jnp.asarray(dx), jnp.asarray(dy)
@@ -117,10 +127,10 @@ class Solver:
     def energy(self, u: jax.Array, dq: jax.Array, mat: Material, notch: Any = None) -> jax.Array:
         dx, dy = self.sizes(notch)
         if self.axi:
-            e = jax.vmap(lambda ue, d, x0, dx, dy: axi.element_strain_energy(ue, d, x0, dx, dy, mat))(
+            e = jax.vmap(lambda ue, d, x0, dx, dy: axi.element_strain_energy(ue, d, x0, dx, dy, mat, **self.vol))(
                 u[self.I, self.J], dq, self.x0, dx, dy)
         else:
-            e = jax.vmap(lambda ue, d, dx, dy: element_strain_energy(ue, d, dx, dy, mat, self.stress))(
+            e = jax.vmap(lambda ue, d, dx, dy: element_strain_energy(ue, d, dx, dy, mat, self.stress, **self.vol))(
                 u[self.I, self.J], dq, dx, dy)
         return jnp.sum(e)
 
@@ -137,10 +147,10 @@ class Solver:
 
         def hessian_blocks(u):
             if self.axi:
-                ke = jax.vmap(lambda ue, d, x0, dx, dy: axi.element_hessian(ue, d, x0, dx, dy, mat))(
+                ke = jax.vmap(lambda ue, d, x0, dx, dy: axi.element_hessian(ue, d, x0, dx, dy, mat, **self.vol))(
                     u[self.I, self.J], dq, self.x0, *self.sizes(notch))
             else:
-                ke = jax.vmap(lambda ue, d, dx, dy: element_hessian(ue, d, dx, dy, mat, self.stress))(
+                ke = jax.vmap(lambda ue, d, dx, dy: element_hessian(ue, d, dx, dy, mat, self.stress, **self.vol))(
                     u[self.I, self.J], dq, *self.sizes(notch))
             diag, upper = self.vec.blocks(ke)
             if c is not None:
@@ -166,10 +176,10 @@ class Solver:
 
     def plus(self, u: jax.Array, mat: Material, notch: Any = None) -> jax.Array:
         if self.axi:
-            return jax.vmap(lambda ue, x0, dx, dy: axi.element_plus(ue, x0, dx, dy, mat))(u[self.I, self.J], self.x0,
-                                                                                          *self.sizes(notch))
-        return jax.vmap(lambda ue, dx, dy: element_plus(ue, dx, dy, mat, self.stress))(u[self.I, self.J],
-                                                                                         *self.sizes(notch))
+            return jax.vmap(lambda ue, x0, dx, dy: axi.element_plus(ue, x0, dx, dy, mat, **self.vol))(
+                u[self.I, self.J], self.x0, *self.sizes(notch))
+        return jax.vmap(lambda ue, dx, dy: element_plus(ue, dx, dy, mat, self.stress, **self.vol))(
+            u[self.I, self.J], *self.sizes(notch))
 
     def solve_damage(self, history: jax.Array, mat: Material, notch: Any = None, d_prev: Any = None,
                      u: Any = None, d: Any = None) -> jax.Array:
@@ -291,9 +301,9 @@ class Solver:
         def blocks(z):
             v, d = split(z)
             dq = self.damage_at_gauss(d)
-            ke = (jax.vmap(lambda ue, dd, x0, dx, dy: axi.element_hessian(ue, dd, x0, dx, dy, mat))(
+            ke = (jax.vmap(lambda ue, dd, x0, dx, dy: axi.element_hessian(ue, dd, x0, dx, dy, mat, **self.vol))(
                 v[self.I, self.J], dq, self.x0, *self.sizes(notch)) if self.axi else
-                jax.vmap(lambda ue, dd, dx, dy: element_hessian(ue, dd, dx, dy, mat, self.stress))(
+                jax.vmap(lambda ue, dd, dx, dy: element_hessian(ue, dd, dx, dy, mat, self.stress, **self.vol))(
                     v[self.I, self.J], dq, *self.sizes(notch)))
             du, uu = self.vec.blocks(ke)
             if c is not None:

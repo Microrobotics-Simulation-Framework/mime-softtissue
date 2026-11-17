@@ -35,6 +35,7 @@ def main() -> None:
     ap.add_argument("--every", type=int, default=1, help="a stage frame every this many steps")
     ap.add_argument("--solver", default="tip3d", help="3-D: tip3d or all2")
     ap.add_argument("--symmetry", default="quarter", help="3-D: quarter, half or full")
+    ap.add_argument("--volumetric", default="gauss", help="axisymmetric: gauss (full integration) or mean")
     ap.add_argument("--offset", type=float, default=0.0, help="mm: the tip off the axis in x (3-D half or full)")
     ap.add_argument("--wall", type=float, default=0.0, help="minutes: stop at a frame after this long and write the "
                                                                "steps reached (0: no limit)")
@@ -42,7 +43,8 @@ def main() -> None:
     p = puncture_experiment(material=a.material, tip=tips()[a.tip], speed=mm_per_s(a.speed), depth=mm(a.depth),
                             dimension=a.dimension, resolution=mm(a.h), step=mm(a.step), block_radius=mm(a.radius),
                             block_height=mm(a.height), fine=mm(a.fine), frames_every=a.every, solver=a.solver,
-                            symmetry=a.symmetry, offset=mm(a.offset), fine_across=mm(a.fine_across))
+                            symmetry=a.symmetry, offset=mm(a.offset), fine_across=mm(a.fine_across),
+                            volumetric=a.volumetric)
     t0 = time.perf_counter()
 
     def stop(_progress: object) -> str | None:
@@ -58,6 +60,7 @@ def main() -> None:
     area = [float(v) * 1e6 for v in run[CRACK].area.values.to(m2)]
     peak = max(range(len(force)), key=lambda k: force[k])
     summary = dict(tip=a.tip, material=a.material, dimension=a.dimension, solver=a.solver, symmetry=a.symmetry,
+                   volumetric=a.volumetric,
                    offset_mm=a.offset, h_mm=a.h, fine_mm=a.fine, fine_across_mm=a.fine_across, step_mm=a.step,
                    speed_mm_s=a.speed, steps=p.steps,
                    wall_s=wall, depth_mm=depth, force_N=force, crack_area_mm2=area,

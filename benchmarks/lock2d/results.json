@@ -1,0 +1,582 @@
+{
+ "about": "LOCK2D's computed results (mean dilatation 'mean' against full integration 'gauss'); y = Fc/(mu R^2) by the first-drop rule; peaks in mN.",
+ "hertz_F_over_hertz": {
+  "g_kr5000_h0.1": {
+   "kappa_over_mu": 5000.000000000002,
+   "h": 0.1,
+   "volumetric": "gauss",
+   "plant": "",
+   "min": 1.2404849730099607,
+   "max": 1.4548158026160325
+  },
+  "g_kr5000_h0.2": {
+   "kappa_over_mu": 5000.000000000002,
+   "h": 0.2,
+   "volumetric": "gauss",
+   "plant": "",
+   "min": 1.5565998570395236,
+   "max": 1.9547219416158288
+  },
+  "g_kr500_h0.1": {
+   "kappa_over_mu": 499.99999999999886,
+   "h": 0.1,
+   "volumetric": "gauss",
+   "plant": "",
+   "min": 1.0259944920135813,
+   "max": 1.099495839355067
+  },
+  "g_kr500_h0.2": {
+   "kappa_over_mu": 499.99999999999886,
+   "h": 0.2,
+   "volumetric": "gauss",
+   "plant": "",
+   "min": 1.1001118532523189,
+   "max": 1.2600759125983503
+  },
+  "g_nu045_h0.1": {
+   "kappa_over_mu": 9.666666666666668,
+   "h": 0.1,
+   "volumetric": "gauss",
+   "plant": "",
+   "min": 1.0039426127876405,
+   "max": 1.0095941121976164
+  },
+  "g_nu045_h0.2": {
+   "kappa_over_mu": 9.666666666666668,
+   "h": 0.2,
+   "volumetric": "gauss",
+   "plant": "",
+   "min": 1.0053323486680859,
+   "max": 1.0176901997592729
+  },
+  "g_nu049_h0.1": {
+   "kappa_over_mu": 49.66666666666663,
+   "h": 0.1,
+   "volumetric": "gauss",
+   "plant": "",
+   "min": 0.9902280303357893,
+   "max": 1.0156876051482602
+  },
+  "g_nu049_h0.2": {
+   "kappa_over_mu": 49.66666666666663,
+   "h": 0.2,
+   "volumetric": "gauss",
+   "plant": "",
+   "min": 1.0009416093352483,
+   "max": 1.0440413343700838
+  },
+  "m_kr5000_h0.1": {
+   "kappa_over_mu": 5000.000000000002,
+   "h": 0.1,
+   "volumetric": "mean",
+   "plant": "",
+   "min": 0.9792529241770337,
+   "max": 0.9954912307740036
+  },
+  "m_kr5000_h0.2": {
+   "kappa_over_mu": 5000.000000000002,
+   "h": 0.2,
+   "volumetric": "mean",
+   "plant": "",
+   "min": 0.9772525879219346,
+   "max": 0.994979225083836
+  },
+  "m_kr500_h0.1": {
+   "kappa_over_mu": 499.99999999999886,
+   "h": 0.1,
+   "volumetric": "mean",
+   "plant": "",
+   "min": 0.9797238957042523,
+   "max": 0.9957264878652221
+  },
+  "m_kr500_h0.2": {
+   "kappa_over_mu": 499.99999999999886,
+   "h": 0.2,
+   "volumetric": "mean",
+   "plant": "",
+   "min": 0.9776757301433262,
+   "max": 0.9952463703069756
+  },
+  "m_nu045_h0.1": {
+   "kappa_over_mu": 9.666666666666668,
+   "h": 0.1,
+   "volumetric": "mean",
+   "plant": "",
+   "min": 1.003334107837765,
+   "max": 1.0077112216902733
+  },
+  "m_nu045_h0.2": {
+   "kappa_over_mu": 9.666666666666668,
+   "h": 0.2,
+   "volumetric": "mean",
+   "plant": "",
+   "min": 1.0001178694143613,
+   "max": 1.0085073880074302
+  },
+  "m_nu049_h0.1": {
+   "kappa_over_mu": 49.66666666666663,
+   "h": 0.1,
+   "volumetric": "mean",
+   "plant": "",
+   "min": 0.9843556564808403,
+   "max": 0.9980328632763281
+  },
+  "m_nu049_h0.2": {
+   "kappa_over_mu": 49.66666666666663,
+   "h": 0.2,
+   "volumetric": "mean",
+   "plant": "",
+   "min": 0.9818355563649042,
+   "max": 0.99786765813787
+  },
+  "p_kr5000_h0.1": {
+   "kappa_over_mu": 5000.000000000002,
+   "h": 0.1,
+   "volumetric": "mean",
+   "plant": "unweighted",
+   "min": 0.9793641699873831,
+   "max": 0.9959194990224992
+  },
+  "p_kr5000_h0.2": {
+   "kappa_over_mu": 5000.000000000002,
+   "h": 0.2,
+   "volumetric": "mean",
+   "plant": "unweighted",
+   "min": 0.9777571414106557,
+   "max": 0.9963418462581869
+  },
+  "p_nu049_h0.1": {
+   "kappa_over_mu": 49.66666666666663,
+   "h": 0.1,
+   "volumetric": "mean",
+   "plant": "unweighted",
+   "min": 0.9844691986584047,
+   "max": 0.9984693037850143
+  },
+  "p_nu049_h0.2": {
+   "kappa_over_mu": 49.66666666666663,
+   "h": 0.2,
+   "volumetric": "mean",
+   "plant": "unweighted",
+   "min": 0.9823459789493048,
+   "max": 0.9992547721351664
+  },
+  "hz-g-kr500-h0.05": {
+   "kappa_over_mu": 499.99999999999886,
+   "h": 0.05,
+   "volumetric": "gauss",
+   "plant": "",
+   "min": 0.9952274387936526,
+   "max": 1.035991948503897
+  },
+  "hz-g-kr5000-h0.05": {
+   "kappa_over_mu": 5000.000000000002,
+   "h": 0.05,
+   "volumetric": "gauss",
+   "plant": "",
+   "min": 1.083209912011492,
+   "max": 1.200101180887661
+  },
+  "hz-g-nu045-h0.05": {
+   "kappa_over_mu": 9.666666666666668,
+   "h": 0.05,
+   "volumetric": "gauss",
+   "plant": "",
+   "min": 1.003506693350303,
+   "max": 1.0081192147166829
+  },
+  "hz-g-nu049-h0.05": {
+   "kappa_over_mu": 49.66666666666663,
+   "h": 0.05,
+   "volumetric": "gauss",
+   "plant": "",
+   "min": 0.9864531916893616,
+   "max": 1.0040777217099635
+  },
+  "hz-m-kr500-h0.05": {
+   "kappa_over_mu": 499.99999999999886,
+   "h": 0.05,
+   "volumetric": "mean",
+   "plant": "",
+   "min": 0.9800282242097482,
+   "max": 0.995940068729983
+  },
+  "hz-m-kr5000-h0.05": {
+   "kappa_over_mu": 5000.000000000002,
+   "h": 0.05,
+   "volumetric": "mean",
+   "plant": "",
+   "min": 0.9795725767569385,
+   "max": 0.9957452874257111
+  },
+  "hz-m-nu045-h0.05": {
+   "kappa_over_mu": 9.666666666666668,
+   "h": 0.05,
+   "volumetric": "mean",
+   "plant": "",
+   "min": 1.0033414354817876,
+   "max": 1.0075052689705815
+  },
+  "hz-m-nu049-h0.05": {
+   "kappa_over_mu": 49.66666666666663,
+   "h": 0.05,
+   "volumetric": "mean",
+   "plant": "",
+   "min": 0.9845074844367016,
+   "max": 0.9980571115506559
+  }
+ },
+ "punch_axi_peaks_mN": {
+  "gauss_h0.0177_step0.02": {
+   "peak": 11.681910683077238,
+   "depth_mm": 0.22
+  },
+  "gauss_h0.025_step0.02": {
+   "peak": 11.669127187642857,
+   "depth_mm": 0.22
+  },
+  "gauss_h0.0354_step0.02": {
+   "peak": 11.512759420809305,
+   "depth_mm": 0.22
+  },
+  "gauss_h0.05_step0.02": {
+   "peak": 11.991092814232067,
+   "depth_mm": 0.28
+  },
+  "gauss_h0.0707_step0.02": {
+   "peak": 10.989544182083726,
+   "depth_mm": 0.28
+  },
+  "gauss_h0.1_step0.02": {
+   "peak": 10.258564318437914,
+   "depth_mm": 0.28
+  },
+  "mean_h0.0177_step0.02": {
+   "peak": 11.084186431769519,
+   "depth_mm": 0.2
+  },
+  "mean_h0.025_step0.02": {
+   "peak": 11.18418950337897,
+   "depth_mm": 0.26
+  },
+  "mean_h0.0354_step0.02": {
+   "peak": 11.619212846993037,
+   "depth_mm": 0.24000000000000002
+  },
+  "mean_h0.05_step0.02": {
+   "peak": 11.115318385959046,
+   "depth_mm": 0.24000000000000002
+  },
+  "mean_h0.0707_step0.02": {
+   "peak": 9.933022597597118,
+   "depth_mm": 0.26
+  },
+  "mean_h0.1_step0.02": {
+   "peak": 8.857831790372053,
+   "depth_mm": 0.26
+  },
+  "gauss_h0.0125_step0.01": {
+   "peak": 11.750835900622505,
+   "depth_mm": 0.22
+  },
+  "gauss_h0.0177_step0.01": {
+   "peak": 11.681692787361996,
+   "depth_mm": 0.22
+  },
+  "gauss_h0.025_step0.01": {
+   "peak": 11.668600711877117,
+   "depth_mm": 0.22
+  },
+  "gauss_h0.0354_step0.01": {
+   "peak": 11.75265428149699,
+   "depth_mm": 0.23
+  },
+  "mean_h0.0177_step0.01": {
+   "peak": 11.325436785604968,
+   "depth_mm": 0.21000000000000002
+  },
+  "mean_h0.025_step0.01": {
+   "peak": 11.18156609749606,
+   "depth_mm": 0.26
+  },
+  "mean_h0.0354_step0.01": {
+   "peak": 11.616767371732596,
+   "depth_mm": 0.24000000000000002
+  },
+  "mean_h0.0125_step0.01": {
+   "peak": 11.599773774791016,
+   "depth_mm": 0.22
+  }
+ },
+ "needle_y": {
+  "pf-m-h0.05-R0.5/run.json/engine": {
+   "volumetric": "mean",
+   "h": 0.05,
+   "block": 25.0,
+   "R_mm": 0.5,
+   "y": 84.8954754630317,
+   "dc_mm": 4.5,
+   "dropped": true
+  },
+  "pf-m-h0.05-R1/run.json/engine": {
+   "volumetric": "mean",
+   "h": 0.05,
+   "block": 25.0,
+   "R_mm": 1.0,
+   "y": 27.643149436699062,
+   "dc_mm": 4.75,
+   "dropped": true
+  },
+  "pf-m-h0.05-R2/run.json/engine": {
+   "volumetric": "mean",
+   "h": 0.05,
+   "block": 25.0,
+   "R_mm": 2.0,
+   "y": 11.547252305981251,
+   "dc_mm": 5.300000000000001,
+   "dropped": false
+  },
+  "pf-m-h0.05-R4/run.json/engine": {
+   "volumetric": "mean",
+   "h": 0.05,
+   "block": 25.0,
+   "R_mm": 4.0,
+   "y": 8.741510093980816,
+   "dc_mm": 8.3,
+   "dropped": true
+  },
+  "pf-g-h0.1-R2/run.json/engine": {
+   "volumetric": "gauss",
+   "h": 0.1,
+   "block": 25.0,
+   "R_mm": 2.0,
+   "y": 14.492585477433687,
+   "dc_mm": 6.3500000000000005,
+   "dropped": true
+  },
+  "pf-g-h0.1-R4/run.json/engine": {
+   "volumetric": "gauss",
+   "h": 0.1,
+   "block": 25.0,
+   "R_mm": 4.0,
+   "y": 9.67340454149155,
+   "dc_mm": 9.15,
+   "dropped": true
+  },
+  "pf-m-h0.1-R2/run.json/engine": {
+   "volumetric": "mean",
+   "h": 0.1,
+   "block": 25.0,
+   "R_mm": 2.0,
+   "y": 14.25110503733008,
+   "dc_mm": 6.300000000000001,
+   "dropped": true
+  },
+  "pf-m-h0.1-R4/run.json/engine": {
+   "volumetric": "mean",
+   "h": 0.1,
+   "block": 25.0,
+   "R_mm": 4.0,
+   "y": 9.227782629636264,
+   "dc_mm": 8.85,
+   "dropped": true
+  },
+  "pf-g-h0.1-R2-b24/run.json/engine": {
+   "volumetric": "gauss",
+   "h": 0.1,
+   "block": 24.0,
+   "R_mm": 2.0,
+   "y": 13.289065049740762,
+   "dc_mm": 5.95,
+   "dropped": true
+  },
+  "pf-g-h0.1-R4-b24/run.json/engine": {
+   "volumetric": "gauss",
+   "h": 0.1,
+   "block": 24.0,
+   "R_mm": 4.0,
+   "y": 10.212192223885571,
+   "dc_mm": 9.5,
+   "dropped": true
+  },
+  "gent-m-h0.1-R0.5/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "mean",
+   "h": 0.1,
+   "block": 25.0,
+   "R_mm": 0.5,
+   "y": 58.41964008023299,
+   "dc_mm": 3.648538621522656
+  },
+  "gent-m-h0.1-R1/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "mean",
+   "h": 0.1,
+   "block": 25.0,
+   "R_mm": 1.0,
+   "y": 30.379616403749036,
+   "dc_mm": 5.0954134827253945
+  },
+  "gent-m-h0.2-R2/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "mean",
+   "h": 0.2,
+   "block": 25.0,
+   "R_mm": 2.0,
+   "y": 10.69271453350471,
+   "dc_mm": 5.192162426654771
+  },
+  "gent-m-h0.2-R4/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "mean",
+   "h": 0.2,
+   "block": 25.0,
+   "R_mm": 4.0,
+   "y": 11.497268687222382,
+   "dc_mm": 10.731556203747031
+  },
+  "nh-m-h0.1-R0.5/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel",
+   "volumetric": "mean",
+   "h": 0.1,
+   "block": 25.0,
+   "R_mm": 0.5,
+   "y": 8.79005828152507,
+   "dc_mm": 1.149914754941337
+  },
+  "nh-m-h0.1-R1/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel",
+   "volumetric": "mean",
+   "h": 0.1,
+   "block": 25.0,
+   "R_mm": 1.0,
+   "y": 7.031549762794139,
+   "dc_mm": 1.6996150597613364
+  },
+  "gent-m-h0.1-R2/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "mean",
+   "h": 0.1,
+   "block": 25.0,
+   "R_mm": 2.0,
+   "y": 13.445691828336304,
+   "dc_mm": 6.0390045931197065
+  },
+  "nh-m-h0.1-R2/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel",
+   "volumetric": "mean",
+   "h": 0.1,
+   "block": 25.0,
+   "R_mm": 2.0,
+   "y": 6.225435829297697,
+   "dc_mm": 3.0474560533553867
+  },
+  "nh-m-h0.1-R4/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel",
+   "volumetric": "mean",
+   "h": 0.1,
+   "block": 25.0,
+   "R_mm": 4.0,
+   "y": 5.690782138302412,
+   "dc_mm": 5.433200144491678
+  },
+  "gent-g-h0.1-R0.5-b24/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "gauss",
+   "h": 0.1,
+   "block": 24.0,
+   "R_mm": 0.5,
+   "y": 65.53520318218071,
+   "dc_mm": 3.898251131407661
+  },
+  "gent-g-h0.1-R1-b24/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "gauss",
+   "h": 0.1,
+   "block": 24.0,
+   "R_mm": 1.0,
+   "y": 30.100435791637704,
+   "dc_mm": 5.045480659845374
+  },
+  "gent-g-h0.2-R2-b24/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "gauss",
+   "h": 0.2,
+   "block": 24.0,
+   "R_mm": 2.0,
+   "y": 16.872312394090585,
+   "dc_mm": 7.134405690483955
+  },
+  "gent-m-h0.2-R0.5/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "mean",
+   "h": 0.2,
+   "block": 25.0,
+   "R_mm": 0.5,
+   "y": 16.19069031448368,
+   "dc_mm": 1.5998078759781007
+  },
+  "gent-m-h0.2-R1/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "mean",
+   "h": 0.2,
+   "block": 25.0,
+   "R_mm": 1.0,
+   "y": 21.732432465591746,
+   "dc_mm": 4.1971796293166115
+  },
+  "gent-m-h0.2-R2-b24/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "mean",
+   "h": 0.2,
+   "block": 24.0,
+   "R_mm": 2.0,
+   "y": 11.370588304534362,
+   "dc_mm": 5.441367079716663
+  },
+  "gent-m-h0.1-R0.5-b24/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "mean",
+   "h": 0.1,
+   "block": 24.0,
+   "R_mm": 0.5,
+   "y": 58.515423204812876,
+   "dc_mm": 3.648536954239265
+  },
+  "gent-m-h0.1-R1-b24/needle_sweep.json/MIME": {
+   "material": "softtissue.puncture_gel_gent",
+   "volumetric": "mean",
+   "h": 0.1,
+   "block": 24.0,
+   "R_mm": 1.0,
+   "y": 24.61383893988322,
+   "dc_mm": 4.446661318918882
+  }
+ },
+ "plant_rate": [
+  {
+   "n": 10000,
+   "seed": 1,
+   "line": 1e-10,
+   "correct_pass": 10000,
+   "correct_max": 1.8381792511355506e-14,
+   "plant_caught": 10000,
+   "plant_min": 2.8214973536913406e-07,
+   "plant_median": 0.0011548113264609528,
+   "plant_min_axis": 1.5467165944349905e-05,
+   "plant_min_off": 2.8214973536913406e-07
+  },
+  {
+   "n": 10000,
+   "seed": 2,
+   "line": 1e-10,
+   "correct_pass": 10000,
+   "correct_max": 2.347532542863551e-14,
+   "plant_caught": 10000,
+   "plant_min": 1.3175050250372818e-07,
+   "plant_median": 0.001161866873327777,
+   "plant_min_axis": 9.142324294789812e-06,
+   "plant_min_off": 1.3175050250372818e-07
+  }
+ ]
+}
