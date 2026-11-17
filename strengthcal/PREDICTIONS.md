@@ -122,3 +122,28 @@ All arms: full integration, no lag, increment 2 h, `--ramp 2 --cut 4 --newton-st
   governed at every radius, no stretch of Fc proportional to R.
 - **P2.6** Sphere R 1 at l 20: Fc within 25 % of l 50's.
 - **P2.7** Cost: flat punch at l 20 5-10 s a step (350 steps, 0.5-1 h before nucleation); sphere R 4 at l 50 2-4 h.
+
+### Read before round 3: G1's first answer (its report, 08:14 CET) and the Gent ceiling
+- G1: the nodal penalty lets the tip pass between surface nodes from d/R 2-3; its edge-quadrature contact (4 points, 1000 E/h)
+  passes its controls; a neo-Hookean solid at G' cannot be followed to d/R 4-10 on any grid (the material's demand); Gent
+  Jm 2-15 can, to d/R 13 at h/R 0.1; its loading fit (R 0.5) is **Jm 3.7 (3.5-4.5)**, with a shape misfit it carries as error.
+  Merged here (b778a1f; the driver's `--edge-points`, `--contact-k`).
+- Gent Jm 4, G' 6.2 kPa, this engine's `coefficients` [computed]: L = 3 Gc / 16 W_ts is 400 / 223 / 125 / 48 / 20 um at s_ts
+  5 / 10 / 20 / 50 / 100 G' (it scales as 1/G' at fixed s_ts/G'); at 300 G' the uniaxial state is wrong (lateral stress -0.18
+  s_ts: the bracket). So at l 20 um the ceiling is about 60-100 G' on the 6.2 kPa gel, 40-60 G' on the 10 kPa gel.
+
+## Round 3: Gent Jm 4 with the edge contact (written 2026-11-17 08:38 CET, `date`, before any arm ran)
+All arms: Gent Jm 4 (G1's loading fit, mid-range), edge contact 4 points at 1000 E/h, full integration, no lag, increment 2 h,
+the ramp, cut and stagnation stop of round 2.
+- Elastic, fields saved: flat punch (G' 6.2, R 0.359) fillet 0.02 and 0.07 mm at h 0.01; sphere R 0.5 (G' 3.66) at h 0.01.
+- Calibration, flat punch, l 20 um, fillet 0.02: s_ts 10, 20, 40, 70, 150 G'. Held-out gel G' 10 kPa (R 0.358): 20 and 70 G'.
+- Spheres (G' 3.66), s_ts 20 and 40 G' (73.2 and 146.4 kPa): R 0.5, 1, 2, 4 at l 50 um; R 0.5 at l 20 um.
+- **P3.1** No elastic drop above 0.5 % to 7 mm; the flat punch reaches P/(G'R^2) of 100-150 at d/R 8-12.
+- **P3.2** The equivalent strength when the load reaches the data's: flat 150-600 G' over all points; sphere R 0.5 at 153 mN
+  100-500 G' over all points and under 20 G' on tension points.
+- **P3.3** Flat Pc/(G'R^2) rises with s_ts; at 70 G' it stays under 100: inside the ceiling no strength calibrates (lean 0.6).
+- **P3.4** The held-out gel at the same s_ts/G' gives Pc/(G'R^2) within 20 % of the calibration gel's.
+- **P3.5** Spheres at l 50: Fc/(mu R^2) falls by less than 2 times from R 0.5 to 4 at either s_ts; no stretch of Fc
+  proportional to R.
+- **P3.6** R 0.5 at l 20 against l 50: Fc within 30 %.
+- **P3.7** Cost: 6-12 Newton a step; flat at l 20 0.3-1 h to nucleation; sphere R 4 at l 50 1.5-4 h.
