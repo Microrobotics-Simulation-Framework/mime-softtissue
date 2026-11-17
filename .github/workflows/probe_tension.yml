@@ -1,0 +1,85 @@
+# A probe workflow (a probe branch only, deleted after its artifacts are downloaded): TENSION's arms, each one
+# run of a TENSION script (the axisymmetric engine called directly), with partial uploads while it runs.
+name: probe-tension
+on:
+  push:
+    branches: ["probe/tension-r*"]
+env:
+  JAX_PLATFORMS: cpu
+  JAX_ENABLE_X64: "1"
+jobs:
+  arm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        include:
+          - {name: b-T5-two-l, script: tension/bar.py, args: "--criterion tension --jm 3.7 --sts 18.3 --l 0.05 0.1"}
+          - {name: b-T10-two-l, script: tension/bar.py, args: "--criterion tension --jm 3.7 --sts 36.6 --l 0.05 0.1"}
+          - {name: c-T-uni, script: tension/bar.py, args: "--criterion tension --jm 3.7 --sts 7.32 --l 0.1 --compress --lam-min 0.35"}
+          - {name: c-DP-uni, script: tension/bar.py, args: "--criterion dp --ratio 1.5 --jm 3.7 --sts 7.32 --l 0.1 --compress --lam-min 0.35"}
+          - {name: c-T-conf, script: tension/bar.py, args: "--criterion tension --jm 3.7 --sts 7.32 --l 0.1 --compress --confined --lam-min 0.8"}
+          - {name: c-DP-conf, script: tension/bar.py, args: "--criterion dp --ratio 1.5 --jm 3.7 --sts 7.32 --l 0.1 --compress --confined --lam-min 0.8"}
+          - {name: d-plant-s1, script: tension/bar.py, args: "--criterion tension --draws 6 --seed 1 --plant 2.0"}
+          - {name: d-plant-s2, script: tension/bar.py, args: "--criterion tension --draws 6 --seed 2 --plant 2.0"}
+          - {name: d-clean-s1, script: tension/bar.py, args: "--criterion tension --draws 6 --seed 1"}
+          - {name: d-clean-s2, script: tension/bar.py, args: "--criterion tension --draws 6 --seed 2"}
+          - {name: e-T10-nu49-H40, script: tension/slab.py, args: "--sts 36.6 --criterion tension --jm 3.7 --nu 0.49 --gc 27.6 --l 0.1 --h 0.05 --H 40 --width 40 --ri 20 --a0 6 --band 1.5 --dlam 0.0025 --lam-max 1.5"}
+          - {name: e-T20-nu49-H20, script: tension/slab.py, args: "--sts 73.2 --criterion tension --jm 3.7 --nu 0.49 --gc 27.6 --l 0.1 --h 0.05 --H 20 --width 40 --ri 20 --a0 6 --band 1.5 --dlam 0.0025 --lam-max 1.5"}
+          - {name: e-T5-nu45-H40, script: tension/slab.py, args: "--sts 18.3 --criterion tension --jm 3.7 --nu 0.45 --gc 27.6 --l 0.1 --h 0.05 --H 40 --width 40 --ri 20 --a0 6 --band 1.5 --dlam 0.005 --lam-max 2.0"}
+          - {name: e-T10-nu45-H20, script: tension/slab.py, args: "--sts 36.6 --criterion tension --jm 3.7 --nu 0.45 --gc 27.6 --l 0.1 --h 0.05 --H 20 --width 40 --ri 20 --a0 6 --band 1.5 --dlam 0.005 --lam-max 2.0"}
+          - {name: e-T10-nu45-H20-dplant2, script: tension/slab.py, args: "--sts 36.6 --criterion tension --jm 3.7 --nu 0.45 --gc 27.6 --l 0.1 --h 0.05 --H 20 --width 40 --ri 20 --a0 6 --band 1.5 --dlam 0.005 --lam-max 2.0 --delta-plant 2.0"}
+    name: ${{ matrix.name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          python-version: "3.12"
+      - run: uv venv --python 3.12
+      - run: uv pip install "mime-engine[verify] @ git+https://github.com/Microrobotics-Simulation-Framework/MIME@99614e487c90f091e1fcbfa712aa14aa583634b5"
+      - run: uv pip install -e .
+      - name: start
+        run: |
+          lscpu | grep "Model name" | tee cpu.txt
+          nproc | tee -a cpu.txt
+          free -m | tee -a cpu.txt
+          mkdir -p out/${{ matrix.name }}
+          nohup bash -c 'timeout 335m uv run --no-sync python ${{ matrix.script }} out/${{ matrix.name }}/run.json ${{ matrix.args }} > log.txt 2>&1; echo "exit $?" >> log.txt' > /dev/null 2>&1 &
+          echo $! > run.pid
+      - name: peek1
+        run: |
+          end=$((SECONDS + 1800))
+          while kill -0 $(cat run.pid) 2>/dev/null && [ $SECONDS -lt $end ]; do sleep 20; done
+          mkdir -p peek1/${{ matrix.name }}
+          cp out/${{ matrix.name }}/* cpu.txt peek1/${{ matrix.name }}/ 2>/dev/null || true
+          tail -c 20000 log.txt > peek1/${{ matrix.name }}/log.txt || true
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.name }}-peek1
+          path: peek1/${{ matrix.name }}
+          retention-days: 14
+      - name: peek2
+        run: |
+          end=$((SECONDS + 3600))
+          while kill -0 $(cat run.pid) 2>/dev/null && [ $SECONDS -lt $end ]; do sleep 20; done
+          mkdir -p peek2/${{ matrix.name }}
+          cp out/${{ matrix.name }}/* cpu.txt peek2/${{ matrix.name }}/ 2>/dev/null || true
+          tail -c 20000 log.txt > peek2/${{ matrix.name }}/log.txt || true
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.name }}-peek2
+          path: peek2/${{ matrix.name }}
+          retention-days: 14
+      - name: finish
+        run: |
+          while kill -0 $(cat run.pid) 2>/dev/null; do sleep 30; done
+          tail -c 200000 log.txt > out/${{ matrix.name }}/log.txt
+          cp cpu.txt out/${{ matrix.name }}/
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: ${{ matrix.name }}
+          path: out/${{ matrix.name }}
+          retention-days: 14
