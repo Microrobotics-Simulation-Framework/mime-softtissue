@@ -95,3 +95,16 @@ and h 0.025.
 - **P4.3 Block 30:** under 1.5 % from block 60 to d/R 12 (Gent's larger force reaches the walls more than neo-Hookean's).
 - **P4.4 Nodal with Gent:** no drop above 0.5 % to d/R 13 at h 0.05 (55 %); its P within 3 % of the edge's where both clean.
 - **P4.5** Every arm drop-free to d/R 13 except possibly the nodal ones.
+
+## Round 5 (runners): Gent's Jm fitted on eq. 5's own geometry (the flat punch), written 08:22 CET (`date` 08:21)
+
+Seen before writing: flat punch (edge 0.2 R) ratios at d/R 1 / 2 / 4 / 8 / 12: Jm 4 0.82 / 0.79 / 0.90 / 1.12 / 1.29; Jm 7
+0.80 / 0.74 / 0.79 / 0.94 / 1.07; neo-Hookean 0.78 / 0.64 / 0.52 then drops. Gent Jm 4 at h 0.1 within 0.9 % of h 0.05.
+Eq. 5 was fitted to flat punches, so the flat punch is its own geometry; the sphere fit (Jm 3.7) may absorb the sphere's
+shortfall at d/R <= 4.
+
+Arms: flat punch, edge 0.2 R, R 0.5, h 0.05, edge contact 1000 E/h, Gent Jm 3, 5, 10.
+
+- **P5.1** The flat-punch least-squares Jm over d/R 2-12 lies in 4.5-7, above the sphere's 3.7 (the sphere's fit absorbs
+  geometry); its ratio still rises with depth (spread at least 0.75-1.2).
+- **P5.2** All three drop-free to d/R 13.
